@@ -1,0 +1,13 @@
+# Change Log
+All notable changes to this project will be documented in this file.
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
+and this project adheres to [Semantic Versioning](http://semver.org/).
+
+##[0.0.0] 2017 Nov 9
+#### added
+- comment, fflush(stdout)
+- checking 1D, 2D, 3D
+- streaming in 1D, 2D
+#### need to do
+- streaming function in 3D
+- how to minimize communication message
