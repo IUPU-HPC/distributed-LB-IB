@@ -584,7 +584,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
 
   /*PTHREAD_Change*/
 
-  gv->TIME_STOP = 5;
+  gv->timesteps= 5;
 
   //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
 

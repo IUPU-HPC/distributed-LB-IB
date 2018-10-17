@@ -1,32 +1,103 @@
-/*  -- Scalable LB-IB --
-    Indiana University Purdue University Indianapolis, USA
-
-    @file
-
-    @date
-
-    @author Yuankun Fu
-*/
+/*  -- Distributed-LB-IB --
+ * Copyright 2018 Indiana University Purdue University Indianapolis 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *   
+ * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
+ *
+ * @file:
+ *
+ * @date:
+ */
 
 
 #include "do_thread.h"
 
-int main(int argc, char* argv[]) {
-  int i;
-  //Error Chek#1
-  if (argc != 18) {
-    fprintf(stderr,
-      "Usage: %s -> fibersheet_width, fibersheet_height, \
-                          total_fibers_row, total_fibers_clmn, \
-                                    FluidgridZDim, FluidgridYDim, FluidGridXDim, \
-                                              fibersheet_xo,  fibersheet_yo,  fibersheet_zo \
-                                                        cubedimension \
-                                                                  P, Q, R, \
-                                                                            Px, Py, Pz \n",
-                                                                  argv[0]); //Enter #fiber and #gripoints
-    exit(1);
+void needs_argument(int i, int argc, const char *flag) {
+  if (i+1 >= argc) {
+    fprintf(stderr, "error: Flag \"%s\" requires an argument\n", flag);
+    abort();
   }
+}
 
+int main(int argc, char* argv[]) {
+
+/*  if (argc != 18) {*/
+    /*fprintf(stderr,*/
+      /*"Usage: %s -> fibersheet_width, fibersheet_height, \*/
+                      /*total_fibers_row, total_fibers_clmn, \*/
+                        /*FluidgridZDim, FluidgridYDim, FluidGridXDim, \*/
+                          /*fibersheet_xo,  fibersheet_yo,  fibersheet_zo \*/
+                            /*cubedimension \*/
+                              /*P, Q, R, \*/
+                                /*Px, Py, Pz \n",*/
+                                  /*argv[0]); //Enter #fiber and #gripoints*/
+    /*exit(1);*/
+  /*}*/
+
+  // Parse command line
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "-steps")) {
+      needs_argument(i, argc, "-steps");
+      long value = atol(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->timesteps = value;
+    }
+
+    if (!strcmp(argv[i], "-numfibers")) {
+      needs_argument(i, argc, "-numfibers");
+      long value = atol(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-numfibers%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->num_fiber_task = value;
+    }
+
+    if (!strcmp(argv[i], "-fiber_x0")) {
+      needs_argument(i, argc, "-fiber_x0");
+      long value = atol(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fiber_x0 %ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->timesteps = value;
+    }
+
+    if (!strcmp(argv[i], "-setps")) {
+      needs_argument(i, argc, "-steps");
+      long value = atol(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->timesteps = value;
+    }
+
+    if (!strcmp(argv[i], "-setps")) {
+      needs_argument(i, argc, "-steps");
+      long value = atol(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->timesteps = value;
+    }
+
+  }
   double fibersheet_w = atof(argv[1]);
   double fibersheet_h = atof(argv[2]);
   int total_fibers_row = atoi(argv[3]);   /* no of fibres along height */
@@ -35,21 +106,21 @@ int main(int argc, char* argv[]) {
   int fluidgrid_z = atoi(argv[5]);      // fluid dim z in whole domain
   int fluidgrid_y = atoi(argv[6]);      // fluid dim y in whole domain
   int fluidgrid_x = atoi(argv[7]);      // fluid dim x in whole domain
-  double fibersheet_xo = atof(argv[8]); //initial position of the fiber sheet chosen somewher in the middle of grid
+  double fibersheet_xo = atof(argv[8]); // initial position of the fiber sheet chosen somewher in the middle of grid
   double fibersheet_yo = atof(argv[9]);
   double fibersheet_zo = atof(argv[10]);
 
-  int k_cubedim = atoi(argv[11]); //cubesize
+  int k_cubedim = atoi(argv[11]); // cubesize
 
-  int P = atoi(argv[12]);               //along x num of fluid thread per fluid process
-  int Q = atoi(argv[13]);               //along y
-  int R = atoi(argv[14]);               //along z
+  int P = atoi(argv[12]); //along x num of fluid thread per fluid process
+  int Q = atoi(argv[13]); //along y
+  int R = atoi(argv[14]); //along z
 
-  int Px = atoi(argv[15]);              //along x num of fluid process
-  int Py = atoi(argv[16]);              //along y
-  int Pz = atoi(argv[17]);              //along z
+  int num_fluid_task_x = atoi(argv[15]); //along x num of fluid process
+  int num_fluid_task_y = atoi(argv[16]); //along y
+  int num_fluid_task_z = atoi(argv[17]); //along z
 
-  int num_macs = Px*Py*Pz + 1;
+  int numtasks_= Px*Py*Pz + 1;
   int num_threads_per_process = P*Q*R;
 
   if (fluidgrid_z%R != 0){
@@ -69,13 +140,17 @@ int main(int argc, char* argv[]) {
 
   //New Error Check
   if (fluidgrid_x%Px != 0 || fluidgrid_y%Py != 0 || fluidgrid_z%Pz != 0){
-    fprintf(stderr, "Check Fluid_elem_x:%dor elem_y:%d or elem_z== :%d and #machines==:%d :Lateral Distribution with one machine reserved for Fiber structure\n", fluidgrid_x, fluidgrid_y, fluidgrid_z, num_macs);
+    fprintf(stderr, "Check Fluid_elem_x:%dor elem_y:%d or elem_z== :%d and #machines==:%d :\
+                     Lateral Distribution with one machine reserved for Fiber structure\n", 
+                    fluidgrid_x, fluidgrid_y, fluidgrid_z, num_macs);
     exit(1);
   }
 
   //Error check for Fluid nodes and cubes to be divisible
   if (fluidgrid_x % (k_cubedim) != 0 || fluidgrid_y % (k_cubedim) != 0 || fluidgrid_z % (k_cubedim) != 0){
-    fprintf(stderr, "Check Fluid_elem_x:%dor elem_y:%d or elem_z== :%d and CubeSIZE:K==:%d : The cubes should be distributed equally on the entire fluid grid\n", fluidgrid_x, fluidgrid_y, fluidgrid_z, k_cubedim);
+    fprintf(stderr, "Check Fluid_elem_x:%dor elem_y:%d or elem_z== :%d and CubeSIZE:K==:%d : \
+                     The cubes should be distributed equally on the entire fluid grid\n", 
+                    fluidgrid_x, fluidgrid_y, fluidgrid_z, k_cubedim);
     exit(1);
   }
 
@@ -105,24 +180,25 @@ int main(int argc, char* argv[]) {
   int fiber_mac_rank = gv->num_macs - 1;
 
   if (my_rank == fiber_mac_rank){
-    printf("***********mpi LBM IB Simulation using Pthreads cube v0.0 starts************\n");
+    printf("***********distributed-LB-IB Simulation using Pthreads cube starts************\n");
     printf("*****INPUT*********\n");
     printf("provided=%d\n", provided);
-    printf("fibersheet_w:%f , fibersheet_h :%f, fibers_row: %d, fibers_clmn:%d \n ", fibersheet_w, fibersheet_w, total_fibers_row, total_fibers_row);
-    printf("elem_z:%d , elem_y :%d, elem_x: %d\n ", fluidgrid_z, fluidgrid_y, fluidgrid_x);
-    printf("fibersheet_xo:%f , fibersheet_yo :%f, fibersheet_zo: %f\n ", fibersheet_xo, fibersheet_yo, fibersheet_zo);
+    printf("    Fibersheet: width %f, height %f, row %d, clmn %d, x0 %f, y0 %f, z0 %f\n ", 
+           fibersheet_w, fibersheet_w, total_fibers_row, total_fibers_row, 
+           fibersheet_xo, fibersheet_yo, fibersheet_zo);
+    printf("    Fluid: elem_z:%d , elem_y :%d, elem_x: %d\n ", fluidgrid_z, fluidgrid_y, fluidgrid_x);
     fflush(stdout);
   }
   else{
     // fluid mac init my_rank_x,y,z
     int direction;
     if (check_1d(Px, Py, Pz, &direction)){
-      if(direction == X_transfer_1D){
+      if (direction == X_transfer_1D){
         gv->my_rank_z = 0;
         gv->my_rank_y = 0;
         gv->my_rank_x = my_rank;
       }
-      else if(direction == Z_transfer_1D){
+      else if (direction == Z_transfer_1D){
         gv->my_rank_z = my_rank;
         gv->my_rank_y = 0;
         gv->my_rank_x = 0;
@@ -133,13 +209,13 @@ int main(int argc, char* argv[]) {
         gv->my_rank_x = 0;
       }
     }
-    else if(check_2d(Px, Py, Pz, &direction)){
-      if(direction==X_transfer_2D){
+    else if (check_2d(Px, Py, Pz, &direction)){
+      if (direction == X_transfer_2D){
         gv->my_rank_z = 0;
         gv->my_rank_y = my_rank % Py;
         gv->my_rank_x = my_rank / Py;
       }
-      else if(direction==Y_transfer_2D){
+      else if (direction == Y_transfer_2D){
         gv->my_rank_z = my_rank % Pz;
         gv->my_rank_y = my_rank / Pz;
         gv->my_rank_x = 0;
@@ -155,10 +231,9 @@ int main(int argc, char* argv[]) {
       gv->my_rank_y = my_rank / Pz;
       gv->my_rank_x = my_rank / (Py*Pz);
     }
-
   }
 
-  // Last machine be the fiber machine
+  // Last machine is the fiber machine
   Fibershape* fiber_shape;
   Fluidgrid*  fluid_grid;
 
