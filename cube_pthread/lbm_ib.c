@@ -85,7 +85,7 @@ typedef struct fluid_node_t {
   double df1[19]; // old value, corresponds to 19 different values of distribution function along 19 different discrete velocities ξj given on FIg1 computed from  df0[] using eq 10
   double df2[19]; // new value, after streaming
   double dfeq[19]; /*???*/            // added since getting errroneous value for timestep>1  That Is, df0 //Todo: no needed
-  double df_inout[2][19]; /*???*/    // df_inout[0] for inlet and df_inout[1] for outlet    //Todo: Too Expensive!!
+  double df_inout[2][19]; /*???*/    // df_inout[0] for inlet and df_inout[1] for outlet    //TODO: Too Expensive!!
   double elastic_force_x, elastic_force_y, elastic_force_z;  // bending + stretching force, which is the little f in equation 19.
 } Fluidnode;
 
@@ -104,7 +104,7 @@ typedef struct sub_fluid_grid_t {
   int sub_coordz_start, sub_coordz_end; // To identify the cube along Z direction (or #rows)    accessed by FluidGrid->SubFluidGrid->sub_z_dim
   Fluidnode* nodes; // element
   bool isboundary; // To check if this subgrid is part of inlet, outlet or boundary to handle LBM boundary cases
-  // =k input from the user, shluld be dim_x, y , z :Some cube might not be k*K*K
+  // =k input from the user, shluld be dim_x, y, z :Some cube might not be k*K*K
   int grid_dim_x;
   int grid_dim_y;
   int grid_dim_z;

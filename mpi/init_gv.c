@@ -416,7 +416,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
     // printf("row:%d, col:%d, ifd_max_bufsize = %d \n", gv->fiber_shape->sheets[0].num_rows, gv->fiber_shape->sheets[0].num_cols, gv->ifd_max_bufsize);
     // fflush(stdout);
     gv->ifd_recv_count = 0;
-    gv->ifd_recv_buf = (char*)malloc(sizeof(char)*gv->ifd_max_bufsize);
+    gv->ifd_recv_buf = (char*)malloc(sizeof(char) * gv->ifd_max_bufsize);
 
     // Initilize stream_msg
     int stream_max_dim = max(max(P*Q, Q*R), P*R);
@@ -425,11 +425,11 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
 
     int direction, dest;
     if(Px==1 && Py==1 && Pz==1){
-      printf("Fluid mac %d doesn't need to stream\n", my_rank);
+      printf("Fluid task %d doesn't need to stream\n", my_rank);
       fflush(stdout);
     }
     else if (check_1d(Px, Py, Pz, &direction)){ //1d, any direction=1, function return 0, at most 2 msg
-      printf("Fluid mac %d Enter 1D Init configuration! direction=%d\n", my_rank, direction);
+      printf("Fluid task %d Enter 1D Init configuration! direction=%d\n", my_rank, direction);
       fflush(stdout);
 
       gv->stream_msg = (char**)malloc(sizeof(char*) * 7);
@@ -526,7 +526,6 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
         //dir 6
         compute_dest_mac(gv, 6, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
 
-
         //dir 15
         for(i=15; i<=18; i++)
           compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
@@ -592,7 +591,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
   gv->time = gv->dt; // Time step#, starting from 1.
 
 
-  //Fiber machine initialize
+  //Fiber task initialization
   /******* Shift fiber sheet for one time step ************/
   //TODO: for all the fiber sheets, shift.
   if (gv->my_rank == fiber_mac_rank){

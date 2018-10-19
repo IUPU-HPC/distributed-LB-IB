@@ -12,3 +12,8 @@ Each core run as 1 pthread.
 
 ## mpi_pthread
 This is the distributed memory MPI/pthread version of LBM-IB algorithm (ongoing)
+
+To compile the code for OpenMPI run the following before make on BigredII
+1)module swap PrgEnv-cray PrgEnv-gnu
+2)module load openmpi/ccm/gnu/1.7.2
+make

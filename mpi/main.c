@@ -22,6 +22,7 @@
 
 
 #include "do_thread.h"
+#include <cstring>
 
 void needs_argument(int i, int argc, const char *flag) {
   if (i+1 >= argc) {
@@ -32,18 +33,9 @@ void needs_argument(int i, int argc, const char *flag) {
 
 int main(int argc, char* argv[]) {
 
-/*  if (argc != 18) {*/
-    /*fprintf(stderr,*/
-      /*"Usage: %s -> fibersheet_width, fibersheet_height, \*/
-                      /*total_fibers_row, total_fibers_clmn, \*/
-                        /*FluidgridZDim, FluidgridYDim, FluidGridXDim, \*/
-                          /*fibersheet_xo,  fibersheet_yo,  fibersheet_zo \*/
-                            /*cubedimension \*/
-                              /*P, Q, R, \*/
-                                /*Px, Py, Pz \n",*/
-                                  /*argv[0]); //Enter #fiber and #gripoints*/
-    /*exit(1);*/
-  /*}*/
+  LV lvs;
+  GV gv;
+  gv = (GV) calloc (1, sizeof(*gv));
 
   // Parse command line
   for (int i = 1; i < argc; i++) {
@@ -57,154 +49,270 @@ int main(int argc, char* argv[]) {
       gv->timesteps = value;
     }
 
-    if (!strcmp(argv[i], "-numfibers")) {
-      needs_argument(i, argc, "-numfibers");
+    if (!strcmp(argv[i], "-fluid_grid_xyz")) {
+      gv->fluid_grid = (Fluidgrid*) calloc(1, sizeof(Fluidgrid));
+      // gv->fluid_grid->sub_fluid_grid = (Sub_Fluidgrid*) calloc (1, sizeof(Sub_Fluidgrid));
+
+      needs_argument(i, argc, "-fluid_grid_x");
       long value = atol(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-numfibers%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_x%ld\" must be > 0\n", value);
         abort();
       }
-      gv->num_fiber_task = value;
-    }
+      gv->fluid_grid->x_dim = value;
 
-    if (!strcmp(argv[i], "-fiber_x0")) {
-      needs_argument(i, argc, "-fiber_x0");
-      long value = atol(argv[++i]);
+      needs_argument(i, argc, "-fluid_grid_y");
+      value = atol(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fiber_x0 %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_y%ld\" must be > 0\n", value);
         abort();
       }
-      gv->timesteps = value;
-    }
+      gv->fluid_grid->y_dim = value;
 
-    if (!strcmp(argv[i], "-setps")) {
-      needs_argument(i, argc, "-steps");
-      long value = atol(argv[++i]);
+      needs_argument(i, argc, "-fluid_grid_z");
+      value = atol(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_z%ld\" must be > 0\n", value);
         abort();
       }
-      gv->timesteps = value;
+      gv->fluid_grid->z_dim = value;
     }
 
-    if (!strcmp(argv[i], "-setps")) {
-      needs_argument(i, argc, "-steps");
-      long value = atol(argv[++i]);
+    if (!strcmp(argv[i], "-cube_size")) {
+      needs_argument(i, argc, "-cube_size");
+      int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-cube_size%d\" must be > 0\n", value);
         abort();
       }
-      gv->timesteps = value;
+      gv->cube_size = value;
     }
 
+    if (!strcmp(argv[i], "-fluid_task_xyz")) {
+      needs_argument(i, argc, "-fluid_task_x");
+      long value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fluid_task_x%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->num_fluid_task_x = value;
+
+      needs_argument(i, argc, "-fluid_task_y");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fluid_task_y%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->num_fluid_task_y = value;
+
+      needs_argument(i, argc, "-fluid_task_z");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fluid_task_z%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->num_fluid_task_z = value;
+    }
+
+    if (!strcmp(argv[i], "-thread_per_task_xyz")) {
+      needs_argument(i, argc, "-thread_per_task_x");
+      long value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_x%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->tx = value;
+
+      needs_argument(i, argc, "-thread_per_task_y");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_y%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->ty = value;
+
+      needs_argument(i, argc, "-thread_per_task_z");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_z%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->tz = value;
+    }
+
+    if (!strcmp(argv[i], "-num_fibersht")) {
+      needs_argument(i, argc, "-num_fibersht");
+      long value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-num_fibersht%ld\" must be > 0\n", value);
+        abort();
+      }
+      gv->fiber_shape = (Fibershape*) calloc (1, sizeof(Fibershape));
+      gv->fiber_shape->num_sheets = value;
+      gv->fiber_shape->sheets = (Fibersheet*) calloc (value, sizeof(Fibersheet));
+    }
+
+    if (!strcmp(argv[i], "-fibersht_width_height")) {
+      for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
+        needs_argument(i, argc, "-fibersht_width");
+        double value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_width %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].width = value;
+
+        needs_argument(i, argc, "-fibersht_height");
+        value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_height %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].height = value;
+      }
+    }
+
+    if (!strcmp(argv[i], "-fibersht_row_clmn")) {
+      for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
+        needs_argument(i, argc, "-fibersht_row");
+        long value = atol(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_row %ld\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].num_rows = value;
+
+        needs_argument(i, argc, "-fibersht_clmn");
+        value = atol(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_clmn %ld\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].num_cols = value;
+      }
+    }
+
+    if (!strcmp(argv[i], "-fibersht_xyz_0")) {
+      for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
+        needs_argument(i, argc, "-fibersht_x0");
+        double value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_x0 %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].x_orig = value;
+
+        needs_argument(i, argc, "-fibersht_y0");
+        value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_y0 %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].y_orig = value;
+
+        needs_argument(i, argc, "-fibersht_z0");
+        value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_z0 %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].z_orig = value;
+      }
+    }
   }
-  double fibersheet_w = atof(argv[1]);
-  double fibersheet_h = atof(argv[2]);
-  int total_fibers_row = atoi(argv[3]);   /* no of fibres along height */
-  int total_fibers_clmn = atoi(argv[4]);  /* no of fibres along width  or column should be 512 for 1024:*/
 
-  int fluidgrid_z = atoi(argv[5]);      // fluid dim z in whole domain
-  int fluidgrid_y = atoi(argv[6]);      // fluid dim y in whole domain
-  int fluidgrid_x = atoi(argv[7]);      // fluid dim x in whole domain
-  double fibersheet_xo = atof(argv[8]); // initial position of the fiber sheet chosen somewher in the middle of grid
-  double fibersheet_yo = atof(argv[9]);
-  double fibersheet_zo = atof(argv[10]);
-
-  int k_cubedim = atoi(argv[11]); // cubesize
-
-  int P = atoi(argv[12]); //along x num of fluid thread per fluid process
-  int Q = atoi(argv[13]); //along y
-  int R = atoi(argv[14]); //along z
-
-  int num_fluid_task_x = atoi(argv[15]); //along x num of fluid process
-  int num_fluid_task_y = atoi(argv[16]); //along y
-  int num_fluid_task_z = atoi(argv[17]); //along z
-
-  int numtasks_= Px*Py*Pz + 1;
-  int num_threads_per_process = P*Q*R;
-
-  if (fluidgrid_z%R != 0){
-    fprintf(stderr, "Check Fluid_elem_z== :%d and  R==:%d :Should be multiple of 2 \n", fluidgrid_z, R);
+  //Error Check for Fluid grid can be divided by fluid_task
+  if ( (gv->fluid_grid->z_dim % gv->num_fluid_task_x != 0) || 
+       (gv->fluid_grid->y_dim % gv->num_fluid_task_y != 0) || 
+       (gv->fluid_grid->z_dim % gv->num_fluid_task_z != 0) ){
+    fprintf(stderr, "Check Fluid_task x: %d y: %d z: %d\n", 
+                    gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
     exit(1);
   }
 
-  if (fluidgrid_y%Q != 0){
-    fprintf(stderr, "Check Fluid_elem_y== :%d and  Q==:%d :Should be multiple of 2 \n", fluidgrid_y, Q);
+  //Error Check for Fluid grid can be divided by thread_per_task_xyz
+  if ( (gv->fluid_grid->z_dim % gv->tz != 0) || 
+       (gv->fluid_grid->y_dim % gv->ty != 0) || 
+       (gv->fluid_grid->x_dim % gv->tx != 0) ){
+    fprintf(stderr, "Check Fluid_grid_z: %ld and tz: %d Should be multiple of 2 \n", gv->fluid_grid->z_dim, gv->tz);
+    fprintf(stderr, "Check Fluid_grid_y: %ld and ty: %d Should be multiple of 2 \n", gv->fluid_grid->y_dim, gv->ty);
+    fprintf(stderr, "Check Fluid_grid_x: %ld and tx: %d Should be multiple of 2 \n", gv->fluid_grid->z_dim, gv->tx);
     exit(1);
   }
 
-  if (fluidgrid_x%P != 0){
-    fprintf(stderr, "Check Fluid_elem_x== :%d and  P==:%d :Should be multiple of 2 \n", fluidgrid_x, P);
-    exit(1);
-  }
-
-  //New Error Check
-  if (fluidgrid_x%Px != 0 || fluidgrid_y%Py != 0 || fluidgrid_z%Pz != 0){
-    fprintf(stderr, "Check Fluid_elem_x:%dor elem_y:%d or elem_z== :%d and #machines==:%d :\
-                     Lateral Distribution with one machine reserved for Fiber structure\n", 
-                    fluidgrid_x, fluidgrid_y, fluidgrid_z, num_macs);
-    exit(1);
-  }
-
-  //Error check for Fluid nodes and cubes to be divisible
-  if (fluidgrid_x % (k_cubedim) != 0 || fluidgrid_y % (k_cubedim) != 0 || fluidgrid_z % (k_cubedim) != 0){
-    fprintf(stderr, "Check Fluid_elem_x:%dor elem_y:%d or elem_z== :%d and CubeSIZE:K==:%d : \
+  //Error check for Fluid grid can be divided by cube_size
+  if ( (gv->fluid_grid->x_dim % (gv->cube_size) != 0) || 
+       (gv->fluid_grid->y_dim % (gv->cube_size) != 0) || 
+       (gv->fluid_grid->z_dim % (gv->cube_size) != 0) ){
+    fprintf(stderr, "cube_size: %d \
                      The cubes should be distributed equally on the entire fluid grid\n", 
-                    fluidgrid_x, fluidgrid_y, fluidgrid_z, k_cubedim);
+                    gv->cube_size);
     exit(1);
   }
 
   /*MPI code starts*/
-  int ierr, my_rank;
+  // gv->total_tasks = gv->num_fluid_task_x * gv->num_fluid_task_y * gv->num_fluid_task_z + gv->num_fibersht;
+  gv->threads_per_task = gv->tx * gv->ty * gv->tz;
+
+  int ierr, taskid;
   int provided;
 
   ierr = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_macs); // num_macs == num of process
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  ierr = MPI_Comm_size(MPI_COMM_WORLD, &gv->total_tasks);
+  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->taskid);
 
-  LV lvs;
-  GV gv;
-  gv = (GV) calloc (1, sizeof(*gv));
-  gv->num_cubes_x = fluidgrid_x / k_cubedim;
-  gv->num_cubes_y = fluidgrid_y / k_cubedim;
-  gv->num_cubes_z = fluidgrid_z / k_cubedim;
-  gv->P = P;
-  gv->Q = Q;
-  gv->R = R;
-  gv->total_threads = num_threads_per_process;
-  gv->num_macs = num_macs;
-  gv->my_rank = my_rank;
-  gv->Px = Px;
-  gv->Py = Py;
-  gv->Pz = Pz;
-  int fiber_mac_rank = gv->num_macs - 1;
+  gv->num_fluid_tasks = gv->total_tasks - gv->fiber_shape->num_sheets;
 
-  if (my_rank == fiber_mac_rank){
+  // print info
+  if (gv->taskid == 0){
     printf("***********distributed-LB-IB Simulation using Pthreads cube starts************\n");
-    printf("*****INPUT*********\n");
     printf("provided=%d\n", provided);
-    printf("    Fibersheet: width %f, height %f, row %d, clmn %d, x0 %f, y0 %f, z0 %f\n ", 
-           fibersheet_w, fibersheet_w, total_fibers_row, total_fibers_row, 
-           fibersheet_xo, fibersheet_yo, fibersheet_zo);
-    printf("    Fluid: elem_z:%d , elem_y :%d, elem_x: %d\n ", fluidgrid_z, fluidgrid_y, fluidgrid_x);
+    printf("    Fluidgrid: elem_z %ld , elem_y %ld, elem_x %ld\n ", 
+      gv->fluid_grid->z_dim, gv->fluid_grid->y_dim, gv->fluid_grid->x_dim);
+    printf("    Fluid task dimension -- Px:%d, Py:%d, Pz:%d\n", 
+      gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
+    printf("    Fluid threads_per_task: x %d, y %d, z %d \n TuningFactor: cube_size %d \n", 
+      gv->tx, gv->ty, gv->tz, gv->cube_size);
     fflush(stdout);
   }
-  else{
-    // fluid mac init my_rank_x,y,z
+
+  // Fiber tasks: generate fibersheet
+  if (gv->taskid >= gv->num_fluid_tasks){
+    for(int i = 0; i < gv->fiber_shape->num_sheets; ++i)
+      if (gv->taskid == (gv->num_fluid_tasks + i)){
+        gen_fiber_sheet(gv->fiber_shape->sheets + i, 
+                        gv->fiber_shape->sheets[i].width, gv->fiber_shape->sheets[i].height,
+                        gv->fiber_shape->sheets[i].num_rows, gv->fiber_shape->sheets[i].num_cols,
+                        gv->fiber_shape->sheets[i].x_orig, gv->fiber_shape->sheets[i].y_orig,
+                        gv->fiber_shape->sheets[i].z_orig);
+        printf("    Fibersheet %d : width %f, height %f, row %ld, clmn %ld, x0 %f, y0 %f, z0 %f\n ", 
+                     i, gv->fiber_shape->sheets[i].width, gv->fiber_shape->sheets[i].height,
+                        gv->fiber_shape->sheets[i].num_rows, gv->fiber_shape->sheets[i].num_cols,
+                        gv->fiber_shape->sheets[i].x_orig, gv->fiber_shape->sheets[i].y_orig,
+                        gv->fiber_shape->sheets[i].z_orig);
+      }
+  }
+  else{ //Fluid tasks: generate fluid
+    // fluid task init my_rank_x,y,z
     int direction;
+    int Px, Py, Pz;
+    Px = gv->num_fluid_task_x;
+    Py = gv->num_fluid_task_y;
+    Pz = gv->num_fluid_task_z;
+
     if (check_1d(Px, Py, Pz, &direction)){
       if (direction == X_transfer_1D){
         gv->my_rank_z = 0;
         gv->my_rank_y = 0;
-        gv->my_rank_x = my_rank;
+        gv->my_rank_x = taskid;
       }
       else if (direction == Z_transfer_1D){
-        gv->my_rank_z = my_rank;
+        gv->my_rank_z = taskid;
         gv->my_rank_y = 0;
         gv->my_rank_x = 0;
       }
       else{//Y_transfer_1D
-        gv->my_rank_z = my_rank;
+        gv->my_rank_z = taskid;
         gv->my_rank_y = 0;
         gv->my_rank_x = 0;
       }
@@ -212,57 +320,43 @@ int main(int argc, char* argv[]) {
     else if (check_2d(Px, Py, Pz, &direction)){
       if (direction == X_transfer_2D){
         gv->my_rank_z = 0;
-        gv->my_rank_y = my_rank % Py;
-        gv->my_rank_x = my_rank / Py;
+        gv->my_rank_y = taskid % Py;
+        gv->my_rank_x = taskid / Py;
       }
       else if (direction == Y_transfer_2D){
-        gv->my_rank_z = my_rank % Pz;
-        gv->my_rank_y = my_rank / Pz;
+        gv->my_rank_z = taskid % Pz;
+        gv->my_rank_y = taskid / Pz;
         gv->my_rank_x = 0;
       }
       else{//direction==Z_transfer_2D
-        gv->my_rank_z = my_rank % Pz;
+        gv->my_rank_z = taskid % Pz;
         gv->my_rank_y = 0;
-        gv->my_rank_x = my_rank / Pz;
+        gv->my_rank_x = taskid / Pz;
       }
     }
     else{
-      gv->my_rank_z = my_rank % Pz;
-      gv->my_rank_y = my_rank / Pz;
-      gv->my_rank_x = my_rank / (Py*Pz);
+      gv->my_rank_z = taskid % Pz;
+      gv->my_rank_y = taskid / Pz;
+      gv->my_rank_x = taskid / (Py*Pz);
     }
+
+    gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);  
   }
 
-  // Last machine is the fiber machine
-  Fibershape* fiber_shape;
-  Fluidgrid*  fluid_grid;
+  
+  
 
-  // if (my_rank == num_macs - 1){
-  fiber_shape = gen_fiber_shape(fibersheet_w, fibersheet_h,
-                                total_fibers_clmn, total_fibers_row,
-                                fibersheet_xo, fibersheet_yo, fibersheet_zo, gv);
-  // }
-  // else{
-  if(my_rank == 0){
-    printf("Fluid Machine Rank %d print info of fluid machine\n", my_rank);
-    printf("thread dimension per fluid process -- P:%d, Q:%d, R:%d \n TuningFactor:cubedim::%d \n", P, Q, R, k_cubedim);
-    printf("***********num_threads_per_process -- P*Q*R =%d  ************\n\n", num_threads_per_process);
-    printf("fluid machines dimension -- Px:%d, Py:%d, Pz:%d\n", Px, Py, Pz);
-    fflush(stdout);
-  }
-  fluid_grid = gen_fluid_grid(fluidgrid_x, fluidgrid_y, fluidgrid_z, k_cubedim, gv);
-  // }
+  init_gv(gv);
 
-  init_gv(gv, fiber_shape, fluid_grid, k_cubedim);
-  // printf("%d Pass init gv!\n", my_rank);
+  // printf("%d Pass init gv!\n", taskid);
   // fflush(stdout);
   //allocating memory for mutex
-  // gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid)*num_threads_per_process);
+  // gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid)*num_threads_per_task);
 
 
   //Error Chek#3
   //initiallise mutex
-  // for (i = 0; i < num_threads_per_process; i++){
+  // for (i = 0; i < num_threads_per_task; i++){
   //   if (pthread_mutex_init(&gv->lock_Fluid[i], NULL)){
   //     fprintf(stderr, "Unable to initialize a mutex\n");
   //     exit(1);
@@ -272,14 +366,14 @@ int main(int argc, char* argv[]) {
   pthread_barrier_t barr;
   //Error Chek#4
 
-  if (pthread_barrier_init(&barr, NULL, num_threads_per_process)){
+  if (pthread_barrier_init(&barr, NULL, num_threads_per_task)){
     fprintf(stderr, "Could not create a barrier\n");
     exit(1);
   }
 
   gv->barr = barr;
 
-  if (gv->my_rank == fiber_mac_rank){
+  if (gv->taskid >= gv->num_fluid_tasks){
     printf("After generating the fiber shape:\n");
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
@@ -309,13 +403,13 @@ int main(int argc, char* argv[]) {
   pthread_t *threads;
   pthread_attr_t *attrs;
   void           *retval;
-  threads = (pthread_t*)malloc(sizeof(pthread_t)*num_threads_per_process);
-  attrs = (pthread_attr_t*)malloc(sizeof(pthread_attr_t)*num_threads_per_process);
+  threads = (pthread_t*)malloc(sizeof(pthread_t)*num_threads_per_task);
+  attrs = (pthread_attr_t*)malloc(sizeof(pthread_attr_t)*num_threads_per_task);
 
-  lvs = (LV)malloc(sizeof(*lvs) * num_threads_per_process);
+  lvs = (LV)malloc(sizeof(*lvs) * num_threads_per_task);
 
   gv->threads = threads;
-  for (i = 0; i < num_threads_per_process; ++i){
+  for (i = 0; i < num_threads_per_task; ++i){
     lvs[i].tid = i;
     lvs[i].gv = gv;
     if (pthread_create(threads + i, NULL, do_thread, lvs + i)){
@@ -326,7 +420,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  for (i = 0; i < num_threads_per_process; i++) {
+  for (i = 0; i < num_threads_per_task; i++) {
     pthread_join(threads[i], &retval); //to check why retval not allocated
 #ifdef DEBUG_PRINT
     printf("Thread %d is finished\n", i);
@@ -334,7 +428,7 @@ int main(int argc, char* argv[]) {
   }
 
   double endTime = get_cur_time();
-  if (gv->my_rank == fiber_mac_rank){
+  if (gv->taskid == fiber_mac_rank){
     printf("after Running for Timesteps:%d:\n", gv->time - 1);
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
@@ -349,15 +443,15 @@ int main(int argc, char* argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD);
 
-  printf("Proc%d: TOTAL TIME TAKEN IN Seconds:%f by machine =%d\n", gv->my_rank, endTime - startTime);
+  printf("Proc%d: TOTAL TIME TAKEN IN Seconds:%f by machine =%d\n", gv->taskid, endTime - startTime);
   fflush(stdout);
 
 
   MPI_Finalize();
 
-  // pthread_mutex_destroy(&gv->lock_Fluid[num_threads_per_process]);
+  // pthread_mutex_destroy(&gv->lock_Fluid[num_threads_per_task]);
   // Need to do
-  pthread_mutex_destroy(&gv->lock_ifd_fluid_mac_msg[num_threads_per_process]);
+  pthread_mutex_destroy(&gv->lock_ifd_fluid_mac_msg[num_threads_per_task]);
   free(gv->fluid_grid->sub_fluid_grid);
   free(gv->fluid_grid);
   free(gv);
