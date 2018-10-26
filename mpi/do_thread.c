@@ -81,13 +81,11 @@ void* do_thread(void* v){
     if (my_rank >= num_fluid_tasks){
 // #ifdef DEBUG_PRINT
       if(tid==0)
-        printf("\n\n\n\nStart time step %ld ...\n", gv->time);
+        printf("\n\nStart time step %ld ...\n", gv->time);
 // #endif //DEBUG_PRINT
       // t0 = get_cur_time();
       compute_bendingforce(lv);
-
       compute_stretchingforce(lv);
-
       compute_elasticforce(lv);
 
       t1 = get_cur_time();

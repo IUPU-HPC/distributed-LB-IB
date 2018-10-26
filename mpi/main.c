@@ -253,7 +253,6 @@ int main(int argc, char* argv[]) {
 
   /*MPI code starts*/
   init_gv_constant(gv);
-  printf("gv constant done\n");
   // gv->total_tasks = gv->num_fluid_task_x * gv->num_fluid_task_y * gv->num_fluid_task_z + gv->num_fibersht;
   gv->threads_per_task = gv->tx * gv->ty * gv->tz;
 
@@ -261,7 +260,6 @@ int main(int argc, char* argv[]) {
   int provided;
 
   ierr = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  // ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &gv->total_tasks);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->taskid);
 
@@ -271,11 +269,11 @@ int main(int argc, char* argv[]) {
   if (gv->taskid == 0){
     printf("***********distributed-LB-IB Simulation using Pthreads cube starts************\n");
     printf("provided=%d\n", provided);
-    printf("    Fluidgrid: elem_z %ld , elem_y %ld, elem_x %ld\n ", 
+    printf("    Fluidgrid: z %ld, elem_y %ld, elem_x %ld\n", 
       gv->fluid_grid->z_dim, gv->fluid_grid->y_dim, gv->fluid_grid->x_dim);
-    printf("    Fluid task dimension -- Px %d, Py %d, Pz %d\n", 
+    printf("    Fluid task dimension: Px %d, Py %d, Pz %d\n", 
       gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
-    printf("    Fluid threads_per_task: x %d, y %d, z %d \n TuningFactor: cube_size %d \n", 
+    printf("    Fluid threads_per_task: x %d, y %d, z %d ; TuningFactor: cube_size %d\n", 
       gv->tx, gv->ty, gv->tz, gv->cube_size);
     fflush(stdout);
   }
@@ -392,7 +390,6 @@ int main(int argc, char* argv[]) {
   //   lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
   // print_fluid_sub_grid(gv, 127, 127, 127, 127, 127, 127, gv->cube_size);
   // print_fluid_cube(gv, 4, 0, 0, 4, 0, 0, gv->cube_size);
-
 
   Timer::time_start();
 
