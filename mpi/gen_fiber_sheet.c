@@ -22,9 +22,16 @@
 
 #include "do_thread.h"
 
-void gen_fiber_sheet(Fibersheet* sheet, double width, double height, 
-                            long num_cols, long num_rows, 
-                            double x_orig, double y_orig, double z_orig){
+void gen_fiber_sheet(Fibersheet* sheet){
+  
+  double width = sheet->width;
+  double height = sheet->height; 
+  long num_cols = sheet->num_cols;
+  long num_rows = sheet->num_rows;;
+  double x_orig = sheet->x_orig;
+  double y_orig = sheet->y_orig;
+  double z_orig = sheet->z_orig;
+
   long row, col;
   Fiber *fiber;
 
@@ -58,6 +65,4 @@ void gen_fiber_sheet(Fibersheet* sheet, double width, double height,
       fiber->nodes[col].z = fiber->nodes[col].z;
     }
   }
-
-  return shape;
 }

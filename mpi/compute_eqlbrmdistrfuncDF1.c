@@ -18,29 +18,33 @@ void compute_eqlbrmdistrfuncDF1(LV lv){
   GV gv = lv->gv;
   tid = lv->tid;
 
-  Fluidgrid     *fluidgrid;
-  Fluidnode     *nodes;
+  Fluidgrid* fluidgrid = gv->fluid_grid;
+  Fluidnode* nodes;
 
-  int           ksi;
-  int           BI, BJ, BK; //to identify the Sub grids
-  int           cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
-  int           starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
-  int           li, lj, lk, node_idx;//local access point inside cube
+  int ksi;
+  long BI, BJ, BK; //to identify the Sub grids
+  long cube_idx;
+  long starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
+  long li, lj, lk, node_idx;//local access point inside cube
 
-  fluidgrid = gv->fluid_grid;
+  long  total_sub_grids, dim_x, dim_y, dim_z;
+  dim_x = gv->fluid_grid->x_dim;
+  dim_y = gv->fluid_grid->y_dim;
+  dim_z = gv->fluid_grid->z_dim;
+  int cube_size = gv->cube_size;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+  total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
 
-  cube_size = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
   int temp_mac_rank, my_rank;
-  my_rank = gv->my_rank;
+  my_rank = gv->taskid;
 
   /*Pthread Changes*/ /*OPTIMISE using Loop unrolling*/
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
-    if (cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) == tid){
+    if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
       if (temp_mac_rank == my_rank){
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
         nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;

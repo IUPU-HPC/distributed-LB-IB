@@ -17,7 +17,7 @@ void   compute_elasticforce(LV lv) { //emabarassingly parallel
   int tid;
   GV gv = lv->gv;
   tid = lv->tid;
-  int total_threads = gv->total_threads;
+  int total_threads = gv->threads_per_task;
 
   int i = 0, j = 0;
   int total_fibers_row = gv->fiber_shape->sheets[0].num_rows;

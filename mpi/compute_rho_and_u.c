@@ -19,31 +19,31 @@ void compute_rho_and_u(LV lv){
   Fluidgrid     *fluidgrid;
   Fluidnode     *nodes;
 
-  int           ksi;
-  double        s1, s2, s3, s4;
-  int           BI, BJ, BK; //to identify the Sub grids
-  int           cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
-  int           starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
-  int           li, lj, lk, node_idx;//local access point inside cube
+  int ksi;
+  double s1, s2, s3, s4;
+  long BI, BJ, BK; //to identify the Sub grids
+  long cube_idx;
+  long starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
+  long  li, lj, lk, node_idx;//local access point inside cube
 
-  int P = gv->P;
-  int Q = gv->Q;
-  int R = gv->R;
+  int P = gv->tx;
+  int Q = gv->ty;
+  int R = gv->tz;
 
   fluidgrid = gv->fluid_grid;
 
-  cube_size = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  int cube_size = gv->cube_size;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
   int my_rank, temp_mac_rank;
-  my_rank = gv->my_rank;
+  my_rank = gv->taskid;
   s1 = s2 = s3 = s4 = 0;
 
   for (BI = 0; BI < num_cubes_x; ++BI)
     for (BJ = 0; BJ < num_cubes_y; ++BJ)//for computing womega near bdy
       for (BK = 0; BK < num_cubes_z; ++BK){
-        if (cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) == tid){
+        if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
           if (my_rank == temp_mac_rank){
             cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
             nodes = fluidgrid->sub_fluid_grid[cube_idx].nodes;

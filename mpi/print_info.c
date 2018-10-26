@@ -1,55 +1,67 @@
-/*  -- Scalable LB-IB --
-    Indiana University Purdue University Indianapolis, USA
-
-    @file
-
-    @date
-
-    @author Yuankun Fu
-*/
+/*  -- Distributed-LB-IB --
+ * Copyright 2018 Indiana University Purdue University Indianapolis 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *   
+ * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
+ *
+ * @file:
+ *
+ * @date:
+ */
 
 #include "do_thread.h"
 
 void print_fiber_sub_grid(GV gv, int start_y, int start_z,
-  int end_y, int end_z) {
+                          int end_y, int end_z) {
   /*Assuming one fiber sheet!!*/
   Fiber     *fiber_array;
-  int        i, j;
+  int        i, j, k;
   Fibernode *node;
 
-  fiber_array = gv->fiber_shape->sheets[0].fibers;
-
-  printf("(i,j): {cord_x, cord_y, cord_z} || SF_x,SF_y, SF_z || BF_X, BF_y, BF_z\n");
-  for (i = start_y; i <= end_y; ++i) {
-    for (j = start_z; j <= end_z; ++j) {
-      node = fiber_array[i].nodes + j;
-      printf("(%d, %d):{%f,%f,%f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
-        i, j, node->x, node->y, node->z,
-        node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
-        node->bend_force_x, node->bend_force_y, node->bend_force_z);
+  for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
+    fiber_array = gv->fiber_shape->sheets[k].fibers;
+    printf("Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x,SF_y, SF_z || BF_X, BF_y, BF_z\n", k);
+    for (i = start_y; i <= end_y; ++i) {
+      for (j = start_z; j <= end_z; ++j) {
+        node = fiber_array[i].nodes + j;
+        printf("(%d, %d):{%f,%f,%f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
+          i, j, node->x, node->y, node->z,
+          node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
+          node->bend_force_x, node->bend_force_y, node->bend_force_z);
+      }
+      printf("\n");
     }
-    printf("\n");
   }
-
 }
 
 // Description: print all the fluid nodes info within all the cubes pointed by fluid coordinate
 // Input: fluid coordinate
 void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
-  int end_x, int end_y, int end_z,
-  int cube_size) {// start, stop are closed: inclusive
+                          int end_x, int end_y, int end_z,
+                          int cube_size) {// start, stop are closed: inclusive
 
   Fluidgrid *grid;
   Sub_Fluidgrid *sub_grid;
-  int        li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
-  int        ksi, cube_idx, num_cubes_y, num_cubes_z;
-  int        temp_mac_rank;
+  int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
+  int ksi, cube_idx, num_cubes_y, num_cubes_z;
+  int temp_taskid;
   Fluidnode *node;
 
   grid = gv->fluid_grid;
   sub_grid = grid->sub_fluid_grid;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  num_cubes_y = gv->fluid_grid->num_cubes_y;
+  num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   BI_start = start_x / cube_size;
   BJ_start = start_y / cube_size;
@@ -66,34 +78,34 @@ void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   lj_end = end_y%cube_size;
   lk_end = end_z%cube_size;*/
 
-  // printf("Rank %d Enter print_fluid_sub_grid\n", gv->my_rank);
+  // printf("Rank %d Enter print_fluid_sub_grid\n", gv->taskid);
 
   for (BI = BI_start; BI <= BI_end; ++BI)
-  for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
-  for (BK = BK_start; BK <= BK_end; ++BK) {
-    cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank);
-    if (gv->my_rank == temp_mac_rank){ //MPI changes
+    for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
+      for (BK = BK_start; BK <= BK_end; ++BK) {
+        temp_taskid = cube2task(BI, BJ, BK, gv);
+        cube2task(BI, BJ, BK, gv);
+        if (gv->taskid == temp_taskid){ //MPI changes
 
-      // printf("temp_mac_rank = %d\n", temp_mac_rank);
-      printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} ||  {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
+          // printf("temp_taskid = %d\n", temp_taskid);
+          printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} ||  {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
-      cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
-      for (li = 0; li < cube_size; li++)
-      for (lj = 0; lj < cube_size; lj++)
-      for (lk = 0; lk < cube_size; lk++){
-        node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
-        //if( li == start_x%cube_size && lj ==start_y%cube_size && lk ==start_z%cube_size ){
-        printf("For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, gv->my_rank);
-        for (ksi = 0; ksi < 19; ksi++){
-          printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,  %.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
-            gv->my_rank, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
-            node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
-            node->rho,
-            node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
+          cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+          for (li = 0; li < cube_size; li++)
+            for (lj = 0; lj < cube_size; lj++)
+              for (lk = 0; lk < cube_size; lk++){
+                node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
+                //if( li == start_x%cube_size && lj ==start_y%cube_size && lk ==start_z%cube_size ){
+                printf("For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, gv->taskid);
+                for (ksi = 0; ksi < 19; ksi++){
+                  printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,  %.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
+                    gv->taskid, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
+                    node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
+                    node->rho,
+                    node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
+                }
+          }
         }
-      }
-    }
-
   }
 
   printf("\n");
@@ -107,55 +119,40 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
 
   Fluidgrid *grid;
   Sub_Fluidgrid *sub_grid;
-  int        li, lj, lk, BI, BJ, BK;
-  int        ksi, cube_idx, num_cubes_y, num_cubes_z;
-  int        temp_mac_rank;
+  int li, lj, lk, BI, BJ, BK;
+  int ksi, cube_idx, num_cubes_y, num_cubes_z;
+  int temp_taskid;
   Fluidnode *node;
 
   grid = gv->fluid_grid;
   sub_grid = grid->sub_fluid_grid;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  num_cubes_y = gv->fluid_grid->num_cubes_y;
+  num_cubes_z = gv->fluid_grid->num_cubes_z;
 
-  // printf("Rank %d Enter print_fluid_cube\n", gv->my_rank);
-
+  // printf("Rank %d Enter print_fluid_cube\n", gv->taskid);
 
   for (BI = BI_start; BI <= BI_end; ++BI)
-  for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
-  for (BK = BK_start; BK <= BK_end; ++BK) {
-    cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank);
-    if (gv->my_rank == temp_mac_rank){ //MPI changes
-      printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} ||  {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
+    for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
+      for (BK = BK_start; BK <= BK_end; ++BK) {
+      temp_taskid = cube2task(BI, BJ, BK, gv);
+      if (gv->taskid == temp_taskid){ //MPI changes
+        printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
-      cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
-      for (li = 0; li < cube_size; li++)
-      for (lj = 0; lj < cube_size; lj++)
-      for (lk = 0; lk < cube_size; lk++){
-        node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
-        printf("For cube <%d,%d,%d>, Rank %d\n", BI, BJ, BK, gv->my_rank);
-        for (ksi = 0; ksi < 19; ksi++){
-          printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,  %.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
-            gv->my_rank, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
-            node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
-            node->rho,
-            node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
-        }
+        cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        for (li = 0; li < cube_size; li++)
+          for (lj = 0; lj < cube_size; lj++)
+            for (lk = 0; lk < cube_size; lk++){
+              node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
+              printf("For cube <%d,%d,%d>, Rank %d\n", BI, BJ, BK, gv->taskid);
+              for (ksi = 0; ksi < 19; ksi++){
+                printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,  %.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
+                  gv->taskid, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
+                  node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
+                  node->rho,
+                  node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
+              }
+            }
       }
     }
-
-  }
-  printf("\n");
-
-}
-
-
-double get_cur_time() {
-  struct timeval   tv;
-  struct timezone  tz;
-  double cur_time;
-
-  gettimeofday(&tv, &tz);
-  cur_time = tv.tv_sec + tv.tv_usec / 1000000.0;
-
-  return cur_time;
+    printf("\n");
 }

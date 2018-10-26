@@ -1,0 +1,38 @@
+########################################
+#
+##IUPUI-CS-HPC/ScalableIB
+#
+#########################################
+
+
+compilation
+1) Using Makefile to compile the program it internally uses $gcc -o <filename> <exec name.o> -g -lpthread -lm
+											
+ Type make on the command prompt to create .o file
+Running the executable
+2) If the name of executable is file then we need to run the following
+	$ ./file  arg1 arg2 srg3 arg4 arg5 arg6 arg7 arg8 arg9 arg10 arg11 
+arg1 = fibersheet width
+arg2 = fibersheet height
+arg3 = total fibers (along height of sheet)
+arg4 = total fibers(gridpoints) along width of sheet
+arg5- arg7 = fluidgrid dimensions 
+arg8- arg11  = Initial position of fibersheet in fluidgrid domain i.e x0,y0,z0 resp
+arg 12 = Number of Threads
+
+Sample script: ./scalable_IB 20 20 52 52 64 64 124 20 21.5 11.5 16 >temp.out
+
+DR ZHU's Comment on Testing:
+1. " Please note that the code still has two branches in it but only one branch is active, the other one is not considered --- the other branch has
+no effects on the computational results. Please compare the data in fpL_kbp005_re150."
+2.Code compiled using gcc -c kbp005_re150_1b.c -lm
+3.The fluidgrid dimensions are 124, 64, 64 (X,Y,Z) respectively
+yes, but to every direction there are 2 layers of buff zone which is not used.
+4.To run the file ./zld_IB
+
+/**********************************/
+
+File Name            : Information
+lbm_ib.c	     : Modified Sequential code with no otimisation
+lbm_ib_omp.c         : Parallel Code with OpenMP
+src_v1/lbm_ib.c       : Sequential Code optimised 

@@ -17,7 +17,7 @@ void compute_stretchingforce(LV lv) {
   int tid;
   GV gv = lv->gv;
   tid   = lv->tid;
-  int total_threads = gv->total_threads;
+  int total_threads = gv->threads_per_task;
 
 
   int i =0;
@@ -40,7 +40,7 @@ void compute_stretchingforce(LV lv) {
 
   //computing stretching force along fibers (row)
   for(i=0; i<total_fibers_row; ++i){  /* for all fibers  */
-   if(fiber2thread(i,total_fibers_row,total_threads) == tid ){
+   if(fiber2thread(i, total_fibers_row, total_threads) == tid ){
     /* general cases for the points in the middle */
     for(j=1; j < total_fibers_clmn-1; ++j){ /* for all points for a given fiber*/
       tangx_right = fiberarray[i].nodes[j+1].x - fiberarray[i].nodes[j].x;

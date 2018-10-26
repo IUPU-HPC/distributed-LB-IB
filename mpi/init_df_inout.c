@@ -16,20 +16,21 @@ void init_df_inout(GV gv){
   Fluidgrid     *fluidgrid;
   Fluidnode     *nodes;
 
-  int           ksi, dim_z;
-  int           BI, BJ, BK; //to identify the Sub grids
-  int           cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
-  int           starting_y, starting_z, stopping_y, stopping_z;//To identify buffer zone
-  int           li, lj, lk, node_idx;//local access point inside cube
-  int           temp_mac_rank;
+  int ksi, dim_z;
+  long BI, BJ, BK; //to identify the Sub grids
+  long cube_idx;
+  long starting_y, starting_z, stopping_y, stopping_z;//To identify buffer zone
+  int li, lj, lk, node_idx;//local access point inside cube
+  int tmp_task;
 
   fluidgrid = gv->fluid_grid;
   dim_z = fluidgrid->z_dim;
 
-  cube_size = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  int cube_size = gv->cube_size;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+
   //printf("*************ENTRY OF init_df_inout\n");
   // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
 
@@ -37,8 +38,8 @@ void init_df_inout(GV gv){
   li = gv->ib; BI = 0;
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
-    cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank);
-    if (gv->my_rank == temp_mac_rank){ //MPI changes
+    tmp_task = cube2task(BI, BJ, BK, gv);
+    if (gv->taskid == tmp_task){ //MPI changes
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       starting_y = starting_z = 0;
@@ -58,8 +59,8 @@ void init_df_inout(GV gv){
   li = cube_size - 1; BI = num_cubes_x - 1;//ie
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
-    cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank);
-    if (gv->my_rank == temp_mac_rank){ //MPI changes
+    tmp_task = cube2task(BI, BJ, BK, gv);
+    if (gv->taskid == tmp_task){ //MPI changes
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       starting_y = starting_z = 0;

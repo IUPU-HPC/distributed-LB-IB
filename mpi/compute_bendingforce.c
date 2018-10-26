@@ -28,7 +28,7 @@ void  compute_bendingforce(LV lv) {
   GV gv = lv->gv;
   tid = lv->tid;
 
-  total_threads = gv->total_threads;
+  total_threads = gv->threads_per_task;
   fiber_shape = gv->fiber_shape;
   /* Assuming one sheet for now */
   fibers = fiber_shape->sheets[0].fibers;
@@ -40,8 +40,6 @@ void  compute_bendingforce(LV lv) {
   ds1 = fiber_sheet_w / (total_fibers_clmn - 1); //gap between fiber nodes along the z-dim.
   ds2 = fiber_sheet_h / (total_fibers_row - 1); //gap between two neighboring fibers along y-dim.
   bending_const = gv->Kb_l / pow(ds1, 3);                 //KB and alpha1 pow 3
-
-
 
   /* compute force along the fibers (row)*/
   for (i = 0; i < total_fibers_row; ++i) {
@@ -70,7 +68,6 @@ void  compute_bendingforce(LV lv) {
         nodes[j].bend_force_z = bending_const * (-nodes[j + 2].z + 4.0 * nodes[j + 1].z
           - 6.0 * nodes[j].z + 4.0 * nodes[j - 1].z
           - nodes[j - 2].z);
-
       }
 
       //For the last but one point

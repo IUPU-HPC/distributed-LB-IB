@@ -23,6 +23,7 @@
 
 #include "do_thread.h"
 #include <cstring>
+#include "timer.h"
 
 void needs_argument(int i, int argc, const char *flag) {
   if (i+1 >= argc) {
@@ -56,7 +57,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_grid_x");
       long value = atol(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_grid_x%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_x %ld\" must be > 0\n", value);
         abort();
       }
       gv->fluid_grid->x_dim = value;
@@ -64,7 +65,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_grid_y");
       value = atol(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_grid_y%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_y %ld\" must be > 0\n", value);
         abort();
       }
       gv->fluid_grid->y_dim = value;
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_grid_z");
       value = atol(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_grid_z%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_z %ld\" must be > 0\n", value);
         abort();
       }
       gv->fluid_grid->z_dim = value;
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-cube_size");
       int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-cube_size%d\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-cube_size %d\" must be > 0\n", value);
         abort();
       }
       gv->cube_size = value;
@@ -90,9 +91,9 @@ int main(int argc, char* argv[]) {
 
     if (!strcmp(argv[i], "-fluid_task_xyz")) {
       needs_argument(i, argc, "-fluid_task_x");
-      long value = atoi(argv[++i]);
+      int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_task_x%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_task_x %d\" must be > 0\n", value);
         abort();
       }
       gv->num_fluid_task_x = value;
@@ -100,7 +101,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_task_y");
       value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_task_y%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_task_y %d\" must be > 0\n", value);
         abort();
       }
       gv->num_fluid_task_y = value;
@@ -108,7 +109,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_task_z");
       value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_task_z%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_task_z %d\" must be > 0\n", value);
         abort();
       }
       gv->num_fluid_task_z = value;
@@ -116,9 +117,9 @@ int main(int argc, char* argv[]) {
 
     if (!strcmp(argv[i], "-thread_per_task_xyz")) {
       needs_argument(i, argc, "-thread_per_task_x");
-      long value = atoi(argv[++i]);
+      int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-thread_per_task_x%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_x %d\" must be > 0\n", value);
         abort();
       }
       gv->tx = value;
@@ -126,7 +127,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-thread_per_task_y");
       value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-thread_per_task_y%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_y %d\" must be > 0\n", value);
         abort();
       }
       gv->ty = value;
@@ -134,7 +135,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-thread_per_task_z");
       value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-thread_per_task_z%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_z %d\" must be > 0\n", value);
         abort();
       }
       gv->tz = value;
@@ -142,9 +143,9 @@ int main(int argc, char* argv[]) {
 
     if (!strcmp(argv[i], "-num_fibersht")) {
       needs_argument(i, argc, "-num_fibersht");
-      long value = atoi(argv[++i]);
+      int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-num_fibersht%ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-num_fibersht %d\" must be > 0\n", value);
         abort();
       }
       gv->fiber_shape = (Fibershape*) calloc (1, sizeof(Fibershape));
@@ -251,6 +252,8 @@ int main(int argc, char* argv[]) {
   }
 
   /*MPI code starts*/
+  init_gv_constant(gv);
+  printf("gv constant done\n");
   // gv->total_tasks = gv->num_fluid_task_x * gv->num_fluid_task_y * gv->num_fluid_task_z + gv->num_fibersht;
   gv->threads_per_task = gv->tx * gv->ty * gv->tz;
 
@@ -258,6 +261,7 @@ int main(int argc, char* argv[]) {
   int provided;
 
   ierr = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  // ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &gv->total_tasks);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->taskid);
 
@@ -269,7 +273,7 @@ int main(int argc, char* argv[]) {
     printf("provided=%d\n", provided);
     printf("    Fluidgrid: elem_z %ld , elem_y %ld, elem_x %ld\n ", 
       gv->fluid_grid->z_dim, gv->fluid_grid->y_dim, gv->fluid_grid->x_dim);
-    printf("    Fluid task dimension -- Px:%d, Py:%d, Pz:%d\n", 
+    printf("    Fluid task dimension -- Px %d, Py %d, Pz %d\n", 
       gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
     printf("    Fluid threads_per_task: x %d, y %d, z %d \n TuningFactor: cube_size %d \n", 
       gv->tx, gv->ty, gv->tz, gv->cube_size);
@@ -280,11 +284,7 @@ int main(int argc, char* argv[]) {
   if (gv->taskid >= gv->num_fluid_tasks){
     for(int i = 0; i < gv->fiber_shape->num_sheets; ++i)
       if (gv->taskid == (gv->num_fluid_tasks + i)){
-        gen_fiber_sheet(gv->fiber_shape->sheets + i, 
-                        gv->fiber_shape->sheets[i].width, gv->fiber_shape->sheets[i].height,
-                        gv->fiber_shape->sheets[i].num_rows, gv->fiber_shape->sheets[i].num_cols,
-                        gv->fiber_shape->sheets[i].x_orig, gv->fiber_shape->sheets[i].y_orig,
-                        gv->fiber_shape->sheets[i].z_orig);
+        gen_fiber_sheet(gv->fiber_shape->sheets + i);
         printf("    Fibersheet %d : width %f, height %f, row %ld, clmn %ld, x0 %f, y0 %f, z0 %f\n ", 
                      i, gv->fiber_shape->sheets[i].width, gv->fiber_shape->sheets[i].height,
                         gv->fiber_shape->sheets[i].num_rows, gv->fiber_shape->sheets[i].num_cols,
@@ -343,9 +343,6 @@ int main(int argc, char* argv[]) {
     gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);  
   }
 
-  
-  
-
   init_gv(gv);
 
   // printf("%d Pass init gv!\n", taskid);
@@ -363,16 +360,15 @@ int main(int argc, char* argv[]) {
   //   }
   // }
 
+  // Init barrier
   pthread_barrier_t barr;
-  //Error Chek#4
-
-  if (pthread_barrier_init(&barr, NULL, num_threads_per_task)){
+  if (pthread_barrier_init(&barr, NULL, gv->threads_per_task)){
     fprintf(stderr, "Could not create a barrier\n");
     exit(1);
   }
-
   gv->barr = barr;
 
+  // Fiber print corner points
   if (gv->taskid >= gv->num_fluid_tasks){
     printf("After generating the fiber shape:\n");
     printf("Printing for Corner Points(z,y) : 0,0 \n");
@@ -398,18 +394,19 @@ int main(int argc, char* argv[]) {
   // print_fluid_cube(gv, 4, 0, 0, 4, 0, 0, gv->cube_size);
 
 
-  double startTime = get_cur_time();
+  Timer::time_start();
+
   //Shared Distribution to Thread in each machine
   pthread_t *threads;
   pthread_attr_t *attrs;
-  void           *retval;
-  threads = (pthread_t*)malloc(sizeof(pthread_t)*num_threads_per_task);
-  attrs = (pthread_attr_t*)malloc(sizeof(pthread_attr_t)*num_threads_per_task);
+  void *retval;
+  threads = (pthread_t*) malloc(sizeof(pthread_t) * gv->threads_per_task);
+  attrs = (pthread_attr_t*) malloc(sizeof(pthread_attr_t) * gv->threads_per_task);
 
-  lvs = (LV)malloc(sizeof(*lvs) * num_threads_per_task);
+  lvs = (LV) malloc(sizeof(*lvs) * gv->threads_per_task);
 
   gv->threads = threads;
-  for (i = 0; i < num_threads_per_task; ++i){
+  for (int i = 0; i < gv->threads_per_task; ++i){
     lvs[i].tid = i;
     lvs[i].gv = gv;
     if (pthread_create(threads + i, NULL, do_thread, lvs + i)){
@@ -420,16 +417,16 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  for (i = 0; i < num_threads_per_task; i++) {
+  for (int i = 0; i < gv->threads_per_task; i++) {
     pthread_join(threads[i], &retval); //to check why retval not allocated
 #ifdef DEBUG_PRINT
     printf("Thread %d is finished\n", i);
 #endif //DEBUG_PRINT
   }
 
-  double endTime = get_cur_time();
-  if (gv->taskid == fiber_mac_rank){
-    printf("after Running for Timesteps:%d:\n", gv->time - 1);
+  // Fiber print corner points
+  if (gv->taskid >= gv->num_fluid_tasks){
+    printf("after Running for timesteps: %ld\n", gv->timesteps);
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
     printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -442,16 +439,16 @@ int main(int argc, char* argv[]) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
+  double time_elapsed = Timer::time_end();
 
-  printf("Proc%d: TOTAL TIME TAKEN IN Seconds:%f by machine =%d\n", gv->taskid, endTime - startTime);
+  printf("Task%d: TOTAL TIME TAKEN IN Seconds: %f\n", gv->taskid, time_elapsed);
   fflush(stdout);
-
 
   MPI_Finalize();
 
   // pthread_mutex_destroy(&gv->lock_Fluid[num_threads_per_task]);
   // Need to do
-  pthread_mutex_destroy(&gv->lock_ifd_fluid_mac_msg[num_threads_per_task]);
+  pthread_mutex_destroy(&gv->lock_ifd_fluid_task_msg[gv->threads_per_task]);
   free(gv->fluid_grid->sub_fluid_grid);
   free(gv->fluid_grid);
   free(gv);

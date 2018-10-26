@@ -22,24 +22,24 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   GV gv = lv->gv;
   tid = lv->tid;
 
-  int     i = 0, j = 0;//inner i corresponding to fluid index
+  int i = 0, j = 0;//inner i corresponding to fluid index
 
-  int     total_fibers_row, total_fibers_clmn;
-  Fiber   *fiberarray;
+  int total_fibers_row, total_fibers_clmn;
+  Fiber* fiberarray;
 
-  double  tmp_dist;
+  double tmp_dist;
 
-  Fluidnode     *nodes;
-  int     BI, BJ, BK;
-  int     li, lj, lk;
-  int     total_sub_grids, cube_size, dim_x, dim_y, dim_z;
-  int     num_cubes_x, num_cubes_y, num_cubes_z, cube_idx, node_idx;
-  int     P, Q, R, total_threads;
+  Fluidnode* nodes;
+  long BI, BJ, BK;
+  long li, lj, lk;
+  long  total_sub_grids, dim_x, dim_y, dim_z;
+  long cube_idx, node_idx;
+  int  P, Q, R, total_threads;
 
   /*MPI changes*/
   int temp_mac_rank, fluid_owner_mac;
-  int fiber_mac_rank = gv->num_macs - 1;
-  int my_rank = gv->my_rank;
+  int fiber_mac_rank = gv->num_fluid_tasks;
+  int my_rank = gv->taskid;
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
 
@@ -52,11 +52,12 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   dim_x = gv->fluid_grid->x_dim;
   dim_y = gv->fluid_grid->y_dim;
   dim_z = gv->fluid_grid->z_dim;
-  cube_size = gv->cube_size;
+
+  int cube_size = gv->cube_size;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
   total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
 
   //Annuling Forces on Fluid grid ::TOO Expensive
   int fluid_mac_rank;
@@ -64,7 +65,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   for (BI = 0; BI <num_cubes_x; BI++)
   for (BJ = 0; BJ <num_cubes_y; BJ++)
   for (BK = 0; BK <num_cubes_z; BK++){
-    if (cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) == tid){
+    if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
       if (temp_mac_rank == my_rank){
         cube_idx = BI*num_cubes_y*num_cubes_z + BJ*num_cubes_z + BK;
         for (li = 0; li< cube_size; li++)
@@ -127,7 +128,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       node_idx = (li)*cube_size*cube_size + (lj)*cube_size + lk;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       int fluid_owner_mac;
-      owner_tid = cube2thread_and_machine(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid machine
+      owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid machine
       // Need check my_rank == fluid_owner_mac?
       if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 machine will recv wrong cube
         // Don't need lock here

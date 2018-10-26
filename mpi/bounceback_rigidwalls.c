@@ -10,7 +10,7 @@
 #include "do_thread.h"
 
 void bounceback_rigidwalls(LV lv){
-   //printf("******************Inside bounceback_rigidwalls************ at time  %d\n");
+  //printf("******************Inside bounceback_rigidwalls************ at time  %d\n");
   int tid;
   GV gv = lv->gv;
   tid   = lv->tid;
@@ -18,27 +18,27 @@ void bounceback_rigidwalls(LV lv){
   Fluidgrid     *fluidgrid;
   Fluidnode     *nodes;
 
-
-  int           BI, BJ, BK; //to identify the Sub grids
-  int           cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
-  int           starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
-  int           li, lj, lk, node_idx;//local access point inside cube
-  int           dim_z;
+  long BI, BJ, BK; //to identify the Sub grids
+  int  cube_size;
+  long cube_idx;
+  long starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
+  long li, lj, lk, node_idx;//local access point inside cube
+  long dim_z;
 
   fluidgrid      = gv->fluid_grid;
   dim_z          = fluidgrid->z_dim;
 
   cube_size   = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
 
-  int P = gv->P;
-  int Q = gv->Q;
-  int R = gv->R;
+  int P = gv->tx;
+  int Q = gv->ty;
+  int R = gv->tz;
 
-   int my_rank, temp_mac_rank;
-   my_rank = gv->my_rank;
+  int my_rank, temp_mac_rank;
+  my_rank = gv->taskid;
 
    /* 1.1 half-way bounce back on the bottom */
    //k = gv->kb;
@@ -46,7 +46,7 @@ void bounceback_rigidwalls(LV lv){
 
    for(BI =0; BI < num_cubes_x; ++BI)
     for(BJ =0; BJ < num_cubes_y; ++BJ){
-      if(cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
+      if(cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
         if(my_rank == temp_mac_rank){
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
@@ -81,7 +81,7 @@ void bounceback_rigidwalls(LV lv){
   BK = num_cubes_z -1;//lk=gv->ke;//BI=gv->ib+1;BI<=gv->ie-1;BJ=gv->jb;BJ<=gv->je
    for(BI =0; BI < num_cubes_x; ++BI)
     for(BJ =0; BJ < num_cubes_y; ++BJ){
-       if(cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
+       if(cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
         if(my_rank == temp_mac_rank){
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       starting_x = starting_y = 0;
@@ -113,7 +113,7 @@ void bounceback_rigidwalls(LV lv){
    lj = gv->jb; BJ =0;
    for(BI =0; BI < num_cubes_x; ++BI)
     for(BK =0; BK < num_cubes_z; ++BK){
-      if(cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
+      if(cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
         if(my_rank == temp_mac_rank){
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
@@ -146,7 +146,7 @@ void bounceback_rigidwalls(LV lv){
    lj = cube_size-3; BJ = num_cubes_y-1;//gv->je;
    for(BI =0; BI < num_cubes_x; ++BI)
     for(BK =0; BK < num_cubes_z; ++BK){
-      if(cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
+      if(cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
         if(my_rank == temp_mac_rank){
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;

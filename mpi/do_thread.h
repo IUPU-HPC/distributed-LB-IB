@@ -20,6 +20,9 @@
  * @date:
  */
 
+#ifndef DO_THREAD_H
+#define DO_THREAD_H
+
 #include <cstdio>
 #include <cstdlib>
 #include <pthread.h>
@@ -166,29 +169,49 @@ typedef struct gv_t {
   double tau, nu_l, u_l, rho_l, L_l, M_l, g_l, Ks_l, Kb_l, Kst_l;
   double Re, cs_l, Ma, Kn, Kshat, Ksthat, Kbhat, Mhat, Fr;
   long dt, time, time1, timesteps, TIME_WR, TIME_WR1, N_WR;
-  double c[19][3]; // stores 19 different velocity directions for ksi
+  const int c[19][3] = { //{x, y, z}
+            { 0, 0, 0},
+
+            { 1, 0, 0}, {-1, 0, 0}, { 0, 0, 1}, //1, 2, 3
+            { 0, 0,-1}, { 0,-1, 0}, { 0, 1, 0}, //4, 5, 6
+            { 1, 0, 1}, {-1, 0,-1}, { 1, 0,-1}, //7, 8, 9
+
+            {-1, 0, 1}, { 0,-1, 1}, { 0, 1,-1}, //10, 11, 12
+            { 0, 1, 1}, { 0,-1,-1}, { 1,-1, 0}, //13, 14, 15
+            {-1, 1, 0}, { 1, 1, 0}, {-1,-1, 0}  //16, 17, 18
+        }; // stores 19 different velocity directions for ksi
+  const double t[19] = {
+            1./3.,
+
+            1./18., 1./18., 1./18., //1~6
+            1./18., 1./18., 1./18.,
+
+            1./36., 1./36., 1./36., //7~18
+            1./36., 1./36., 1./36.,
+            1./36., 1./36., 1./36.,
+            1./36., 1./36., 1./36.
+        };
   long ib, ie, jb, je, kb, ke; // For Fluid Grid's actual computation part
 
-  /*PTHREAD_Change*/
-  pthread_t *threads;
-  //pthread_mutex_t lock_Fluid;
-  /*Lock for every thread for optimisation*/
-  // pthread_mutex_t *lock_Fluid;
-
-  //task
-  int total_tasks;// Total number of tasks
-  int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z; //number of fluid task along x, y, z
-  int num_fluid_tasks;
-
+/*PTHREAD_Change*/
   //thread
   int tx, ty, tz; //number of threads = tx*ty*tz within each fluid task
   int threads_per_task;
   int cube_size; // Tuning factor k having dimension of the subgrid
 
-  pthread_barrier_t barr;// to put a bariier after every routine and also in some parts of Fiber's force compuatation
-  /*PTHREAD_Change*/
-  /*MPI Changes*/
-  int taskid;//my_rank is the rank assigned by COMM_WORLS to diff machines..to be stored in GV.]
+  pthread_t *threads;
+  //pthread_mutex_t lock_Fluid;
+  /*Lock for every thread for optimisation*/
+  // pthread_mutex_t *lock_Fluid;
+  pthread_barrier_t barr; // to put a bariier after every routine and also in some parts of Fiber's force compuatation
+/*PTHREAD_Change*/
+
+/*MPI Changes*/
+  //task
+  int taskid; //my_rank is the rank assigned by COMM_WORLS to diff machines..to be stored in GV.
+  int total_tasks;// Total number of tasks
+  int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z; //number of fluid task along x, y, z
+  int num_fluid_tasks;
   int my_rank_x, my_rank_y, my_rank_z;
   int dest_task[19];
 
@@ -198,7 +221,7 @@ typedef struct gv_t {
   int* ifd_last_pos;              //Track last position of each fluid process's buffer
   char* ifd_recv_buf;
   int ifd_recv_count;             //Track number of char in received message
-  pthread_mutex_t* lock_ifd_fluid_mac_msg;
+  pthread_mutex_t* lock_ifd_fluid_task_msg;
   int* influenced_macs;         //machines rank of influential domain
   int num_influenced_macs;
   int ifd_max_bufsize;
@@ -241,32 +264,33 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
 /*cube2thread not used in MPI version*/
 int cube2thread(int BI, int BJ, int BK, int num_cubes_x, int num_cubes_y, int num_cubes_z, int P, int Q, int R);
 /*For MPI*/
-int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *mac_rank);
+int cube2task(long BI, long BJ, long BK, GV gv);
+int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task);
 
 /*Fiber Distribution Function: Map a fiber row to each thread
   fiber_row -ith row*/
 int fiber2thread(int fiber_row, int num_fibers, int num_threads);
 
 /* Initiallize the global GV *//*PTHREAD_Change*/
-void init_gv(GV, Fibershape*, Fluidgrid*, int cube_size); //TODO: pass all necessary information from users to initialize GV.
+void init_gv_constant(GV gv);
+void init_gv(GV gv); //TODO: pass all necessary information from users to initialize GV.
 
 /* Create a fiber shape (user defined arbitray shape)*/
-void gen_fiber_sheet(Fibersheet* sheet, double width, double height, 
-                     int num_cols, int num_rows, double x0, double y0, double z0);
+void gen_fiber_sheet(Fibersheet* sheet);
 
 /* Create a 3D fluid grid */ /*PTHREAD_Change*/
-void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv)
+void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv);
 
 
 /* Methods for IB computations */
 /*Local to fiber machine*/
-void compute_bendingforce(LV);//eqn 18
+void compute_bendingforce(LV lv);//eqn 18
 
 /*Local to fiber machine*/
-void compute_stretchingforce(LV);//eqn 16
+void compute_stretchingforce(LV lv);//eqn 16
 
 /*Local to fiber machine*/
-void compute_elasticforce(LV);//F for eqn 19
+void compute_elasticforce(LV lv);//F for eqn 19
 
 /*One way Message Passing involvng both fluid and fiber machines.
 Spreading force from fiber to influenced fluid nodes*/
@@ -317,3 +341,7 @@ void replace_old_DF(LV);// it copies DF2 to DF1
 void* do_thread(void* v); //IB-LBM simulation moved to do_thread called via ptheread_create
 int check_1d(int x, int y, int z, int* dir);
 int check_2d(int x, int y, int z, int* dir);
+
+static inline double get_cur_time();
+
+#endif //DO_THREAD_H

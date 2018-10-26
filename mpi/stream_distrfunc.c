@@ -11,12 +11,11 @@
 #include "do_thread.h"
 
 int check_cube_on_proc_line_boundary(GV gv, int BI, int BJ, int BK, int Px, int Py, int Pz){
-  int num_cubes_x, num_cubes_y, num_cubes_z;
-  int num_cubes_per_proc_x, num_cubes_per_proc_y, num_cubes_per_proc_z;
+  long num_cubes_per_proc_x, num_cubes_per_proc_y, num_cubes_per_proc_z;
 
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   num_cubes_per_proc_x = num_cubes_x / Px; // along x: how many cubes in each process
   num_cubes_per_proc_y = num_cubes_y / Py; // along y: how many cubes in each process
@@ -52,7 +51,7 @@ void insert_msg(GV gv, int BI, int BJ, int BK, int li, int lj, int lk, int dir, 
   *((double*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int)* 7))  = df1_tosend;
 
   gv->stream_last_pos[dir] += sizeof(int)* 7 + sizeof(double);
-  printf("Fluid_mac%d: gv->stream_last_pos[%d]=%d\n", gv->my_rank, dir, gv->stream_last_pos[dir]);
+  printf("Fluid_mac%d: gv->stream_last_pos[%d]=%d\n", gv->taskid, dir, gv->stream_last_pos[dir]);
   fflush(stdout);
 
   pthread_mutex_unlock(&gv->lock_stream_msg[dir]);
@@ -71,9 +70,9 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count){
   int cube_df2_idx, node_df2_idx;
 
   int cube_size = gv->cube_size;
-  int num_cubes_x = gv->num_cubes_x;
-  int num_cubes_y = gv->num_cubes_y;
-  int num_cubes_z = gv->num_cubes_z;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   while (position < stream_msg_count){
 
@@ -88,7 +87,7 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count){
 
     position += sizeof(int)* 7 + sizeof(double);
 
-    owner_tid = cube2thread_and_machine(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid machine
+    owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid machine
     // Need check my_rank == fluid_owner_mac?
     if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 machine will recv wrong cube
 
@@ -100,13 +99,13 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count){
     }
   }
 
-  printf("Fluid%d: Pass get df2 from dir=%d stream_msg\n", gv->my_rank, dir);
+  printf("Fluid%d: Pass get df2 from dir=%d stream_msg\n", gv->taskid, dir);
   fflush(stdout);
 }
 
 void streaming_on_direction(GV gv, LV lv, int dir, int dest){
   int stream_msg_recv_cnt;
-  int my_rank = gv->my_rank;
+  int my_rank = gv->taskid;
   MPI_Status status;
 
   printf("Fluid%d: Prepare to MPI_Sendrecv to dest=%d gv->stream_last_pos[%d]=%d\n", my_rank, dest, dir, gv->stream_last_pos[dir]);
@@ -146,23 +145,22 @@ void  stream_distrfunc(GV gv, LV lv){//df2
   Fluidgrid  *fluidgrid;
   Fluidnode  *nodes_df1, *nodes_df2;
 
-  int        cube_df1_idx, cube_df2_idx, node_df1_idx, node_df2_idx, cube_size, num_cubes_x, num_cubes_y, num_cubes_z;
-  int        starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
+  int cube_df1_idx, cube_df2_idx, node_df1_idx, node_df2_idx, cube_size;
+  int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
 
-  int        BI, BJ, BK, li, lj, lk;
-  int        Px, Py, Pz;
-  int        num_cubes_per_proc_x, num_cubes_per_proc_y, num_cubes_per_proc_z;
+  int BI, BJ, BK, li, lj, lk;
+  int Px, Py, Pz;
+  int num_cubes_per_proc_x, num_cubes_per_proc_y, num_cubes_per_proc_z;
 
-
-  Px = gv->Px;
-  Py = gv->Py;
-  Pz = gv->Pz;
+  Px = gv->num_fluid_task_x;
+  Py = gv->num_fluid_task_y;
+  Pz = gv->num_fluid_task_z;
 
   fluidgrid = gv->fluid_grid;
   cube_size = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   num_cubes_per_proc_x = num_cubes_x / Px; // along x: how many cubes in each process
   num_cubes_per_proc_y = num_cubes_y / Py; // along y: how many cubes in each process
@@ -174,7 +172,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
   int  temp_mac_rank_sender, temp_mac_rank_recv, my_rank, send_tid;
   double df1_tosend;
-  my_rank = gv->my_rank;
+  my_rank = gv->taskid;
 
 
   //prepare message
@@ -182,7 +180,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
 
-    send_tid = cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank_sender);
+    send_tid = cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank_sender);
 
     if (my_rank == temp_mac_rank_sender && send_tid == tid){
 
@@ -230,7 +228,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
             nodes_df2[node_df2_idx].df2[1] = nodes_df1[node_df1_idx].df1[1];
         }
         else{
-          cube2thread_and_machine(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);//finding the recv machine rank
+          cube2thread_and_task(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);//finding the recv machine rank
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){ // streaming in different cube but in same machine
 
@@ -263,7 +261,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{// computation domain is in the prev cube and proabaly prev machine only BI changes
 
-          cube2thread_and_machine(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI - 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -293,7 +291,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
             nodes_df2[node_df2_idx].df2[3] = nodes_df1[node_df1_idx].df1[3];
         }
         else{//computation domain is in the next cube and probably next machine only BK changes
-          cube2thread_and_machine(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK + 1;
@@ -325,7 +323,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{// computation domain is in the prev cube and probably prev machine only BK changes
-          cube2thread_and_machine(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK - 1;
@@ -356,7 +354,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{// computation domain is in the prev cube and probably prev machine only BJ changes
 
-          cube2thread_and_machine(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + BK;
@@ -387,7 +385,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{//computation domain is in the next cube and probably next machine only BJ changes
 
-          cube2thread_and_machine(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + (BJ + 1) * num_cubes_z + BK;
@@ -419,7 +417,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li + 1) >cube_size - 1 && (lk + 1) > cube_size - 1){//comp domain changes both BI and BK and probalby mahcines
           // up-right
-          cube2thread_and_machine(BI + 1, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){ //different cube in same machine
             cube_df2_idx = (BI + 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + (BK + 1);
@@ -449,7 +447,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li + 1) >cube_size - 1 && (lk + 1) <= cube_size - 1){//only BI changes and probably machine
           //right
-          cube2thread_and_machine(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){ //different cubes in same machines
 
@@ -469,7 +467,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{//only BK changes and probably machine
           // up
-          cube2thread_and_machine(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -503,7 +501,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li - 1) <0 && (lk - 1) <0){//comp domain changes both BI and BK and probably machines
           // down-left
-          cube2thread_and_machine(BI - 1, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI - 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + (BK - 1);
@@ -532,7 +530,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li - 1)<0 && (lk - 1) >= 0){//only BI changes and probably machines
           //left
-          cube2thread_and_machine(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){ // different cube in same machine
 
@@ -552,7 +550,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{//only BK changes and prabably diff machine
           //down
-          cube2thread_and_machine(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -586,7 +584,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li + 1) >cube_size - 1 && (lk - 1)<0){//comp domain changes both BI and BK and probably machines
           //down-right
-          cube2thread_and_machine(BI + 1, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI + 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK - 1;
@@ -614,7 +612,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li + 1) >cube_size - 1 && (lk - 1) >= 0){//only BI changes and probably machine
 
-          cube2thread_and_machine(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI + 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -631,7 +629,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BK changes and probaly diff machine
-          cube2thread_and_machine(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK - 1;
@@ -662,7 +660,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else if ((li - 1) <0 && (lk + 1) >cube_size - 1){//comp domain changes both BI and BK and probably machines
-          cube2thread_and_machine(BI - 1, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -693,7 +691,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else if ((li - 1) <0 && (lk + 1) <= cube_size - 1){ //only BI changes and probably machines
-          cube2thread_and_machine(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI - 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -712,7 +710,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{//only BK changes and probably machines, up
 
-          cube2thread_and_machine(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK + 1;
@@ -744,7 +742,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if (lj - 1 <0 && lk + 1 >cube_size - 1){//comp domain changes both BJ and BK and probably machines, front-up
 
-          cube2thread_and_machine(BI, BJ - 1, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -776,7 +774,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if (lj - 1 <0 && lk + 1 <= cube_size - 1){//only BJ changes and probably machine, front
 
-          cube2thread_and_machine(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -796,7 +794,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else{//only BK changes and probably machine, up
 
-          cube2thread_and_machine(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -830,7 +828,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((lj + 1) >cube_size - 1 && (lk - 1)<0){//comp domain changes both BJ and BK and probably machine, back-down
 
-          cube2thread_and_machine(BI, BJ + 1, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -861,7 +859,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else if ((lj + 1) >cube_size - 1 && (lk - 1) >= 0){//only BJ changes and probably machine
-          cube2thread_and_machine(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI)* num_cubes_y * num_cubes_z + (BJ + 1) * num_cubes_z + BK;
@@ -878,7 +876,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BK changes and probably maxhine
-          cube2thread_and_machine(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + (BK - 1);
@@ -910,7 +908,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((lj + 1) >cube_size - 1 && (lk + 1) >cube_size - 1){//comp domain changes both BI and BK and probably maxhine, back-up
 
-          cube2thread_and_machine(BI, BJ + 1, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -941,7 +939,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((lj + 1) >cube_size - 1 && (lk + 1) <= cube_size - 1){//only BJ changes and probably maxhine, back
 
-          cube2thread_and_machine(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -960,7 +958,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BK changes and probably maxhine, up
-          cube2thread_and_machine(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK + 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + (BK + 1);
@@ -992,7 +990,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((lj - 1) <0 && (lk - 1) <0){//comp domain changes both BJ and BK and robably maxhine, front-down
 
-          cube2thread_and_machine(BI, BJ - 1, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI)* num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + (BK - 1);
@@ -1022,7 +1020,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((lj - 1)<0 && (lk - 1) >= 0){//only BJ changes and probably maxhine, front
 
-          cube2thread_and_machine(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI)* num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + BK;
@@ -1039,7 +1037,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BK changes and probably machine, down
-          cube2thread_and_machine(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ, BK - 1, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -1071,7 +1069,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
           // }
         }
         else if ((li + 1) >cube_size - 1 && (lj - 1)<0){//comp domain changes both BI and BJ and probably maxhine, front-right
-          cube2thread_and_machine(BI + 1, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI + 1) * num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + BK;
@@ -1101,7 +1099,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li + 1) >cube_size - 1 && (lj - 1) >= 0){//only BI changes and probably maxhine, right
 
-          cube2thread_and_machine(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -1120,7 +1118,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BJ changes and probably maxhine
-          cube2thread_and_machine(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + BK;
@@ -1151,7 +1149,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li - 1) <0 && (lj + 1) >cube_size - 1){//comp domain changes both BI and BJ and probably maxhine, back-left
 
-          cube2thread_and_machine(BI - 1, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -1183,7 +1181,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li - 1) <0 && (lj + 1) <= cube_size - 1){//only BI changes and probably maxhine, left
 
-          cube2thread_and_machine(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -1202,7 +1200,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BJ changes and probably machine, back
-          cube2thread_and_machine(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -1234,7 +1232,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else if ((li + 1) >cube_size - 1 && (lj + 1) >cube_size - 1){//comp domain changes both BI and BJ and probably maxchines, back-right
-          cube2thread_and_machine(BI + 1, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI + 1) * num_cubes_y * num_cubes_z + (BJ + 1) * num_cubes_z + (BK);
@@ -1263,7 +1261,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else if ((li + 1) >cube_size - 1 && (lj + 1) <= cube_size - 1){//only BI changes and probably machiine
-          cube2thread_and_machine(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI + 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI + 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -1280,7 +1278,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BJ changes and probably machine, back
-          cube2thread_and_machine(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ + 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
 
@@ -1313,7 +1311,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else if ((li - 1) <0 && (lj - 1) <0){//comp domain changes both BI and BJ and proabaly machine, front-left
-          cube2thread_and_machine(BI - 1, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI - 1) * num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + (BK);
@@ -1343,7 +1341,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         }
         else if ((li - 1)<0 && (lj - 1) >= 0){//only BI changes and prabably machine, left
 
-          cube2thread_and_machine(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI - 1, BJ, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = (BI - 1) * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -1360,7 +1358,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
         }
         else{//only BJ changes and probably machine, front
-          cube2thread_and_machine(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
+          cube2thread_and_task(BI, BJ - 1, BK, gv, &temp_mac_rank_recv);
 
           if(temp_mac_rank_sender == temp_mac_rank_recv){
             cube_df2_idx = BI * num_cubes_y * num_cubes_z + (BJ - 1) * num_cubes_z + (BK);
@@ -1397,7 +1395,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
       printf("Fluid mac%d: don't need to stream!\n", my_rank);
       fflush(stdout);
     }
-    else if (check_1d(gv->Px, gv->Py, gv->Pz, &direction)){//1d
+    else if (check_1d(Px, Py, Pz, &direction)){//1d
 
       printf("Fluid mac%d: Enter 1D streaming msg!\n", my_rank);
       fflush(stdout);
@@ -1433,42 +1431,42 @@ void  stream_distrfunc(GV gv, LV lv){//df2
         fflush(stdout);
       }
     }
-    else if(check_2d(gv->Px, gv->Py, gv->Pz, &direction)) {//2d
+    else if(check_2d(Px, Py, Pz, &direction)) {//2d
 
       if(direction==X_transfer_2D){// 1, 2, 5, 6, 15~18
 
         //dir 1, 2
         for(i=1; i<=2; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
         //dir 5, 6
         for(i=5; i<=6; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
         //dir 15~18
         for(i=15; i<=18; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
       }
       else if(direction==Y_transfer_2D){// 3, 4, 5, 6, 11~14
 
         //dir 3~6
         for(i=3; i<=6; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
         //dir 11~14
         for(i=11; i<=14; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
       }
       else if(direction==Z_transfer_2D){// 1, 2, 3, 4, 7~10
         //dir 1~4
         for(i=1; i<=4; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
         //dir 7~10
         for(i=7; i<=10; i++)
-          streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+          streaming_on_direction(gv, lv, i, gv->dest_task[i]);
 
       }
       else{
@@ -1479,7 +1477,7 @@ void  stream_distrfunc(GV gv, LV lv){//df2
     else{//3d
       //dir 1~18
       for(i=7; i<=10; i++)
-        streaming_on_direction(gv, lv, i, gv->dest_mac[i]);
+        streaming_on_direction(gv, lv, i, gv->dest_task[i]);
     }
   }
 
