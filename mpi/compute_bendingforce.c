@@ -39,7 +39,10 @@ void  compute_bendingforce(LV lv) {
 
   ds1 = fiber_sheet_w / (total_fibers_clmn - 1); //gap between fiber nodes along the z-dim.
   ds2 = fiber_sheet_h / (total_fibers_row - 1); //gap between two neighboring fibers along y-dim.
-  bending_const = gv->Kb_l / pow(ds1, 3);                 //KB and alpha1 pow 3
+  bending_const = gv->Kb_l / pow(ds1, 3);  //KB and alpha1 pow 3
+
+  // printf("fiber_sheet_w = %f, fiber_sheet_h = %f, ds1 = %f, ds2 = %f, bending_const = %f\n", 
+  //   fiber_sheet_w, fiber_sheet_h, ds1, ds2, bending_const);
 
   /* compute force along the fibers (row)*/
   for (i = 0; i < total_fibers_row; ++i) {
@@ -50,56 +53,71 @@ void  compute_bendingforce(LV lv) {
       nodes[0].bend_force_x = bending_const * (-nodes[2].x + 2 * nodes[1].x - nodes[0].x);
       nodes[0].bend_force_y = bending_const * (-nodes[2].y + 2 * nodes[1].y - nodes[0].y);
       nodes[0].bend_force_z = bending_const * (-nodes[2].z + 2 * nodes[1].z - nodes[0].z);
+
       //For the 2nd Point
       nodes[1].bend_force_x = bending_const * (-nodes[3].x + 4 * nodes[2].x - 5 * nodes[1].x +
         2 * nodes[0].x);
       nodes[1].bend_force_y = bending_const * (-nodes[3].y + 4 * nodes[2].y - 5 * nodes[1].y +
         2 * nodes[0].y);
-      nodes[1].bend_force_z = bending_const * (-nodes[3].z + 4 * nodes[2].z - 5 * nodes[1].z
-        + 2 * nodes[0].z);
+      nodes[1].bend_force_z = bending_const * (-nodes[3].z + 4 * nodes[2].z - 5 * nodes[1].z +
+        2 * nodes[0].z);
+
       //For the middle points
       for (j = 2; j < total_fibers_clmn - 2; ++j){
-        nodes[j].bend_force_x = bending_const * (-nodes[j + 2].x + 4.0 * nodes[j + 1].x
-          - 6.0 * nodes[j].x + 4.0 * nodes[j - 1].x
-          - nodes[j - 2].x);
-        nodes[j].bend_force_y = bending_const * (-nodes[j + 2].y + 4.0 * nodes[j + 1].y
-          - 6.0 * nodes[j].y + 4.0 * nodes[j - 1].y
-          - nodes[j - 2].y);
-        nodes[j].bend_force_z = bending_const * (-nodes[j + 2].z + 4.0 * nodes[j + 1].z
-          - 6.0 * nodes[j].z + 4.0 * nodes[j - 1].z
-          - nodes[j - 2].z);
+        nodes[j].bend_force_x = bending_const * (-nodes[j+2].x + 4.0 * nodes[j+1].x
+          - 6.0 * nodes[j].x + 4.0 * nodes[j-1].x
+          - nodes[j-2].x);
+        nodes[j].bend_force_y = bending_const * (-nodes[j+2].y + 4.0 * nodes[j+1].y
+          - 6.0 * nodes[j].y + 4.0 * nodes[j-1].y
+          - nodes[j-2].y);
+        nodes[j].bend_force_z = bending_const * (-nodes[j+2].z + 4.0 * nodes[j+1].z
+          - 6.0 * nodes[j].z + 4.0 * nodes[j-1].z
+          - nodes[j-2].z);
       }
 
       //For the last but one point
       j = total_fibers_clmn - 2;
-      nodes[j].bend_force_x = bending_const * (2 * nodes[j + 1].x
+      nodes[j].bend_force_x = bending_const * (2 * nodes[j+1].x
         - 5 * nodes[j].x
-        + 4 * nodes[j - 1].x
+        + 4 * nodes[j-1].x
         - nodes[j].x);
-      nodes[j].bend_force_y = bending_const * (2 * nodes[j + 1].y
+      nodes[j].bend_force_y = bending_const * (2 * nodes[j+1].y
         - 5 * nodes[j].y
-        + 4 * nodes[j - 1].y
+        + 4 * nodes[j-1].y
         - nodes[j - 2].y);
-      nodes[j].bend_force_z = bending_const * (2 * nodes[j + 1].z
+      nodes[j].bend_force_z = bending_const * (2 * nodes[j+1].z
         - 5 * nodes[j].z
-        + 4 * nodes[j - 1].z
-        - nodes[j - 2].z);
+        + 4 * nodes[j-1].z
+        - nodes[j-2].z);
       //For last ponit
       j = total_fibers_clmn - 1;
       nodes[j].bend_force_x = bending_const * (-nodes[j].x
-        + 2 * nodes[j - 1].x
-        - nodes[j - 2].x);
+        + 2 * nodes[j-1].x
+        - nodes[j-2].x);
       nodes[j].bend_force_y = bending_const * (-nodes[j].y
-        + 2 * nodes[j - 1].y
-        - nodes[j - 2].y);
+        + 2 * nodes[j-1].y
+        - nodes[j-2].y);
       nodes[j].bend_force_z = bending_const * (-nodes[j].z
-        + 2 * nodes[j - 1].z
-        - nodes[j - 2].z);
+        + 2 * nodes[j-1].z
+        - nodes[j-2].z);
     }//if fiber2thread ends
   }
 
-
   pthread_barrier_wait(&(gv->barr));
+
+#ifdef DEBUG_PRINT
+      if (tid == 0){
+        printf("Inside BF -- Printing for Corner Points(z,y) : 0,0 \n");
+        print_fiber_sub_grid(gv, 0, 0, 0, 0);
+        printf("Inside BF -- Printing for Corner Points(z,y) : 51,0 \n");
+        print_fiber_sub_grid(gv, 0, 51, 0, 51);
+        printf("Inside BF -- Printing for Corner Points(z,y) : 0,51 \n");
+        print_fiber_sub_grid(gv, 51, 0, 51, 0);
+        printf("Inside BF -- Printing for Corner Points (z,y): 51,51 \n");
+        print_fiber_sub_grid(gv, 51, 51, 51, 51);
+      }
+      pthread_barrier_wait(&(gv->barr));
+#endif //DEBUG_PRINT  
 
 // #ifdef DEBUG_PRINT
 //   printf("After barrier in BF\n");
@@ -139,52 +157,52 @@ void  compute_bendingforce(LV lv) {
     // For the middle fibers
     for (i = 2; i < total_fibers_row - 2; ++i){
       if (fiber2thread(i, total_fibers_row, total_threads) == tid){
-        sheet->fibers[i].nodes[j].bend_force_x += bending_const*(-sheet->fibers[i + 2].nodes[j].x
-          + 4.0 * (sheet->fibers[i + 1].nodes[j].x)
+        sheet->fibers[i].nodes[j].bend_force_x += bending_const*(-sheet->fibers[i+2].nodes[j].x
+          + 4.0 * (sheet->fibers[i+1].nodes[j].x)
           - 6.0 * (sheet->fibers[i].nodes[j].x) +
-          4.0 * (sheet->fibers[i - 1].nodes[j].x)
-          - (sheet->fibers[i - 2].nodes[j].x));
-        sheet->fibers[i].nodes[j].bend_force_y += bending_const*(-sheet->fibers[i + 2].nodes[j].y
-          + 4.0*(sheet->fibers[i + 1].nodes[j].y)
+          4.0 * (sheet->fibers[i-1].nodes[j].x)
+          - (sheet->fibers[i-2].nodes[j].x));
+        sheet->fibers[i].nodes[j].bend_force_y += bending_const*(-sheet->fibers[i+2].nodes[j].y
+          + 4.0*(sheet->fibers[i+1].nodes[j].y)
           - 6.0*(sheet->fibers[i].nodes[j].y)
-          + 4.0*(sheet->fibers[i - 1].nodes[j].y)
-          - (sheet->fibers[i - 2].nodes[j].y));
-        sheet->fibers[i].nodes[j].bend_force_z += bending_const*(-sheet->fibers[i + 2].nodes[j].z
-          + 4.0*(sheet->fibers[i + 1].nodes[j].z)
+          + 4.0*(sheet->fibers[i-1].nodes[j].y)
+          - (sheet->fibers[i-2].nodes[j].y));
+        sheet->fibers[i].nodes[j].bend_force_z += bending_const*(-sheet->fibers[i+2].nodes[j].z
+          + 4.0*(sheet->fibers[i+1].nodes[j].z)
           - 6.0*(sheet->fibers[i].nodes[j].z)
-          + 4.0*(sheet->fibers[i - 1].nodes[j].z)
-          - (sheet->fibers[i - 2].nodes[j].z));
+          + 4.0*(sheet->fibers[i-1].nodes[j].z)
+          - (sheet->fibers[i-2].nodes[j].z));
       }//if fiber2thread ends
     }
 
     //For last but one fiber
     i = total_fibers_row - 2;
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
-      sheet->fibers[i].nodes[j].bend_force_x += bending_const * (2 * sheet->fibers[i + 1].nodes[j].x
+      sheet->fibers[i].nodes[j].bend_force_x += bending_const * (2 * (sheet->fibers[i+1].nodes[j].x)
         - 5 * (sheet->fibers[i].nodes[j].x)
-        + 4 * (sheet->fibers[i - 1].nodes[j].x)
-        - (sheet->fibers[i - 2].nodes[j].x));
-      sheet->fibers[i].nodes[j].bend_force_y += bending_const * (2 * (sheet->fibers[i + 1].nodes[j].y)
+        + 4 * (sheet->fibers[i-1].nodes[j].x)
+        - (sheet->fibers[i-2].nodes[j].x));
+      sheet->fibers[i].nodes[j].bend_force_y += bending_const * (2 * (sheet->fibers[i+1].nodes[j].y)
         - 5 * (sheet->fibers[i].nodes[j].y)
-        + 4 * (sheet->fibers[i - 1].nodes[j].y)
-        - (sheet->fibers[i - 2].nodes[j].y));
-      sheet->fibers[i].nodes[j].bend_force_z += bending_const  * (2 * (sheet->fibers[i + 1].nodes[j].z)
+        + 4 * (sheet->fibers[i-1].nodes[j].y)
+        - (sheet->fibers[i-2].nodes[j].y));
+      sheet->fibers[i].nodes[j].bend_force_z += bending_const  * (2 * (sheet->fibers[i+1].nodes[j].z)
         - 5 * (sheet->fibers[i].nodes[j].z)
-        + 4 * (sheet->fibers[i - 1].nodes[j].z)
+        + 4 * (sheet->fibers[i-1].nodes[j].z)
         - (sheet->fibers[i - 2].nodes[j].z));
     }
     //For the last fiber
     i = total_fibers_row - 1;
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
       sheet->fibers[i].nodes[j].bend_force_x += bending_const * (-(sheet->fibers[i].nodes[j].x)
-        + 2 * (sheet->fibers[i - 1].nodes[j].x)
-        - (sheet->fibers[i - 2].nodes[j].x));
+        + 2 * (sheet->fibers[i-1].nodes[j].x)
+        - (sheet->fibers[i-2].nodes[j].x));
       sheet->fibers[i].nodes[j].bend_force_y += bending_const * (-(sheet->fibers[i].nodes[j].y)
-        + 2 * (sheet->fibers[i - 1].nodes[j].y)
-        - (sheet->fibers[i - 2].nodes[j].y));
+        + 2 * (sheet->fibers[i-1].nodes[j].y)
+        - (sheet->fibers[i-2].nodes[j].y));
       sheet->fibers[i].nodes[j].bend_force_z += bending_const * (-(sheet->fibers[i].nodes[j].z)
-        + 2 * (sheet->fibers[i - 1].nodes[j].z)
-        - (sheet->fibers[i - 2].nodes[j].z));
+        + 2 * (sheet->fibers[i-1].nodes[j].z)
+        - (sheet->fibers[i-2].nodes[j].z));
     }
   }
 

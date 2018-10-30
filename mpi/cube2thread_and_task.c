@@ -63,9 +63,16 @@ int cube2task(long BI, long BJ, long BK, GV gv){
 	num_fluid_task_y = gv->num_fluid_task_y;
 	num_fluid_task_z = gv->num_fluid_task_z;
 
+	// printf("num_cubes_x %ld, num_cubes_y %ld, num_cubes_z %ld\n", num_cubes_x, num_cubes_y, num_cubes_z);
+	// printf("num_fluid_task_x %d, num_fluid_task_y %d, num_fluid_task_z %d\n", num_fluid_task_x, num_fluid_task_y, num_fluid_task_z);
+	// fflush(stdout);
+
 	cubes_per_task_x = num_cubes_x / num_fluid_task_x; // along x: how many cubes in each task
 	cubes_per_task_y = num_cubes_y / num_fluid_task_y; // along y: how many cubes in each task
 	cubes_per_task_z = num_cubes_z / num_fluid_task_z; // along y: how many cubes in each task
+
+	// printf("cubes_per_task_x %d, cubes_per_task_y %d, cubes_per_task_z %d\n", cubes_per_task_x, cubes_per_task_y, cubes_per_task_z);
+	// fflush(stdout);
 
 	// task -- 3D distribution mapping
 	// rank_z = BK / cubes_per_task_z;

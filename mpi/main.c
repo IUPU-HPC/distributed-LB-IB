@@ -280,6 +280,7 @@ int main(int argc, char* argv[]) {
 
   // Fiber tasks: generate fibersheet
   if (gv->taskid >= gv->num_fluid_tasks){
+    printf("Friber task%d start gen_fiber_sheet!\n", gv->taskid);
     for(int i = 0; i < gv->fiber_shape->num_sheets; ++i)
       if (gv->taskid == (gv->num_fluid_tasks + i)){
         gen_fiber_sheet(gv->fiber_shape->sheets + i);
@@ -342,9 +343,10 @@ int main(int argc, char* argv[]) {
   }
 
   init_gv(gv);
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("Task%d Pass init gv!\n", taskid);
+  fflush(stdout);
 
-  // printf("%d Pass init gv!\n", taskid);
-  // fflush(stdout);
   //allocating memory for mutex
   // gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid)*num_threads_per_task);
 
@@ -368,7 +370,7 @@ int main(int argc, char* argv[]) {
 
   // Fiber print corner points
   if (gv->taskid >= gv->num_fluid_tasks){
-    printf("After generating the fiber shape:\n");
+    printf("Friber task%d gen_fiber_sheet complete!\n", gv->taskid);
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
     printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -383,6 +385,7 @@ int main(int argc, char* argv[]) {
     init_eqlbrmdistrfuncDF0(gv);
     init_df1(gv);
     init_df_inout(gv);
+    printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
   }
 
   // check_point : fluid grid info
@@ -417,7 +420,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < gv->threads_per_task; i++) {
     pthread_join(threads[i], &retval); //to check why retval not allocated
 #ifdef DEBUG_PRINT
-    printf("Thread %d is finished\n", i);
+    printf("Task%d Thread%d is finished\n", gv->taskid, i);
 #endif //DEBUG_PRINT
   }
 
@@ -445,7 +448,7 @@ int main(int argc, char* argv[]) {
 
   // pthread_mutex_destroy(&gv->lock_Fluid[num_threads_per_task]);
   // Need to do
-  pthread_mutex_destroy(&gv->lock_ifd_fluid_task_msg[gv->threads_per_task]);
+  // pthread_mutex_destroy(&gv->lock_ifd_fluid_task_msg[gv->threads_per_task]);
   free(gv->fluid_grid->sub_fluid_grid);
   free(gv->fluid_grid);
   free(gv);

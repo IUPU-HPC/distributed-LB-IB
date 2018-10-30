@@ -25,7 +25,7 @@
 void init_gv_constant(GV gv){
   long dim_x, dim_y, dim_z;
 
-  gv->timesteps= 5;
+  // gv->timesteps= 5; // add default value
   //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
   gv->dt = 1;      // Time step size, always equal 1!
   gv->time = gv->dt; // Time step#, starting from 1.
@@ -33,6 +33,12 @@ void init_gv_constant(GV gv){
   dim_x = gv->fluid_grid->x_dim;
   dim_y = gv->fluid_grid->y_dim;
   dim_z = gv->fluid_grid->z_dim;
+
+  // fiber also needs fluid grid dimension infomation
+  int cube_size = gv->cube_size;
+  long num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
+  long num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
+  long num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
 
   gv->ib = 2;       //0 and 1 are used for buffer zone
   gv->ie = dim_x - 3; //dim_x-1 (i.e., the last node), dim_x-2 are used for buffer zone
@@ -152,7 +158,7 @@ void compute_dest_mac(GV gv, int dir, int my_rank_x, int my_rank_y, int my_rank_
       dest_x = (my_rank_x+1) % Px;
       dest_y = my_rank_y;
       dest_z = my_rank_z;
-      printf("mac%d: dest_x=%d, dest_y=%d, dest_z=%d\n",
+      printf("Task%d: dest_x=%d, dest_y=%d, dest_z=%d\n",
         gv->taskid, dest_x, dest_y, dest_z);
       fflush(stdout);
       // if(dest_x >= Px)

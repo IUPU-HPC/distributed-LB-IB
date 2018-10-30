@@ -31,7 +31,7 @@ void print_fiber_sub_grid(GV gv, int start_y, int start_z,
 
   for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
     fiber_array = gv->fiber_shape->sheets[k].fibers;
-    printf("Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x,SF_y, SF_z || BF_X, BF_y, BF_z\n", k);
+    printf("Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_X, BF_y, BF_z\n", k);
     for (i = start_y; i <= end_y; ++i) {
       for (j = start_z; j <= end_z; ++j) {
         node = fiber_array[i].nodes + j;

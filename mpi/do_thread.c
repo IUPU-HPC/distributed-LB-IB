@@ -79,11 +79,13 @@ void* do_thread(void* v){
 
     t0 = get_cur_time();
     if (my_rank >= num_fluid_tasks){
-// #ifdef DEBUG_PRINT
-      if(tid==0)
-        printf("\n\nStart time step %ld ...\n", gv->time);
-// #endif //DEBUG_PRINT
-      // t0 = get_cur_time();
+#ifdef DEBUG_PRINT
+      if(tid==0){
+        printf("\n\nTask%d Tid%d: Start time step %ld ...\n", my_rank, tid, gv->time);
+      }
+#endif //DEBUG_PRINT
+      t0 = get_cur_time();
+
       compute_bendingforce(lv);
       compute_stretchingforce(lv);
       compute_elasticforce(lv);
@@ -92,38 +94,47 @@ void* do_thread(void* v){
       t2_1 += t1 - t0;
 
 #ifdef DEBUG_PRINT
-    printf("Fiber task %d thread %d finish calculate local force\n", my_rank, tid);
+    printf("Fiber task %d Tid%d finish calculate local force\n", my_rank, tid);
 #endif //DEBUG_PRINT
     }
     else{ //fluid tasks wait here
-      pthread_barrier_wait(&(gv->barr));
+      // pthread_barrier_wait(&(gv->barr));
     }
 
     //check whether barrier long is becuase of this
-    if(tid==0)
-      MPI_Barrier(MPI_COMM_WORLD);
+    // if(tid==0)
+      // MPI_Barrier(MPI_COMM_WORLD);
+
     t1 = get_cur_time();
     t2 += t1 - t0;
 
-
     if (my_rank >= num_fluid_tasks){
+#ifdef DEBUG_PRINT
+      if(tid==0){
+        printf("Fiber Task%d Tid%d: Start fiber_SpreadForce\n", my_rank, tid);
+        fflush(stdout);
+      }
+#endif //DEBUG_PRINT      
       t0 = get_cur_time();
+
       fiber_SpreadForce(lv);
+      
       t1 = get_cur_time();
       t3_1 += t1- t0;
     }
     else{
 #ifdef DEBUG_PRINT
       if(tid==0){
-        printf("rank%d: Start get_influence_domain\n", my_rank);
+        printf("Fluid Task%d Tid%d: Start fluid_get_SpreadForce\n", my_rank, tid);
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
       t0 = get_cur_time();
+
       fluid_get_SpreadForce(lv);
 
-      // t1 = get_cur_time();
-      // t4 += t1- t0;
+      t1 = get_cur_time();
+      t4 += t1- t0;
     }
 
     pthread_barrier_wait(&(gv->barr));
@@ -134,7 +145,7 @@ void* do_thread(void* v){
     t4 += t1- t0;
 #ifdef DEBUG_PRINT
     if(tid==0){
-      printf("mac%d: After get_influence_domain\n", my_rank);
+      printf("Task%d: After fluid_get_SpreadForce\n", my_rank);
       fflush(stdout);
     }
 #endif //DEBUG_PRINT
@@ -247,7 +258,7 @@ void* do_thread(void* v){
 
 #ifdef DEBUG_PRINT
     if ( (my_rank >= num_fluid_tasks) && (tid == 0)){
-      printf("after Running for Timesteps:%ld:\n", gv->time - 1);
+      printf("Timesteps:%ld complete!\n", gv->time - 1);
       printf("Printing for Corner Points(z,y) : 0,0 \n");
       print_fiber_sub_grid(gv, 0, 0, 0, 0);
       printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -261,7 +272,9 @@ void* do_thread(void* v){
 
     t0 = get_cur_time();
     pthread_barrier_wait(&(gv->barr));
-    MPI_Barrier(MPI_COMM_WORLD);
+    if (tid == 0){
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
     t1 = get_cur_time();
     tail += t1 - t0;
   }
@@ -278,7 +291,6 @@ void* do_thread(void* v){
       my_rank, tid, t2, t4, t5, tail, endTime-startTime);
     fflush(stdout);
   }
-
-
+  
   return NULL;
 }

@@ -59,7 +59,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   double  cf = 1.0 / (64.0*dx*dy*dz);
 
   /*MPI changes*/
-  int fluid_owner_mac;
+  int ifd_fluid_task;
   int num_fluid_tasks = gv->num_fluid_tasks;
   int my_rank = gv->taskid;
   double elastic_force_x, elastic_force_y, elastic_force_z;
@@ -68,8 +68,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
   fiberarray = gv->fiber_shape->sheets[0].fibers;
-  /*Pthread chages*/
 
+  /*Pthread chages*/
   dim_x = gv->fluid_grid->x_dim;
   dim_y = gv->fluid_grid->y_dim;
   dim_z = gv->fluid_grid->z_dim;
@@ -78,6 +78,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   long num_cubes_x = gv->fluid_grid->num_cubes_x;
   long num_cubes_y = gv->fluid_grid->num_cubes_y;
   long num_cubes_z = gv->fluid_grid->num_cubes_z;
+
+  printf("fiber_SpreadForce: num_cubes_x %ld\n", num_cubes_x);
 
   total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
 
@@ -121,24 +123,26 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           elastic_force_y = fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
           elastic_force_z = fiberarray[i].nodes[j].elastic_force_z * tmp_dist;
 
-          //find fluid_owner_mac for this fluid node
-          int fluid_owner_mac = cube2task(BI, BJ, BK, gv);
+          //find fluid_owner_task for this fluid task
+          int ifd_fluid_task = cube2task(BI, BJ, BK, gv);
+          // printf("ifd_fluid_task=%d\n", ifd_fluid_task);
+          // fflush(stdout);
 
-          pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[fluid_owner_mac]);
+          pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd_fluid_task]);
 
-          *((int*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac]))                   = BI;
-          *((int*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)))     = BJ;
-          *((int*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 2))  = BK;
-          *((int*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 3))  = li;
-          *((int*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 4))  = lj;
-          *((int*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 5))  = lk;
-          *((double*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 6))    = elastic_force_x;
-          *((double*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 6 + sizeof(double))) = elastic_force_y;
-          *((double*)(gv->ifd_bufpool[fluid_owner_mac] + gv->ifd_last_pos[fluid_owner_mac] + sizeof(int)* 6 + sizeof(double)* 2)) = elastic_force_z;
+          *((int*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task]))                   = BI;
+          *((int*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)))     = BJ;
+          *((int*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 2))  = BK;
+          *((int*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 3))  = li;
+          *((int*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 4))  = lj;
+          *((int*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 5))  = lk;
+          *((double*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 6))    = elastic_force_x;
+          *((double*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 6 + sizeof(double))) = elastic_force_y;
+          *((double*)(gv->ifd_bufpool[ifd_fluid_task] + gv->ifd_last_pos[ifd_fluid_task] + sizeof(int)* 6 + sizeof(double)* 2)) = elastic_force_z;
 
-          gv->ifd_last_pos[fluid_owner_mac] += sizeof(int) * 6 + sizeof(double) * 3;
+          gv->ifd_last_pos[ifd_fluid_task] += sizeof(int) * 6 + sizeof(double) * 3;
 
-          pthread_mutex_unlock(&gv->lock_ifd_fluid_task_msg[fluid_owner_mac]);
+          pthread_mutex_unlock(&gv->lock_ifd_fluid_task_msg[ifd_fluid_task]);
 
 
         }//for innerk ends
@@ -153,6 +157,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   fflush(stdout);
 
   //fiber task thread 0 send the message out
+  // 2018-10-30
   if (tid == 0){
     Timer::time_start();
     for (int tmp_fluid_mac = 0; tmp_fluid_mac < num_fluid_tasks; tmp_fluid_mac++){
@@ -191,6 +196,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
     printf("Fiber_mac:%d send_msg_time=%f,\n", my_rank, time_elapsed);
     fflush(stdout);
   }
+  // 2018-10-30
 
 #ifdef DEBUG_PRINT
   // printf("----- Fiber_mac:%d fiber_SpreadForce Exit! -----\n", my_rank);

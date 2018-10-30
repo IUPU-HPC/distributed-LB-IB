@@ -21,7 +21,7 @@
 ##
 
 ## Compiler, tools and options
-DEBUG ?= 0
+DEBUG ?= 1
 
 MPICXX ?= mpicxx
 CXXFLAGS ?=

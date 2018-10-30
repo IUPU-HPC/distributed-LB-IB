@@ -215,7 +215,7 @@ typedef struct gv_t {
   int my_rank_x, my_rank_y, my_rank_z;
   int dest_task[19];
 
-  //ifd
+  // Fiber <--> Fluid influential domain
   char** ifd_bufpool;          //fiber task send bufferpool
   int* ifd_bufpool_msg_size;   //each buffer size
   int* ifd_last_pos;              //Track last position of each fluid process's buffer
