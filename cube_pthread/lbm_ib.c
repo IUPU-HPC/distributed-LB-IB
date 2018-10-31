@@ -363,7 +363,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
   int dim_x, dim_y, dim_z;
   int total_sub_grids;
   Sub_Fluidgrid *sub_fluid_grid;
-  int num_cubes_x, num_cubes_y, num_cubes_z;
+  // int num_cubes_x, num_cubes_y, num_cubes_z;
 
   if(fiber_shape == NULL) {
     fprintf(stderr, "Error(%s): Null fiber shape!\n", __func__); exit(1);
@@ -391,9 +391,9 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
   gv->num_cubes_x = dim_x/cube_size;
   gv->num_cubes_y = dim_y/cube_size;
   gv->num_cubes_z = dim_z/cube_size;
-  num_cubes_x     = gv->num_cubes_x;
-  num_cubes_y     = gv->num_cubes_y;
-  num_cubes_z     = gv->num_cubes_z;
+  // num_cubes_x     = gv->num_cubes_x;
+  // num_cubes_y     = gv->num_cubes_y;
+  // num_cubes_z     = gv->num_cubes_z;
 
   gv->ib = 2;       // 0 and 1 are used for buffer zone
   gv->ie = dim_x-3; // dim_x-1 (i.e., the last node), dim_x-2 are used for buffer zone 
@@ -584,13 +584,13 @@ Fibershape*  gen_fiber_shape(double w, double h, int num_cols, int num_rows,
 Fluidgrid* gen_fluid_grid(int dim_x, int dim_y, int dim_z, int cube_size){
   
   Fluidgrid *fluid_grid;
-  int idx, total_sub_grids, total_sub_grids_x, total_sub_grids_y, total_sub_grids_z; 
+  int idx, total_sub_grids; //total_sub_grids_x, total_sub_grids_y, total_sub_grids_z; 
 
   /* calculate total # of cubes */
   total_sub_grids   = (dim_x * dim_y * dim_z) / (cube_size * cube_size * cube_size);
-  total_sub_grids_x = dim_x / cube_size; // shoould be sub_grid_dimx for later
-  total_sub_grids_y = dim_y / cube_size;
-  total_sub_grids_z = dim_z / cube_size;
+  // total_sub_grids_x = dim_x / cube_size; // shoould be sub_grid_dimx for later
+  // total_sub_grids_y = dim_y / cube_size;
+  // total_sub_grids_z = dim_z / cube_size;
 
   /* allocate memory for the entire fluid grid */
   fluid_grid = (Fluidgrid *) malloc(sizeof(*fluid_grid));
@@ -621,7 +621,7 @@ Fluidgrid* gen_fluid_grid(int dim_x, int dim_y, int dim_z, int cube_size){
 void compute_bendingforce(LV lv) { 
   #ifdef DEBUG_PRINT
     printf("****Inside compute_bendingforce*******\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 
   int         i, j;
   double      ds1, ds2;
@@ -719,7 +719,7 @@ void compute_bendingforce(LV lv) {
      
   #ifdef DEBUG_PRINT
     printf("After barrier in BF\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
   /* computing bending force along direction normal to fibers (column), bending_const may be different */									
   Fibersheet* sheet = fiber_shape->sheets + 0;
   bending_const     = gv->Kb_l / (ds2 * ds2 * ds2); // KB and alpha1 pow 3
@@ -808,13 +808,13 @@ void compute_bendingforce(LV lv) {
 
   #ifdef DEBUG_PRINT
     printf("**** compute_bendingforce Exit*******\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 }
      
 void compute_stretchingforce(LV lv) { 
   #ifdef DEBUG_PRINT
     printf("****Inside compute_stretchingforce*******\n");
-  #endif DEBUG_PRINT 
+  #endif //DEBUG_PRINT
 
   int tid;
   GV gv = lv->gv;   
@@ -939,14 +939,14 @@ void compute_stretchingforce(LV lv) {
 
   #ifdef DEBUG_PRINT
     printf("**** compute_stretchingforce Exit*******\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 }
 
 
 void compute_elasticforce(LV lv) { //emabarassingly parallel
   #ifdef DEBUG_PRINT
    printf("****Inside compute_elasticforce*******\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 
   int tid;
   GV gv = lv->gv;   
@@ -975,7 +975,7 @@ void compute_elasticforce(LV lv) { //emabarassingly parallel
    
    #ifdef DEBUG_PRINT
      printf("**** compute_elasticforce Exit*******\n");
-   #endif DEBUG_PRINT
+   #endif //DEBUG_PRINT
 }
 
 
@@ -984,7 +984,7 @@ void compute_elasticforce(LV lv) { //emabarassingly parallel
 void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences fluid
   #ifdef DEBUG_PRINT
     printf("****Inside get_influentaildomain_fluid_grid******\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 
   int tid;
   GV gv = lv->gv;   
@@ -1309,7 +1309,7 @@ void init_df_inout(GV gv){
 void compute_eqlbrmdistrfuncDF1(LV lv){
   #ifdef DEBUG_PRINT
 printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
-#endif DEBUG_PRINT
+#endif //DEBUG_PRINT
   int tid;
   GV gv = lv->gv;   
   tid   = lv->tid;
@@ -2172,7 +2172,7 @@ s1 =s2= s3 = s4 =0;
 void moveFiberSheet(LV lv){
   #ifdef DEBUG_PRINT
   printf("************** Inside moveFibersheet**********\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 
   int tid;
   GV gv = lv->gv;   
@@ -2194,7 +2194,7 @@ void moveFiberSheet(LV lv){
   dy1 = 1.0/dy;
   dz1 = 1.0/dz;
 
-  double  PI   = 3.14159265358979;
+  // double  PI   = 3.14159265358979;
   double  c_x  = PI/(2.0*dx);
   double  c_y  = PI/(2.0*dy);
   double  c_z  = PI/(2.0*dz);
@@ -2332,7 +2332,7 @@ void moveFiberSheet(LV lv){
   } //jf ends i.e fiber along row
   #ifdef DEBUG_PRINT
   printf("**************  moveFibersheet   Exit**********\n");
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
 }
 
 void init_df1(GV gv) {
@@ -2706,11 +2706,11 @@ void* do_thread(void* v){
      
   #ifdef DEBUG_PRINT    
   printf("Inside do_thread :Started by Threadid: %d\n",lv->tid);
-  #endif DEBUG_PRINT
+  #endif //DEBUG_PRINT
    while (gv->time <= gv->TIME_STOP) {
     #ifdef DEBUG_PRINT
      printf("\n\n\n\nStart time step %d ...\n", gv->time);
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
 //     print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z);
 //     print_fiber_sub_grid(gv,lookup_fiber_start_y, lookup_fiber_start_z, lookup_fiber_end_y, lookup_fiber_end_z);
      
@@ -2785,7 +2785,7 @@ void* do_thread(void* v){
      get_influentialdomain_fluid_grid_and_SpreadForce(lv);
      #ifdef DEBUG_PRINT
      printf("After get_influence_domain\n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2809,7 +2809,7 @@ void* do_thread(void* v){
      compute_eqlbrmdistrfuncDF1(lv);
      #ifdef DEBUG_PRINT
      printf("After compute DF1 \n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
  /*    printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2833,7 +2833,7 @@ void* do_thread(void* v){
      stream_distrfunc(lv);
      #ifdef DEBUG_PRINT
      printf("After streaming \n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
 
 /*     printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
@@ -2858,7 +2858,7 @@ void* do_thread(void* v){
      bounceback_rigidwalls(lv);
      #ifdef DEBUG_PRINT
      printf("After bounceback\n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
     /* printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2882,7 +2882,7 @@ void* do_thread(void* v){
      compute_rho_and_u(lv);
      #ifdef DEBUG_PRINT
      printf("After compute rho and u \n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2907,7 +2907,7 @@ void* do_thread(void* v){
      moveFiberSheet(lv);
      #ifdef DEBUG_PRINT
      printf("After moving fibersheet \n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2933,7 +2933,7 @@ void* do_thread(void* v){
      copy_inout_to_df2(lv);
      #ifdef DEBUG_PRINT
      printf("After  copy_inout_to_df2 \n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2957,7 +2957,7 @@ void* do_thread(void* v){
      replace_old_DF(lv);
      #ifdef DEBUG_PRINT
      printf("After  replace_old_DF \n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2981,7 +2981,7 @@ void* do_thread(void* v){
      periodicBC(lv);
      #ifdef DEBUG_PRINT
      printf("After PeriodicBC\n");
-     #endif DEBUG_PRINT
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2997,7 +2997,7 @@ void* do_thread(void* v){
 
     #ifdef DEBUG_PRINT
      printf("End of time step %d\n", gv->time);
-    #endif DEBUG_PRINT
+    #endif //DEBUG_PRINT
      
      //if(tid==0)
     // pthread_mutex_lock(&(gv->lock_Fluid));
@@ -3211,7 +3211,7 @@ printf("P :%d, Q:%d, R:%d \n TuningFactor:cubedim::%d \n",P,Q,R, k_cubedim);
     pthread_join(threads[i], &retval);
     #ifdef DEBUG_PRINT
     printf("Thread %d is finished\n", i);
-    #endif DEBUG_PRINT
+    #endif //DEBUG_PRINT
   } 
   printf("***********IB Simulation using Pthreads cube v 4.1 ends************\n\n\n");
      printf("Printing for Corner Points(z,y) : 0,0 \n");
