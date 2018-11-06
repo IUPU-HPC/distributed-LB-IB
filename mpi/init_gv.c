@@ -174,177 +174,177 @@ void init_gv_constant(GV gv){
   // gv->c[18][2] = 0; //direction 18
 }
 
-void compute_dest_mac(GV gv, int dir, int my_rank_x, int my_rank_y, int my_rank_z, int Px, int Py, int Pz){
-  int dest_x, dest_y, dest_z;
-  switch(dir){
-    case 1: {
-      //dir 1
-      dest_x = (my_rank_x+1) % Px;
-      dest_y = my_rank_y;
-      dest_z = my_rank_z;
-      printf("Task%d: dest_x=%d, dest_y=%d, dest_z=%d\n",
-        gv->taskid, dest_x, dest_y, dest_z);
-      fflush(stdout);
-      // if(dest_x >= Px)
-      //   dest_x = 0;
-      break;
-    }
+// void compute_dest_mac(GV gv, int dir, int my_rank_x, int my_rank_y, int my_rank_z, int Px, int Py, int Pz){
+//   int dest_x, dest_y, dest_z;
+//   switch(dir){
+//     case 1: {
+//       //dir 1
+//       dest_x = (my_rank_x+1) % Px;
+//       dest_y = my_rank_y;
+//       dest_z = my_rank_z;
+//       printf("Task%d: dest_x=%d, dest_y=%d, dest_z=%d\n",
+//         gv->taskid, dest_x, dest_y, dest_z);
+//       fflush(stdout);
+//       // if(dest_x >= Px)
+//       //   dest_x = 0;
+//       break;
+//     }
 
-    case 2: {//dir 2
-      dest_x = (my_rank_x-1) % Px;
-      dest_y = my_rank_y;
-      dest_z = my_rank_z;
-      if(dest_x < 0)
-        dest_x += Px;
-      break;
-    }
+//     case 2: {//dir 2
+//       dest_x = (my_rank_x-1) % Px;
+//       dest_y = my_rank_y;
+//       dest_z = my_rank_z;
+//       if(dest_x < 0)
+//         dest_x += Px;
+//       break;
+//     }
 
-    case 3: {
-      dest_x = my_rank_x;
-      dest_y = my_rank_y;
-      dest_z = (my_rank_z+1) % Pz;
-      // if(dest_z >= Pz)
-      //   dest_z = 0;
-      break;
-    }
+//     case 3: {
+//       dest_x = my_rank_x;
+//       dest_y = my_rank_y;
+//       dest_z = (my_rank_z+1) % Pz;
+//       // if(dest_z >= Pz)
+//       //   dest_z = 0;
+//       break;
+//     }
 
-    case 4: {
-      dest_x = my_rank_x;
-      dest_y = my_rank_y;
-      dest_z = (my_rank_z-1) % Pz;
-      if(dest_z < 0)
-        dest_z += Pz;
-      break;
-    }
+//     case 4: {
+//       dest_x = my_rank_x;
+//       dest_y = my_rank_y;
+//       dest_z = (my_rank_z-1) % Pz;
+//       if(dest_z < 0)
+//         dest_z += Pz;
+//       break;
+//     }
 
-    case 5: { //dir 5
-      dest_x = my_rank_x;
-      dest_y = (my_rank_y-1) % Py;
-      dest_z = my_rank_z;
-      if(dest_y < 0)
-        dest_y += Py;
-      break;
-    }
+//     case 5: { //dir 5
+//       dest_x = my_rank_x;
+//       dest_y = (my_rank_y-1) % Py;
+//       dest_z = my_rank_z;
+//       if(dest_y < 0)
+//         dest_y += Py;
+//       break;
+//     }
 
-    case 6: { //dir 6
-      dest_x = my_rank_x;
-      dest_y = (my_rank_y+1) % Py;
-      dest_z = my_rank_z;
-      break;
-    }
+//     case 6: { //dir 6
+//       dest_x = my_rank_x;
+//       dest_y = (my_rank_y+1) % Py;
+//       dest_z = my_rank_z;
+//       break;
+//     }
 
-    case 7: {
-      dest_x = (my_rank_x+1) % Px;
-      dest_y = my_rank_y;
-      dest_z = (my_rank_z+1) % Pz;
+//     case 7: {
+//       dest_x = (my_rank_x+1) % Px;
+//       dest_y = my_rank_y;
+//       dest_z = (my_rank_z+1) % Pz;
 
-      break;
-    }
+//       break;
+//     }
 
-    case 8: {
-      dest_x = (my_rank_x-1) % Px;
-      dest_y = my_rank_y;
-      dest_z = (my_rank_z-1) % Pz;
-      if(dest_x < 0)
-        dest_x += Px;
-      if(dest_z < 0)
-        dest_z += Pz;
-      break;
-    }
+//     case 8: {
+//       dest_x = (my_rank_x-1) % Px;
+//       dest_y = my_rank_y;
+//       dest_z = (my_rank_z-1) % Pz;
+//       if(dest_x < 0)
+//         dest_x += Px;
+//       if(dest_z < 0)
+//         dest_z += Pz;
+//       break;
+//     }
 
-    case 9: {
-      dest_x = (my_rank_x+1) % Px;
-      dest_y = my_rank_y;
-      dest_z = (my_rank_z-1) % Pz;
-      if(dest_z < 0)
-        dest_z += Pz;
-      break;
-    }
+//     case 9: {
+//       dest_x = (my_rank_x+1) % Px;
+//       dest_y = my_rank_y;
+//       dest_z = (my_rank_z-1) % Pz;
+//       if(dest_z < 0)
+//         dest_z += Pz;
+//       break;
+//     }
 
-    case 10: {
-      dest_x = (my_rank_x-1) % Px;
-      dest_y = my_rank_y;
-      dest_z = (my_rank_z+1) % Pz;
-      if(dest_x < 0)
-        dest_x += Px;
-      break;
-    }
+//     case 10: {
+//       dest_x = (my_rank_x-1) % Px;
+//       dest_y = my_rank_y;
+//       dest_z = (my_rank_z+1) % Pz;
+//       if(dest_x < 0)
+//         dest_x += Px;
+//       break;
+//     }
 
-    case 11: {
-      dest_x = my_rank_x;
-      dest_y = (my_rank_y-1) % Py;
-      dest_z = (my_rank_z+1) % Pz;
-      if(dest_y < 0)
-        dest_y += Py;
-      break;
-    }
+//     case 11: {
+//       dest_x = my_rank_x;
+//       dest_y = (my_rank_y-1) % Py;
+//       dest_z = (my_rank_z+1) % Pz;
+//       if(dest_y < 0)
+//         dest_y += Py;
+//       break;
+//     }
 
-    case 12: {
-      dest_x = my_rank_x;
-      dest_y = (my_rank_y+1) % Py;
-      dest_z = (my_rank_z-1) % Pz;
-      if(dest_z < 0)
-        dest_z += Pz;
-      break;
-    }
+//     case 12: {
+//       dest_x = my_rank_x;
+//       dest_y = (my_rank_y+1) % Py;
+//       dest_z = (my_rank_z-1) % Pz;
+//       if(dest_z < 0)
+//         dest_z += Pz;
+//       break;
+//     }
 
-    case 13: {
-      dest_x = my_rank_x;
-      dest_y = (my_rank_y+1) % Py;
-      dest_z = (my_rank_z+1) % Pz;
-      break;
-    }
+//     case 13: {
+//       dest_x = my_rank_x;
+//       dest_y = (my_rank_y+1) % Py;
+//       dest_z = (my_rank_z+1) % Pz;
+//       break;
+//     }
 
-    case 14: {
-      dest_x = my_rank_x;
-      dest_y = (my_rank_y-1) % Py;
-      dest_z = (my_rank_z-1) % Pz;
-      if(dest_y < 0)
-        dest_y += Py;
-      if(dest_z < 0)
-        dest_z += Pz;
-      break;
-    }
+//     case 14: {
+//       dest_x = my_rank_x;
+//       dest_y = (my_rank_y-1) % Py;
+//       dest_z = (my_rank_z-1) % Pz;
+//       if(dest_y < 0)
+//         dest_y += Py;
+//       if(dest_z < 0)
+//         dest_z += Pz;
+//       break;
+//     }
 
-    case 15: {
-      dest_x = (my_rank_x+1) % Px;
-      dest_y = (my_rank_y-1) % Py;
-      dest_z = my_rank_z;
-      if(dest_y < 0)
-        dest_y += Py;
-      break;
-    }
+//     case 15: {
+//       dest_x = (my_rank_x+1) % Px;
+//       dest_y = (my_rank_y-1) % Py;
+//       dest_z = my_rank_z;
+//       if(dest_y < 0)
+//         dest_y += Py;
+//       break;
+//     }
 
-    case 16: {
-      dest_x = (my_rank_x-1) % Px;
-      dest_y = (my_rank_y+1) % Py;
-      dest_z = my_rank_z;
-      if(dest_x < 0)
-        dest_x += Px;
-      break;
-    }
+//     case 16: {
+//       dest_x = (my_rank_x-1) % Px;
+//       dest_y = (my_rank_y+1) % Py;
+//       dest_z = my_rank_z;
+//       if(dest_x < 0)
+//         dest_x += Px;
+//       break;
+//     }
 
-    case 17: {
-      dest_x = (my_rank_x+1) % Px;
-      dest_y = (my_rank_y+1) % Py;
-      dest_z = my_rank_z;
-      break;
-    }
+//     case 17: {
+//       dest_x = (my_rank_x+1) % Px;
+//       dest_y = (my_rank_y+1) % Py;
+//       dest_z = my_rank_z;
+//       break;
+//     }
 
-    case 18: {
-      dest_x = (my_rank_x-1) % Px;
-      dest_y = (my_rank_y-1) % Py;
-      dest_z = my_rank_z;
-      if(dest_x < 0)
-        dest_x += Px;
-      if(dest_y < 0)
-        dest_y += Py;
-      break;
-    }
-  }
+//     case 18: {
+//       dest_x = (my_rank_x-1) % Px;
+//       dest_y = (my_rank_y-1) % Py;
+//       dest_z = my_rank_z;
+//       if(dest_x < 0)
+//         dest_x += Px;
+//       if(dest_y < 0)
+//         dest_y += Py;
+//       break;
+//     }
+//   }
 
-  gv->dest_task[dir] = dest_x * Py * Pz + dest_y * Pz + dest_z;
-}
+//   gv->dest_task[dir] = dest_x * Py * Pz + dest_y * Pz + dest_z;
+// }
 
 void init_stream_msg(GV gv, int dir, long size){
   int cube_size =  gv->cube_size;
@@ -447,12 +447,14 @@ void init_gv(GV gv) {
   // my_rank_z = gv->my_rank_z;
 
   // determine the max msg size received by a fluid task
+  int ifd_size = 64; //4*4*4
   gv->ifd_max_bufsize = 0;
   for(i = 0; i < num_fiber_tasks; i++){
-    gv->ifd_max_bufsize += (sizeof(long) * 3 + sizeof(double) * 3) *
+    gv->ifd_max_bufsize += (sizeof(long) * 3 + sizeof(double) * 3) * ifd_size *
                         (gv->fiber_shape->sheets[i].num_rows) * (gv->fiber_shape->sheets[i].num_cols);
   }
 
+  printf("Task%d: Enter init_gv\n", my_rank);
   // Fluid task
   if (gv->taskid < gv->num_fluid_tasks){
 
@@ -474,9 +476,9 @@ void init_gv(GV gv) {
 
     int NextRankCoord[3];
     for (int iPop = 0; iPop < 19; ++iPop) {
-      NextRankCoord[0] = (gv->rankCoord[0] + c[iPop][0]) ? : 0;
-      NextRankCoord[1] = (gv->rankCoord[1] + c[iPop][1]) ? : 0;
-      NextRankCoord[2] = (gv->rankCoord[2] + c[iPop][2]) ? : 0;
+      NextRankCoord[0] = (gv->rankCoord[0] + c[iPop][0]);
+      NextRankCoord[1] = (gv->rankCoord[1] + c[iPop][1]);
+      NextRankCoord[2] = (gv->rankCoord[2] + c[iPop][2]);
 
       int toProc;
       MPI_Cart_rank(gv->cartcomm, NextRankCoord, &toProc);
@@ -662,19 +664,24 @@ void init_gv(GV gv) {
 
     /*MPI changes*/
     gv->ifd_bufpool = (char **) malloc(sizeof(char*) * num_fluid_tasks);
-    gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
-    gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
+    gv->ifd_bufpool_msg_size = (long *) malloc(sizeof(long) * num_fluid_tasks);
+    gv->ifd_last_pos = (long*) malloc(sizeof(long) * num_fluid_tasks);
     gv->lock_ifd_fluid_task_msg = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * num_fluid_tasks);
     gv->num_influenced_macs = 0;
     gv->influenced_macs = (int*) malloc(sizeof(int) * num_fluid_tasks);
 
-    int max_msg_size = (sizeof(long) * 3 + sizeof(double) * 3) *
+    long max_msg_size = (sizeof(long) * 3 + sizeof(double) * 3) * ifd_size *
                         (gv->fiber_shape->sheets[gv->rank[1]].num_rows) * (gv->fiber_shape->sheets[gv->rank[1]].num_cols);
 
-    for (i = 0; i<num_fluid_tasks; i++){
+    printf("Fiber%d of %d: Init num_rows=%d, num_cols=%d, max_msg_size=%ld\n", 
+      gv->rank[1], gv->size[1], 
+      gv->fiber_shape->sheets[gv->rank[1]].num_rows, gv->fiber_shape->sheets[gv->rank[1]].num_cols, 
+      max_msg_size);                    
+
+    for (i = 0; i < num_fluid_tasks; i++){
 
       // Initialize ifd_bufpool
-      gv->ifd_bufpool[i] = (char*)malloc(sizeof(char)* max_msg_size);
+      gv->ifd_bufpool[i] = (char*) malloc(sizeof(char) * max_msg_size);
       gv->ifd_bufpool_msg_size[i] = 0;
 
       gv->ifd_last_pos[i] = 0;     // Initialize gv->ifd_last_pos

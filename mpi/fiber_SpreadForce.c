@@ -117,29 +117,21 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           elastic_force_y = fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
           elastic_force_z = fiberarray[i].nodes[j].elastic_force_z * tmp_dist;
 
-          //find fluid_owner_task for this fluid task
-          int ifd2FluidProc = cube2task(inneri, innerj, innerk, gv);
-          // printf("ifd2FluidProc=%d\n", ifd2FluidProc);
-          // fflush(stdout);
+          //find ifd Fluid toProc
+          int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
 
           pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd2FluidProc]);
+
+          // printf("Tid%d: Fluid(%d, %d, %d) ifd_last_pos[%d]=%ld\n", 
+          //   tid, inneri, innerj, innerk, ifd2FluidProc, gv->ifd_last_pos[ifd2FluidProc]);
+          // fflush(stdout);
 
           *((long*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                   = inneri;
           *((long*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)))    = innerj;
           *((long*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)* 2)) = innerk;
-          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)* 3))                    = elastic_force_x;
-          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)* 3 + sizeof(double)))   = elastic_force_y;
-          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)* 3 + sizeof(double)* 2))= elastic_force_z;
-
-          // *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                   = BI;
-          // *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)))     = BJ;
-          // *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 2))  = BK;
-          // *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 3))  = li;
-          // *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 4))  = lj;
-          // *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 5))  = lk;
-          // *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 6))    = elastic_force_x;
-          // *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 6 + sizeof(double))) = elastic_force_y;
-          // *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 6 + sizeof(double)* 2)) = elastic_force_z;
+          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long) * 3))                      = elastic_force_x;
+          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long) * 3 + sizeof(double)))     = elastic_force_y;
+          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long) * 3 + sizeof(double) * 2)) = elastic_force_z;
 
           gv->ifd_last_pos[ifd2FluidProc] += sizeof(long) * 3 + sizeof(double) * 3;
 
@@ -158,18 +150,22 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   fflush(stdout);
 
   //fiber task thread 0 send the message out
-  // 2018-10-30
+  // 2018-11-06
   if (tid == 0){
     Timer::time_start();
     for (int toProc = 0; toProc < num_fluid_tasks; toProc++){
       if (gv->ifd_last_pos[toProc] > 0){
-        assert(gv->ifd_last_pos[toProc] < gv->ifd_max_bufsize);
+
         // gv->bufferpool_msg_size[toProc] = gv->ifd_last_pos[toProc];
+
         gv->influenced_macs[gv->num_influenced_macs] = toProc;
         printf("Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d,\n",
           my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize,
           gv->num_influenced_macs, toProc);
         fflush(stdout);
+
+        assert(gv->ifd_last_pos[toProc] <= gv->ifd_max_bufsize);
+
         MPI_Send(gv->ifd_bufpool[toProc], gv->ifd_last_pos[toProc], MPI_CHAR, toProc, 0, MPI_COMM_WORLD);
 
         gv->num_influenced_macs++;
@@ -192,7 +188,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
     printf("Fiber task%d: send_msg_time=%f,\n", my_rank, time_elapsed);
     fflush(stdout);
   }
-  // 2018-10-30
+  // 2018-10-06
 
   //reset
   gv->num_influenced_macs = 0;

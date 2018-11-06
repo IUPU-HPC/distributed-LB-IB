@@ -102,8 +102,8 @@ void* do_thread(void* v){
     }
 
     //check whether barrier long is becuase of this
-    // if(tid==0)
-      // MPI_Barrier(MPI_COMM_WORLD);
+    if(tid==0)
+      MPI_Barrier(MPI_COMM_WORLD);
 
     t1 = get_cur_time();
     t2 += t1 - t0;
@@ -150,45 +150,46 @@ void* do_thread(void* v){
     }
 #endif //DEBUG_PRINT
 
-// //2018-10-26
-//     if(my_rank < num_fluid_tasks){ //:TODO why this if doesnot work? it hangs all the process
 
-// #ifdef DEBUG_PRINT
-//       if(tid==0){
-//         printf("Fluid mac%d: Start compute DF1\n", my_rank);
-//         fflush(stdout);
-//       }
-// #endif //DEBUG_PRINT
-//       compute_eqlbrmdistrfuncDF1(lv);
-//       pthread_barrier_wait(&(gv->barr));
-//       // if(tid==0)
-//       //   MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//       if(tid==0){
-//         printf("Fluid mac%d: After compute DF1\n", my_rank);
-//         fflush(stdout);
-//       }
-// #endif //DEBUG_PRINT
+    if(my_rank < num_fluid_tasks){ //:TODO why this if doesnot work? it hangs all the process
+
+#ifdef DEBUG_PRINT
+      if(tid==0){
+        printf("Fluid Task%d: Start compute DF1\n", my_rank);
+        fflush(stdout);
+      }
+#endif //DEBUG_PRINT
+      compute_eqlbrmdistrfuncDF1(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if(tid==0)
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      if(tid==0){
+        printf("Fluid Task%d: After compute DF1\n", my_rank);
+        fflush(stdout);
+      }
+#endif //DEBUG_PRINT
 
 
-// #ifdef DEBUG_PRINT
-//       if(tid==0){
-//         printf("Fluid mac%d: Start streaming\n", my_rank);
-//         fflush(stdout);
-//       }
-// #endif //DEBUG_PRINT
-//       stream_distrfunc(gv, lv);
-//       // pthread_barrier_wait(&(gv->barr));
-//       // if(tid==0)
-//       //   MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//       if(tid==0){
-//         printf("Fluid mac%d: After streaming\n", my_rank);
-//         fflush(stdout);
-//       }
+#ifdef DEBUG_PRINT
+      if(tid==0){
+        printf("Fluid Task%d: Start streaming\n", my_rank);
+        fflush(stdout);
+      }
+#endif //DEBUG_PRINT
+      stream_distrfunc(gv, lv);
+      // pthread_barrier_wait(&(gv->barr));
+      // if(tid==0)
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      if(tid==0){
+        printf("Fluid Task%d: After streaming\n", my_rank);
+        fflush(stdout);
+      }
 
-// #endif //DEBUG_PRINT
+#endif //DEBUG_PRINT
 
+// //2018-11-06
 // //       //Comment Here
 // //       bounceback_rigidwalls(lv);
 // //       pthread_barrier_wait(&(gv->barr));
@@ -203,7 +204,10 @@ void* do_thread(void* v){
 // // #ifdef DEBUG_PRINT
 // //       printf("After compute rho and u \n");
 // // #endif //DEBUG_PRINT
-//     }
+// //2018-11-06      
+    }
+
+// //2018-11-06    
 //     pthread_barrier_wait(&(gv->barr));
 //     if(tid==0)
 //         MPI_Barrier(MPI_COMM_WORLD);
@@ -251,7 +255,7 @@ void* do_thread(void* v){
 // //     printf("After PeriodicBC\n");
 // // #endif //DEBUG_PRINT
 
-// //2018-10-26
+// //2018-11-06
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;

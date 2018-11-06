@@ -321,24 +321,25 @@ int main(int argc, char* argv[]) {
     dim_size[0] = Px;
     dim_size[1] = Py;
     dim_size[2] = Pz;
-    periods[0] = 0; //periodic = false
-    periods[1] = 0;
-    periods[2] = 0;
+    periods[0] = 1; //periodic = false
+    periods[1] = 1;
+    periods[2] = 1;
     reorder = 1;
 
-    ierr = MPI_Dims_create (nprocs, ndims, dim_size);
+    // ierr = MPI_Dims_create (nprocs, ndims, dim_size);
     ierr = MPI_Cart_create(mygroup, ndims, dim_size,
                periods, reorder, &gv->cartcomm);
-    if(ierr != 0) printf("ERROR[%d] creating CART\n",ierr);
+    if(ierr != 0) printf("ERROR[%d] creating CART\n", ierr);
 
     /* find my coordinates in the cartesian communicator group */
     ierr = MPI_Cart_coords(gv->cartcomm, gv->taskid, ndims, gv->rankCoord);
+    if(ierr != 0) printf("ERROR[%d] MPI_Cart_rank\n", ierr);
 
     /* use my coordinates to find my rank in cartesian group*/
     int my_cart_rank;
-    MPI_Cart_rank(gv->cartcomm, gv->rankCoord, &my_cart_rank);
-
-    printf("PW[%d]: my_cart_rank PCM[%d], my coords(x,y,z) = (%d, %d, %d)\n",
+    ierr = MPI_Cart_rank(gv->cartcomm, gv->rankCoord, &my_cart_rank);
+    if(ierr != 0) printf("ERROR[%d] MPI_Cart_rank\n", ierr);
+    printf("Fluid PW[%d]: my_cart_rank PCM[%d], my coords(x,y,z) = (%d, %d, %d)\n",
       gv->rank[0], my_cart_rank, gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2]);
 
     // if (check_1d(Px, Py, Pz, &direction)){
@@ -384,6 +385,7 @@ int main(int argc, char* argv[]) {
     gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);  
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
   init_gv(gv);
   MPI_Barrier(MPI_COMM_WORLD);
   printf("Task%d Pass init gv!\n", taskid);
@@ -485,6 +487,9 @@ int main(int argc, char* argv[]) {
 
   printf("Task%d: TOTAL TIME TAKEN IN Seconds: %f\n", gv->taskid, time_elapsed);
   fflush(stdout);
+
+  if(gv->taskid < gv->num_fluid_tasks) MPI_Comm_free(&gv->cartcomm);
+  MPI_Comm_free(&mygroup);
 
   MPI_Finalize();
 

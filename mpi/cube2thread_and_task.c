@@ -83,16 +83,16 @@ int cube2task(long BI, long BJ, long BK, GV gv){
 	return dst_task;
 }
 
-int global2task(long x, long y, long z, GV gv){
+int global2task(long X, long Y, long Z, GV gv){
 	long num_cubes_x, num_cubes_y, num_cubes_z;
 	long cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
 	int  num_fluid_task_x, num_fluid_task_y, num_fluid_task_z;
 	long BI, BJ, BK;
 	int cube_size = gv->cube_size;
 
-	BI = x / cube_size;
-    BJ = y / cube_size;
-    BK = z / cube_size;
+	BI = X / cube_size;
+    BJ = Y / cube_size;
+    BK = Z / cube_size;
 
 	num_cubes_x = gv->fluid_grid->num_cubes_x;
 	num_cubes_y = gv->fluid_grid->num_cubes_y;

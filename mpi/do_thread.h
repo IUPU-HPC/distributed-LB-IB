@@ -169,28 +169,6 @@ typedef struct gv_t {
   double tau, nu_l, u_l, rho_l, L_l, M_l, g_l, Ks_l, Kb_l, Kst_l;
   double Re, cs_l, Ma, Kn, Kshat, Ksthat, Kbhat, Mhat, Fr;
   long dt, time, time1, timesteps, TIME_WR, TIME_WR1, N_WR;
-  const int c[19][3] = { //{x, y, z}
-            { 0, 0, 0},
-
-            { 1, 0, 0}, {-1, 0, 0}, { 0, 0, 1}, //1, 2, 3
-            { 0, 0,-1}, { 0,-1, 0}, { 0, 1, 0}, //4, 5, 6
-            { 1, 0, 1}, {-1, 0,-1}, { 1, 0,-1}, //7, 8, 9
-
-            {-1, 0, 1}, { 0,-1, 1}, { 0, 1,-1}, //10, 11, 12
-            { 0, 1, 1}, { 0,-1,-1}, { 1,-1, 0}, //13, 14, 15
-            {-1, 1, 0}, { 1, 1, 0}, {-1,-1, 0}  //16, 17, 18
-        }; // stores 19 different velocity directions for ksi
-  const double t[19] = {
-            1./3.,
-
-            1./18., 1./18., 1./18., //1~6
-            1./18., 1./18., 1./18.,
-
-            1./36., 1./36., 1./36., //7~18
-            1./36., 1./36., 1./36.,
-            1./36., 1./36., 1./36.,
-            1./36., 1./36., 1./36.
-        };
   long ib, ie, jb, je, kb, ke; // For Fluid Grid's actual computation part
 
 /*PTHREAD_Change*/
@@ -218,13 +196,13 @@ typedef struct gv_t {
   MPI_Comm cartcomm;
 
   // Fiber <--> Fluid influential domain
-  char** ifd_bufpool;          //fiber task send bufferpool
-  int* ifd_bufpool_msg_size;   //each buffer size
-  int* ifd_last_pos;           //Track last position of each fluid process's buffer
+  char** ifd_bufpool;          //fiber task pack message in bufferpool, and then send message to fluid tasks 
+  long* ifd_bufpool_msg_size;  //each message size
+  long* ifd_last_pos;          //Track last position of each fluid process's buffer
   char* ifd_recv_buf;
   int ifd_recv_count;          //Track number of char in received message
   pthread_mutex_t* lock_ifd_fluid_task_msg;
-  int* influenced_macs;        //machines rank of influential domain
+  int* influenced_macs;        //Fluid taskid of influential domain
   int num_influenced_macs;
   int ifd_max_bufsize;
 
@@ -307,6 +285,8 @@ void fluid_get_SpreadForce(LV); // eqn 19
 /* Methods for LBM computations */
 /*No Communication
 Finction is used to compute dfeq but the purpose is to initiallize DF1, because in 1st iteration DF1 is empty*/
+double computeEquilibrium(int iPop, double rho,
+                          double ux, double uy, double uz, double uSqr);
 void init_eqlbrmdistrfuncDF0(GV);//eqn13 for df0 or dfeq, df0 does not exist
 
 /*No Communication*/

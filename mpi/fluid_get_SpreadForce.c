@@ -21,6 +21,7 @@
  */
 
 #include "do_thread.h"
+#include <assert.h>
 
 /* Step1: Influential domain for force-spreading and velocity interpolation. */
 /* Step2: Do actual force spreading. */
@@ -34,17 +35,13 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   GV gv = lv->gv;
   tid = lv->tid;
 
-  int i = 0, j = 0;//inner i corresponding to fluid index
-
   int total_fibers_row, total_fibers_clmn;
   Fiber* fiberarray;
-
-  double tmp_dist;
 
   Fluidnode* nodes;
   long BI, BJ, BK;
   long li, lj, lk;
-  long  total_sub_grids, dim_x, dim_y, dim_z;
+  long total_sub_grids, dim_x, dim_y, dim_z;
   long cube_idx, node_idx;
   int  P, Q, R, total_threads;
 
@@ -77,18 +74,16 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   for (BI = 0; BI <num_cubes_x; BI++)
   for (BJ = 0; BJ <num_cubes_y; BJ++)
   for (BK = 0; BK <num_cubes_z; BK++){
-    if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
-      if (temp_mac_rank == my_rank){
-        cube_idx = BI*num_cubes_y*num_cubes_z + BJ*num_cubes_z + BK;
-        for (li = 0; li< cube_size; li++)
-        for (lj = 0; lj< cube_size; lj++)
-        for (lk = 0; lk< cube_size; lk++){
-          node_idx = li* cube_size * cube_size + lj * cube_size + lk;
-          gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_x = 0.0e0;
-          gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_y = 0.0e0;
-          gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_z = 0.0e0;
-        }
-      }//if task check ends
+    if (gv->taskid == cube2task(BI, BJ, BK, gv)){
+      cube_idx = BI*num_cubes_y*num_cubes_z + BJ*num_cubes_z + BK;
+      for (li = 0; li< cube_size; li++)
+      for (lj = 0; lj< cube_size; lj++)
+      for (lk = 0; lk< cube_size; lk++){
+        node_idx = li* cube_size * cube_size + lj * cube_size + lk;
+        gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_x = 0.0e0;
+        gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_y = 0.0e0;
+        gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_z = 0.0e0;
+      }
     }//if cube2thread ends
   }
 
@@ -101,8 +96,8 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 #endif //DEBUG_PRINT
     MPI_Recv(gv->ifd_recv_buf, gv->ifd_max_bufsize, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
-    // printf("Fluid task%d receive a message with ifd_recv_count=%d\n", my_rank, gv->ifd_recv_count);
-    // fflush(stdout);
+    printf("Fluid task%d tid%d receive a message with ifd_recv_count=%d\n", my_rank, tid, gv->ifd_recv_count);
+    fflush(stdout);
   }
 
   // All other thread wait until thread 0 finish receiving msg
@@ -144,21 +139,31 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 
       position += sizeof(long)* 3 + sizeof(double)* 3;
 
-      BI = X / num_cubes_x;
-      BJ = Y / num_cubes_y;
-      BK = Z / num_cubes_z;
+      BI = X / cube_size;
+      BJ = Y / cube_size;
+      BK = Z / cube_size;
 
-      li = X % num_cubes_x;
-      lj = Y % num_cubes_y;
-      lk = Z % num_cubes_z;
+      li = X % cube_size;
+      lj = Y % cube_size;
+      lk = Z % cube_size;
+
+      // printf("(X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
+      //   X, Y, Z, BI, BJ, BK, li, lj, lk);
+      // fflush(stdout);
 
       /*Spreading force*/
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       node_idx = li * cube_size * cube_size + lj * cube_size + lk;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
-      int fluid_owner_mac;
-      owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid task
-      // Need check my_rank == fluid_owner_mac?
+      int toProc;
+      owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//owner_tid is thread id in the fluid task
+
+      // printf("(my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
+      //   my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk);
+      // fflush(stdout);
+
+      assert(my_rank == toProc);
+
       if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 task will recv wrong cube
         // Don't need lock here
         // pthread_mutex_lock(&(gv->lock_Fluid[owner_tid]));
@@ -174,6 +179,6 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 
 
 #ifdef DEBUG_PRINT
-  // printf("**** Fluid task%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
+  printf("**** Fluid task%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
 #endif //DEBUG_PRINT
 }

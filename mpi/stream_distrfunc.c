@@ -21,6 +21,7 @@
  */
 
 #include "do_thread.h"
+#include <assert.h>
 
 extern int c[19][3];
 extern double t[19];
@@ -56,13 +57,13 @@ void insert_msg(GV gv, long nextX, long nextY, long nextZ, long dir, double df1_
 
   pthread_mutex_lock(&gv->lock_stream_msg[dir]);
 
-  *((long*)(gv->stream_msg[dir] + gv->stream_last_pos[dir]))                    = nextX;
-  *((long*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(long)))     = nextY;
+  *((long*)(gv->stream_msg[dir] + gv->stream_last_pos[dir]))                     = nextX;
+  *((long*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(long)))      = nextY;
   *((long*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(long) * 2))  = nextZ;
   *((long*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(long) * 3))  = dir;
   *((double*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(long) * 4))  = df1_tosend;
 
-  gv->stream_last_pos[dir] += sizeof(long)* 4 + sizeof(double);
+  gv->stream_last_pos[dir] += sizeof(long) * 4 + sizeof(double);
   printf("Fluid_Proc%d: gv->stream_last_pos[%ld]=%d\n", gv->taskid, dir, gv->stream_last_pos[dir]);
   fflush(stdout);
 
@@ -260,23 +261,24 @@ void  stream_distrfunc(GV gv, LV lv){//df2
 
           int toProc = global2task(nextX, nextY, nextZ, gv);
 
-          nextBI = nextX / num_cubes_x;
-          nextBJ = nextY / num_cubes_y;
-          nextBK = nextZ / num_cubes_z;
+          nextBI = nextX / cube_size;
+          nextBJ = nextY / cube_size;
+          nextBK = nextZ / cube_size;
 
-          nextli = nextX % num_cubes_x;
-          nextlj = nextY % num_cubes_y;
-          nextlk = nextZ % num_cubes_z;
+          nextli = nextX % cube_size;
+          nextlj = nextY % cube_size;
+          nextlk = nextZ % cube_size;
 
           cube_df2_idx = nextBI * num_cubes_y * num_cubes_z + nextBJ * num_cubes_z + nextBK;
           nodes_df2 = gv->fluid_grid->sub_fluid_grid[cube_df2_idx].nodes;
           node_df2_idx = nextli * cube_size * cube_size + nextlj * cube_size + nextlk;
 
           if(my_rank == toProc){
-            nodes_df2[node_df2_idx].df2[1] = nodes_df1[node_df1_idx].df1[1];
+            nodes_df2[node_df2_idx].df2[iPop] = nodes_df1[node_df1_idx].df1[iPop];
           }
           else{
             int dir = findDir(gv, toProc);
+            assert(dir > 0);
             insert_msg(gv, nextX, nextY, nextZ, dir, df1_tosend);
           }
 
@@ -1463,8 +1465,9 @@ void  stream_distrfunc(GV gv, LV lv){//df2
   if (tid == 0){
 
     for(int iPop =1; iPop < 19; iPop++){
-      if(gv->streamdir[iPop] != -1)
+      if(gv->streamdir[iPop] != -1){
         streaming_on_direction(gv, lv, iPop, gv->streamdir[iPop]);
+      }
     }
 
     // //add condition 1d,2d,3d
