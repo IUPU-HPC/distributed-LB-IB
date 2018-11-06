@@ -209,29 +209,32 @@ typedef struct gv_t {
 /*MPI Changes*/
   //task
   int taskid; //my_rank is the rank assigned by COMM_WORLS to diff machines..to be stored in GV.
+  int rank[3], size[3];
   int total_tasks;// Total number of tasks
   int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z; //number of fluid task along x, y, z
   int num_fluid_tasks;
-  int my_rank_x, my_rank_y, my_rank_z;
+  int rankCoord[3]; //x, y, z
   int dest_task[19];
+  MPI_Comm cartcomm;
 
   // Fiber <--> Fluid influential domain
   char** ifd_bufpool;          //fiber task send bufferpool
   int* ifd_bufpool_msg_size;   //each buffer size
-  int* ifd_last_pos;              //Track last position of each fluid process's buffer
+  int* ifd_last_pos;           //Track last position of each fluid process's buffer
   char* ifd_recv_buf;
-  int ifd_recv_count;             //Track number of char in received message
+  int ifd_recv_count;          //Track number of char in received message
   pthread_mutex_t* lock_ifd_fluid_task_msg;
-  int* influenced_macs;         //machines rank of influential domain
+  int* influenced_macs;        //machines rank of influential domain
   int num_influenced_macs;
   int ifd_max_bufsize;
 
   //streaming
-  char** stream_msg;
-  pthread_mutex_t* lock_stream_msg;
-  int* stream_last_pos;
+  char* stream_msg[19];
+  pthread_mutex_t lock_stream_msg[19];
+  int stream_last_pos[19];
   char* stream_recv_buf;
-  int stream_recv_max_bufsize;
+  long stream_recv_max_bufsize;
+  int streamdir[19];
 }* GV;
 
 
@@ -261,11 +264,14 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
 * Distribuion is Block based where every thread is working on a block
 * # of threads = P*Q*R--
 */
+
+/* Mapping function*/
 /*cube2thread not used in MPI version*/
 int cube2thread(int BI, int BJ, int BK, int num_cubes_x, int num_cubes_y, int num_cubes_z, int P, int Q, int R);
 /*For MPI*/
 int cube2task(long BI, long BJ, long BK, GV gv);
 int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task);
+int global2task(long x, long y, long z, GV gv);
 
 /*Fiber Distribution Function: Map a fiber row to each thread
   fiber_row -ith row*/

@@ -50,8 +50,9 @@ OBJECTS = main.o print_info.o gen_fluid_grid.o gen_fiber_sheet.o init_gv.o \
 	timer.o fiber2thread.o cube2thread.o cube2thread_and_task.o \
 	init_eqlbrmdistrfuncDF0.o init_df1.o init_df_inout.o do_thread.o \
 	compute_bendingforce.o compute_elasticforce.o compute_stretchingforce.o \
-	fiber_SpreadForce.o fluid_get_SpreadForce.o
-	# compute_eqlbrmdistrfuncDF1.o stream_distrfunc.o bounceback_rigidwalls.o compute_rho_and_u.o
+	fiber_SpreadForce.o fluid_get_SpreadForce.o \
+	stream_distrfunc.o
+	# compute_eqlbrmdistrfuncDF1.o bounceback_rigidwalls.o compute_rho_and_u.o
 	# moveFiberSheet.o copy_inout_to_df2.o replace_old_DF.o periodicBC.o
 TARGET  = distributed-lb-ib
 

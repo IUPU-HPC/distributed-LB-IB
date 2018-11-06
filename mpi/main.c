@@ -262,8 +262,21 @@ int main(int argc, char* argv[]) {
   ierr = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &gv->total_tasks);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->taskid);
+  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->rank[0]);
 
   gv->num_fluid_tasks = gv->total_tasks - gv->fiber_shape->num_sheets;
+
+  int color;
+  if(gv->taskid < gv->num_fluid_tasks)
+    //Fuild Group
+    color = 0;
+  else
+    //Fiber Group
+    color = 1;
+  MPI_Comm mygroup;
+  MPI_Comm_split(MPI_COMM_WORLD, color, gv->taskid, &mygroup);
+  MPI_Comm_rank(mygroup, &gv->rank[1]);
+  MPI_Comm_size(mygroup, &gv->size[1]);
 
   // print info
   if (gv->taskid == 0){
@@ -299,45 +312,74 @@ int main(int argc, char* argv[]) {
     Py = gv->num_fluid_task_y;
     Pz = gv->num_fluid_task_z;
 
-    if (check_1d(Px, Py, Pz, &direction)){
-      if (direction == X_transfer_1D){
-        gv->my_rank_z = 0;
-        gv->my_rank_y = 0;
-        gv->my_rank_x = taskid;
-      }
-      else if (direction == Z_transfer_1D){
-        gv->my_rank_z = taskid;
-        gv->my_rank_y = 0;
-        gv->my_rank_x = 0;
-      }
-      else{//Y_transfer_1D
-        gv->my_rank_z = taskid;
-        gv->my_rank_y = 0;
-        gv->my_rank_x = 0;
-      }
-    }
-    else if (check_2d(Px, Py, Pz, &direction)){
-      if (direction == X_transfer_2D){
-        gv->my_rank_z = 0;
-        gv->my_rank_y = taskid % Py;
-        gv->my_rank_x = taskid / Py;
-      }
-      else if (direction == Y_transfer_2D){
-        gv->my_rank_z = taskid % Pz;
-        gv->my_rank_y = taskid / Pz;
-        gv->my_rank_x = 0;
-      }
-      else{//direction==Z_transfer_2D
-        gv->my_rank_z = taskid % Pz;
-        gv->my_rank_y = 0;
-        gv->my_rank_x = taskid / Pz;
-      }
-    }
-    else{
-      gv->my_rank_z = taskid % Pz;
-      gv->my_rank_y = taskid / Pz;
-      gv->my_rank_x = taskid / (Py*Pz);
-    }
+    int ndims, reorder;
+    ndims = 3;
+    int dim_size[ndims], periods[ndims];
+
+    // old_comm = mygroup;
+    int nprocs = gv->num_fluid_tasks;
+    dim_size[0] = Px;
+    dim_size[1] = Py;
+    dim_size[2] = Pz;
+    periods[0] = 0; //periodic = false
+    periods[1] = 0;
+    periods[2] = 0;
+    reorder = 1;
+
+    ierr = MPI_Dims_create (nprocs, ndims, dim_size);
+    ierr = MPI_Cart_create(mygroup, ndims, dim_size,
+               periods, reorder, &gv->cartcomm);
+    if(ierr != 0) printf("ERROR[%d] creating CART\n",ierr);
+
+    /* find my coordinates in the cartesian communicator group */
+    ierr = MPI_Cart_coords(gv->cartcomm, gv->taskid, ndims, gv->rankCoord);
+
+    /* use my coordinates to find my rank in cartesian group*/
+    int my_cart_rank;
+    MPI_Cart_rank(gv->cartcomm, gv->rankCoord, &my_cart_rank);
+
+    printf("PW[%d]: my_cart_rank PCM[%d], my coords(x,y,z) = (%d, %d, %d)\n",
+      gv->rank[0], my_cart_rank, gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2]);
+
+    // if (check_1d(Px, Py, Pz, &direction)){
+    //   if (direction == X_transfer_1D){
+    //     gv->my_rank_z = 0;
+    //     gv->my_rank_y = 0;
+    //     gv->my_rank_x = taskid;
+    //   }
+    //   else if (direction == Z_transfer_1D){
+    //     gv->my_rank_z = taskid;
+    //     gv->my_rank_y = 0;
+    //     gv->my_rank_x = 0;
+    //   }
+    //   else{//Y_transfer_1D
+    //     gv->my_rank_z = taskid;
+    //     gv->my_rank_y = 0;
+    //     gv->my_rank_x = 0;
+    //   }
+    // }
+    // else if (check_2d(Px, Py, Pz, &direction)){
+    //   if (direction == X_transfer_2D){
+    //     gv->my_rank_z = 0;
+    //     gv->my_rank_y = taskid % Py;
+    //     gv->my_rank_x = taskid / Py;
+    //   }
+    //   else if (direction == Y_transfer_2D){
+    //     gv->my_rank_z = taskid % Pz;
+    //     gv->my_rank_y = taskid / Pz;
+    //     gv->my_rank_x = 0;
+    //   }
+    //   else{//direction==Z_transfer_2D
+    //     gv->my_rank_z = taskid % Pz;
+    //     gv->my_rank_y = 0;
+    //     gv->my_rank_x = taskid / Pz;
+    //   }
+    // }
+    // else{//3D
+    //   gv->my_rank_z = taskid % Pz;
+    //   gv->my_rank_y = taskid / Pz;
+    //   gv->my_rank_x = taskid / (Py*Pz);
+    // }
 
     gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);  
   }
@@ -427,11 +469,11 @@ int main(int argc, char* argv[]) {
   // Fiber print corner points
   if (gv->taskid >= gv->num_fluid_tasks){
     printf("after Running for timesteps: %ld\n", gv->timesteps);
-    printf("Printing for Corner Points(z,y) : 0,0 \n");
+    printf("Printing for Corner Points(z,y) : 0 , 0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
-    printf("Printing for Corner Points(z,y) : 51,0 \n");
+    printf("Printing for Corner Points(z,y) : 51, 0 \n");
     print_fiber_sub_grid(gv, 0, 51, 0, 51);
-    printf("Printing for Corner Points(z,y) : 0,51 \n");
+    printf("Printing for Corner Points(z,y) : 0 ,51 \n");
     print_fiber_sub_grid(gv, 51, 0, 51, 0);
     printf("Printing for Corner Points (z,y): 51,51 \n");
     print_fiber_sub_grid(gv, 51, 51, 51, 51);

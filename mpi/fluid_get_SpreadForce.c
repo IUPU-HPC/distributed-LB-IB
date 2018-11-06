@@ -1,12 +1,24 @@
-/*  -- Scalable LB-IB --
-    Indiana University Purdue University Indianapolis, USA
-
-    @file
-
-    @date
-
-    @author Yuankun Fu
-*/
+/*  -- Distributed-LB-IB --
+ * Copyright 2018 Indiana University Purdue University Indianapolis 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *   
+ * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
+ *
+ * @file:
+ *
+ * @date:
+ */
 
 #include "do_thread.h"
 
@@ -76,20 +88,20 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
           gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_y = 0.0e0;
           gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_z = 0.0e0;
         }
-      }//if machine check ends
+      }//if task check ends
     }//if cube2thread ends
   }
 
 
-  // fluid machine starts
-  // fluid machine thread 0 do receive
+  // fluid task starts
+  // fluid task thread 0 do receive
   if (tid == 0){
 #ifdef DEBUG_PRINT
-    printf("fluid_mac%d gv->ifd_max_bufsize=%d\n", my_rank, gv->ifd_max_bufsize);
+    printf("Fluid task%d gv->ifd_max_bufsize=%d\n", my_rank, gv->ifd_max_bufsize);
 #endif //DEBUG_PRINT
     MPI_Recv(gv->ifd_recv_buf, gv->ifd_max_bufsize, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
-    // printf("fluid_mac%d receive a message with ifd_recv_count=%d\n", my_rank, gv->ifd_recv_count);
+    // printf("Fluid task%d receive a message with ifd_recv_count=%d\n", my_rank, gv->ifd_recv_count);
     // fflush(stdout);
   }
 
@@ -100,37 +112,54 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   if (gv->ifd_recv_count == 1){
     // receive stop message
 // #ifdef DEBUG_PRINT
-//   printf("**** Fluid_mac%d_tid%d: fluid_get_SpreadForce recv STOP and Exit******\n", my_rank, tid);
+//   printf("**** Fluid task%d_tid%d: fluid_get_SpreadForce recv STOP and Exit******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
     return;
   }
   else{
 // #ifdef DEBUG_PRINT
-//   printf("**** Fluid_mac%d_tid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
+//   printf("**** Fluid task%d_tid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
     int position = 0;
-    while (position<gv->ifd_recv_count){
+    while (position < gv->ifd_recv_count){
 
-      BI = *((int*)(gv->ifd_recv_buf + position));
-      BJ = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
-      BK = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 2));
-      li = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 3));
-      lj = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 4));
-      lk = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 5));
-      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6));
-      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6 + sizeof(double)));
-      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6 + sizeof(double)* 2));
+      // BI = *((int*)(gv->ifd_recv_buf + position));
+      // BJ = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
+      // BK = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 2));
+      // li = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 3));
+      // lj = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 4));
+      // lk = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 5));
+      // elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6));
+      // elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6 + sizeof(double)));
+      // elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6 + sizeof(double)* 2));
 
-      position += sizeof(int)* 6 + sizeof(double)* 3;
+      // position += sizeof(int)* 6 + sizeof(double)* 3;
+
+      long X = *((long*)(gv->ifd_recv_buf + position));
+      long Y = *((long*)(gv->ifd_recv_buf + position + sizeof(long)));
+      long Z = *((long*)(gv->ifd_recv_buf + position + sizeof(long)* 2));
+      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(long)* 3));
+      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(long)* 3 + sizeof(double)));
+      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(long)* 3 + sizeof(double)* 2));
+
+      position += sizeof(long)* 3 + sizeof(double)* 3;
+
+      BI = X / num_cubes_x;
+      BJ = Y / num_cubes_y;
+      BK = Z / num_cubes_z;
+
+      li = X % num_cubes_x;
+      lj = Y % num_cubes_y;
+      lk = Z % num_cubes_z;
 
       /*Spreading force*/
-      cube_idx = BI *num_cubes_y *num_cubes_z + BJ *num_cubes_z + BK;
-      node_idx = (li)*cube_size*cube_size + (lj)*cube_size + lk;
+      cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+      node_idx = li * cube_size * cube_size + lj * cube_size + lk;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       int fluid_owner_mac;
-      owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid machine
+      owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &fluid_owner_mac);//owner_tid is thread id in the fluid task
       // Need check my_rank == fluid_owner_mac?
-      if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 machine will recv wrong cube
+      if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 task will recv wrong cube
         // Don't need lock here
         // pthread_mutex_lock(&(gv->lock_Fluid[owner_tid]));
         nodes[node_idx].elastic_force_x += elastic_force_x;
@@ -145,6 +174,6 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 
 
 #ifdef DEBUG_PRINT
-  // printf("**** Fluid_mac%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
+  // printf("**** Fluid task%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
 #endif //DEBUG_PRINT
 }
