@@ -118,18 +118,6 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
     int position = 0;
     while (position < gv->ifd_recv_count){
 
-      // BI = *((int*)(gv->ifd_recv_buf + position));
-      // BJ = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
-      // BK = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 2));
-      // li = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 3));
-      // lj = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 4));
-      // lk = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 5));
-      // elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6));
-      // elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6 + sizeof(double)));
-      // elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 6 + sizeof(double)* 2));
-
-      // position += sizeof(int)* 6 + sizeof(double)* 3;
-
       long X = *((long*)(gv->ifd_recv_buf + position));
       long Y = *((long*)(gv->ifd_recv_buf + position + sizeof(long)));
       long Z = *((long*)(gv->ifd_recv_buf + position + sizeof(long)* 2));

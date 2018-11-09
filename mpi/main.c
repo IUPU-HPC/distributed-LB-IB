@@ -338,49 +338,10 @@ int main(int argc, char* argv[]) {
     /* use my coordinates to find my rank in cartesian group*/
     int my_cart_rank;
     ierr = MPI_Cart_rank(gv->cartcomm, gv->rankCoord, &my_cart_rank);
+    MPI_Comm_size(gv->cartcomm, &gv->size[2]);
     if(ierr != 0) printf("ERROR[%d] MPI_Cart_rank\n", ierr);
     printf("Fluid PW[%d]: my_cart_rank PCM[%d], my coords(x,y,z) = (%d, %d, %d)\n",
       gv->rank[0], my_cart_rank, gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2]);
-
-    // if (check_1d(Px, Py, Pz, &direction)){
-    //   if (direction == X_transfer_1D){
-    //     gv->my_rank_z = 0;
-    //     gv->my_rank_y = 0;
-    //     gv->my_rank_x = taskid;
-    //   }
-    //   else if (direction == Z_transfer_1D){
-    //     gv->my_rank_z = taskid;
-    //     gv->my_rank_y = 0;
-    //     gv->my_rank_x = 0;
-    //   }
-    //   else{//Y_transfer_1D
-    //     gv->my_rank_z = taskid;
-    //     gv->my_rank_y = 0;
-    //     gv->my_rank_x = 0;
-    //   }
-    // }
-    // else if (check_2d(Px, Py, Pz, &direction)){
-    //   if (direction == X_transfer_2D){
-    //     gv->my_rank_z = 0;
-    //     gv->my_rank_y = taskid % Py;
-    //     gv->my_rank_x = taskid / Py;
-    //   }
-    //   else if (direction == Y_transfer_2D){
-    //     gv->my_rank_z = taskid % Pz;
-    //     gv->my_rank_y = taskid / Pz;
-    //     gv->my_rank_x = 0;
-    //   }
-    //   else{//direction==Z_transfer_2D
-    //     gv->my_rank_z = taskid % Pz;
-    //     gv->my_rank_y = 0;
-    //     gv->my_rank_x = taskid / Pz;
-    //   }
-    // }
-    // else{//3D
-    //   gv->my_rank_z = taskid % Pz;
-    //   gv->my_rank_y = taskid / Pz;
-    //   gv->my_rank_x = taskid / (Py*Pz);
-    // }
 
     gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);  
   }

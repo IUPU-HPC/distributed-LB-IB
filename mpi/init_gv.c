@@ -95,256 +95,7 @@ void init_gv_constant(GV gv){
   //Not used any more.gv->Kst_l = gv->Ksthat * gv->rho_l * gv->u_l * gv->u_l * gv->L_l;       // For stretching Force may be used fo tethered points only
   gv->Ks_l = gv->Kshat * gv->rho_l * gv->u_l * gv->u_l * gv->L_l;
   //printf("GV->Ks_l:::::%f\n",gv->Ks_l);
-
-  /* discrete particle velocity, 19 velocities: see Figure 1 */
-  // gv->c[0][0] = 0;
-  // gv->c[0][1] = 0;
-  // gv->c[0][2] = 0; //direction 0
-
-  // gv->c[1][0] = 1;
-  // gv->c[1][1] = 0;
-  // gv->c[1][2] = 0; //direction 1
-
-  // gv->c[2][0] = -1;
-  // gv->c[2][1] = 0;
-  // gv->c[2][2] = 0; //direction 2
-
-  // gv->c[3][0] = 0;
-  // gv->c[3][1] = 0;
-  // gv->c[3][2] = 1; //direction 3
-
-  // gv->c[4][0] = 0;
-  // gv->c[4][1] = 0;
-  // gv->c[4][2] = -1; //direction 4
-
-  // gv->c[5][0] = 0;
-  // gv->c[5][1] = -1;
-  // gv->c[5][2] = 0; //direction 5
-
-  // gv->c[6][0] = 0;
-  // gv->c[6][1] = 1;
-  // gv->c[6][2] = 0; //direction 6
-
-  // gv->c[7][0] = 1;
-  // gv->c[7][1] = 0;
-  // gv->c[7][2] = 1; //direction 7
-
-  // gv->c[8][0] = -1;
-  // gv->c[8][1] = 0;
-  // gv->c[8][2] = -1; //direction 8
-
-  // gv->c[9][0] = 1;
-  // gv->c[9][1] = 0;
-  // gv->c[9][2] = -1; //direction 9
-
-  // gv->c[10][0] = -1;
-  // gv->c[10][1] = 0;
-  // gv->c[10][2] = 1; //direction 10
-
-  // gv->c[11][0] = 0;
-  // gv->c[11][1] = -1;
-  // gv->c[11][2] = 1; //direction 11
-
-  // gv->c[12][0] = 0;
-  // gv->c[12][1] = 1;
-  // gv->c[12][2] = -1; //direction 12
-
-  // gv->c[13][0] = 0;
-  // gv->c[13][1] = 1;
-  // gv->c[13][2] = 1; //direction 13
-
-  // gv->c[14][0] = 0;
-  // gv->c[14][1] = -1;
-  // gv->c[14][2] = -1; //direction 14
-
-  // gv->c[15][0] = 1;
-  // gv->c[15][1] = -1;
-  // gv->c[15][2] = 0; //direction 15
-
-  // gv->c[16][0] = -1;
-  // gv->c[16][1] = 1;
-  // gv->c[16][2] = 0; //direction 16
-
-  // gv->c[17][0] = 1;
-  // gv->c[17][1] = 1;
-  // gv->c[17][2] = 0; //direction 17
-
-  // gv->c[18][0] = -1;
-  // gv->c[18][1] = -1;
-  // gv->c[18][2] = 0; //direction 18
 }
-
-// void compute_dest_mac(GV gv, int dir, int my_rank_x, int my_rank_y, int my_rank_z, int Px, int Py, int Pz){
-//   int dest_x, dest_y, dest_z;
-//   switch(dir){
-//     case 1: {
-//       //dir 1
-//       dest_x = (my_rank_x+1) % Px;
-//       dest_y = my_rank_y;
-//       dest_z = my_rank_z;
-//       printf("Task%d: dest_x=%d, dest_y=%d, dest_z=%d\n",
-//         gv->taskid, dest_x, dest_y, dest_z);
-//       fflush(stdout);
-//       // if(dest_x >= Px)
-//       //   dest_x = 0;
-//       break;
-//     }
-
-//     case 2: {//dir 2
-//       dest_x = (my_rank_x-1) % Px;
-//       dest_y = my_rank_y;
-//       dest_z = my_rank_z;
-//       if(dest_x < 0)
-//         dest_x += Px;
-//       break;
-//     }
-
-//     case 3: {
-//       dest_x = my_rank_x;
-//       dest_y = my_rank_y;
-//       dest_z = (my_rank_z+1) % Pz;
-//       // if(dest_z >= Pz)
-//       //   dest_z = 0;
-//       break;
-//     }
-
-//     case 4: {
-//       dest_x = my_rank_x;
-//       dest_y = my_rank_y;
-//       dest_z = (my_rank_z-1) % Pz;
-//       if(dest_z < 0)
-//         dest_z += Pz;
-//       break;
-//     }
-
-//     case 5: { //dir 5
-//       dest_x = my_rank_x;
-//       dest_y = (my_rank_y-1) % Py;
-//       dest_z = my_rank_z;
-//       if(dest_y < 0)
-//         dest_y += Py;
-//       break;
-//     }
-
-//     case 6: { //dir 6
-//       dest_x = my_rank_x;
-//       dest_y = (my_rank_y+1) % Py;
-//       dest_z = my_rank_z;
-//       break;
-//     }
-
-//     case 7: {
-//       dest_x = (my_rank_x+1) % Px;
-//       dest_y = my_rank_y;
-//       dest_z = (my_rank_z+1) % Pz;
-
-//       break;
-//     }
-
-//     case 8: {
-//       dest_x = (my_rank_x-1) % Px;
-//       dest_y = my_rank_y;
-//       dest_z = (my_rank_z-1) % Pz;
-//       if(dest_x < 0)
-//         dest_x += Px;
-//       if(dest_z < 0)
-//         dest_z += Pz;
-//       break;
-//     }
-
-//     case 9: {
-//       dest_x = (my_rank_x+1) % Px;
-//       dest_y = my_rank_y;
-//       dest_z = (my_rank_z-1) % Pz;
-//       if(dest_z < 0)
-//         dest_z += Pz;
-//       break;
-//     }
-
-//     case 10: {
-//       dest_x = (my_rank_x-1) % Px;
-//       dest_y = my_rank_y;
-//       dest_z = (my_rank_z+1) % Pz;
-//       if(dest_x < 0)
-//         dest_x += Px;
-//       break;
-//     }
-
-//     case 11: {
-//       dest_x = my_rank_x;
-//       dest_y = (my_rank_y-1) % Py;
-//       dest_z = (my_rank_z+1) % Pz;
-//       if(dest_y < 0)
-//         dest_y += Py;
-//       break;
-//     }
-
-//     case 12: {
-//       dest_x = my_rank_x;
-//       dest_y = (my_rank_y+1) % Py;
-//       dest_z = (my_rank_z-1) % Pz;
-//       if(dest_z < 0)
-//         dest_z += Pz;
-//       break;
-//     }
-
-//     case 13: {
-//       dest_x = my_rank_x;
-//       dest_y = (my_rank_y+1) % Py;
-//       dest_z = (my_rank_z+1) % Pz;
-//       break;
-//     }
-
-//     case 14: {
-//       dest_x = my_rank_x;
-//       dest_y = (my_rank_y-1) % Py;
-//       dest_z = (my_rank_z-1) % Pz;
-//       if(dest_y < 0)
-//         dest_y += Py;
-//       if(dest_z < 0)
-//         dest_z += Pz;
-//       break;
-//     }
-
-//     case 15: {
-//       dest_x = (my_rank_x+1) % Px;
-//       dest_y = (my_rank_y-1) % Py;
-//       dest_z = my_rank_z;
-//       if(dest_y < 0)
-//         dest_y += Py;
-//       break;
-//     }
-
-//     case 16: {
-//       dest_x = (my_rank_x-1) % Px;
-//       dest_y = (my_rank_y+1) % Py;
-//       dest_z = my_rank_z;
-//       if(dest_x < 0)
-//         dest_x += Px;
-//       break;
-//     }
-
-//     case 17: {
-//       dest_x = (my_rank_x+1) % Px;
-//       dest_y = (my_rank_y+1) % Py;
-//       dest_z = my_rank_z;
-//       break;
-//     }
-
-//     case 18: {
-//       dest_x = (my_rank_x-1) % Px;
-//       dest_y = (my_rank_y-1) % Py;
-//       dest_z = my_rank_z;
-//       if(dest_x < 0)
-//         dest_x += Px;
-//       if(dest_y < 0)
-//         dest_y += Py;
-//       break;
-//     }
-//   }
-
-//   gv->dest_task[dir] = dest_x * Py * Pz + dest_y * Pz + dest_z;
-// }
 
 void init_stream_msg(GV gv, int dir, long size){
   int cube_size =  gv->cube_size;
@@ -474,179 +225,45 @@ void init_gv(GV gv) {
     // printf("Here! stream_recv_max_bufsize=%d\n", gv->stream_recv_max_bufsize);
     // fflush(stdout);
 
-    int NextRankCoord[3];
+    int destCoord[3], srcCoord[3];
     for (int iPop = 0; iPop < 19; ++iPop) {
-      NextRankCoord[0] = (gv->rankCoord[0] + c[iPop][0]);
-      NextRankCoord[1] = (gv->rankCoord[1] + c[iPop][1]);
-      NextRankCoord[2] = (gv->rankCoord[2] + c[iPop][2]);
+      destCoord[0] = gv->rankCoord[0] + c[iPop][0];
+      destCoord[1] = gv->rankCoord[1] + c[iPop][1];
+      destCoord[2] = gv->rankCoord[2] + c[iPop][2];
 
-      int toProc;
-      MPI_Cart_rank(gv->cartcomm, NextRankCoord, &toProc);
+      srcCoord[0] = gv->rankCoord[0] - c[iPop][0];
+      srcCoord[1] = gv->rankCoord[1] - c[iPop][1];
+      srcCoord[2] = gv->rankCoord[2] - c[iPop][2];
 
-      if(gv->rank[0] != toProc){
+      int dest, src;
+      MPI_Cart_rank(gv->cartcomm, destCoord, &dest);
+      MPI_Cart_rank(gv->cartcomm, srcCoord, &src);
+
+      gv->streamDest[iPop] = dest;
+      gv->streamSrc[iPop] = src;
+
+      printf("Fluid%2d: iPop=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n", 
+        gv->rank[0], iPop, destCoord[0], destCoord[1], destCoord[2], dest,
+        srcCoord[0], srcCoord[1], srcCoord[2], src);
+      fflush(stdout);
+
+      // if(gv->rank[0] != dest){
         
-        gv->streamdir[iPop] = toProc;
+      //   gv->streamdir[iPop] = dest;
 
-        // if(iPop < 7){
-        //   init_stream_msg(gv, iPop, * 5);
-        // }
-        // else{
-        //   init_stream_msg(gv, iPop, Q);
-        // }
-      }
-      else{
-        gv->streamdir[iPop] = -1;
-      }
+      //   // if(iPop < 7){
+      //   //   init_stream_msg(gv, iPop, * 5);
+      //   // }
+      //   // else{
+      //   //   init_stream_msg(gv, iPop, Q);
+      //   // }
+      // }
+      // else{
+      //   gv->streamdir[iPop] = -1;
+      // }
 
       init_stream_msg(gv, iPop, max_stream_msg_size); //need to optimize
     }
-
-    // int direction, dest;
-    // if (Px==1 && Py==1 && Pz==1){
-    //   printf("Fluid task %d doesn't need to stream\n", my_rank);
-    //   fflush(stdout);
-    // }
-    // else if (check_1d(Px, Py, Pz, &direction)){ //1d, any direction=1, function return 0, at most 2 msg
-    //   printf("Fluid task %d Enter 1D Init configuration! direction=%d\n", my_rank, direction);
-    //   fflush(stdout);
-
-    //   gv->lock_stream_msg = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t)* 7);
-    //   gv->stream_last_pos = (int*)malloc(sizeof(int)*7);
-
-    //   // use msg[0] as recv buffer
-    //   gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
-    //   gv->stream_recv_buf = gv->stream_msg[0];
-    //   // printf("Here! stream_recv_max_bufsize=%d\n", gv->stream_recv_max_bufsize);
-    //   // fflush(stdout);
-
-    //   if (direction == X_transfer_1D){
-    //     printf("Fluid mac %d Enter 1D X_transfer_1D configuration!\n", my_rank);
-    //     fflush(stdout);
-    //     //1d, along x axis
-    //     init_stream_msg_surface(gv, 1, 2, Q, R);
-    //     //dir 1
-    //     compute_dest_mac(gv, 1, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-
-    //     //dir 2
-    //     compute_dest_mac(gv, 2, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-
-    //     for (i = 1; i <= 18; i++){
-    //       printf("Fluid mac%d: dest_task[%d]=%d\n", my_rank, i, gv->dest_task[i]);
-    //       fflush(stdout);
-    //     }
-
-    //     // find_stream_dest(gv, 1);
-
-    //     //   init_stream_msg_surface(gv, 1, Q, R);
-
-    //     //   init_stream_msg_surface(gv, 2, Q, R);
-    //   }
-    //   else if (direction == Z_transfer_1D){
-    //     //1d, along z axis
-    //     init_stream_msg_surface(gv, 3, 4, P, Q);
-    //     //dir 3
-    //     compute_dest_mac(gv, 3, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //   init_stream_msg_surface(gv, 3, P, Q);
-    //     //dir 4
-    //     compute_dest_mac(gv, 4, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //   init_stream_msg_surface(gv, 4, P, Q);
-
-    //   }
-    //   else if (direction == Y_transfer_1D){
-    //     //1d, along y axis
-    //     init_stream_msg_surface(gv, 5, 6, P, R);
-    //     //dir 5
-    //     compute_dest_mac(gv, 5, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //   init_stream_msg_surface(gv, 5, P, R);
-    //     //dir 6
-    //     compute_dest_mac(gv, 6, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     // dest = my_rank + 1;
-    //     // if(dest >= Py)
-    //     //   dest = 0;
-    //     // gv->dest_task[6] = dest;
-    //     //   init_stream_msg_surface(gv, 6, P, R);
-    //   }
-    //   else{
-    //     printf("check_1d init Error!\n");
-    //     fflush(stdout);
-    //   }
-    // }
-    // else if (check_2d(Px, Py, Pz, &direction)){//2d, at most 8
-    //   printf("Fluid mac Enter 2D Init configuration!\n");
-    //   fflush(stdout);
-    //   gv->stream_msg = (char**)malloc(sizeof(char*)* 19);
-
-    //   gv->lock_stream_msg = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t)* 19);
-    //   gv->stream_last_pos = (int*)malloc(sizeof(int) * 19);
-
-    //   gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
-    //   gv->stream_recv_buf = gv->stream_msg[0];
-
-    //   if(direction==X_transfer_2D){ //1, 2, 5, 6, 15~18
-
-    //     init_stream_msg_surface(gv, 1, 2, Q, R);
-    //     init_stream_msg_surface(gv, 5, 6, P, R);
-    //     init_stream_msg_line(gv,15, 18, R);
-
-    //     //dir 1
-    //     compute_dest_mac(gv, 1, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //dir 2
-    //     compute_dest_mac(gv, 2, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //dir 5
-    //     compute_dest_mac(gv, 5, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //dir 6
-    //     compute_dest_mac(gv, 6, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     //dir 15
-    //     for(i=15; i<=18; i++)
-    //       compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-
-    //   }
-    //   else if (direction==Y_transfer_2D){
-    //     init_stream_msg_surface(gv, 3, 4, P, Q);
-    //     init_stream_msg_surface(gv, 5, 6, P, R);
-    //     init_stream_msg_line(gv,11, 14, P);
-
-    //     for(i=3; i<=6; i++)
-    //       compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     for(i=11; i<=14; i++)
-    //       compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //   }
-    //   else if (direction==Z_transfer_2D){
-    //     init_stream_msg_surface(gv, 1, 2, Q, R);
-    //     init_stream_msg_surface(gv, 3, 4, P, Q);
-    //     init_stream_msg_line(gv,7, 10, Q);
-
-    //     for(i=1; i<=4; i++)
-    //       compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //     for(i=7; i<=10; i++)
-    //       compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    //   }
-    //   else{
-    //     printf("check_2d init Error!\n");
-    //     fflush(stdout);
-    //   }
-    // }
-    // else{ //3d
-    //   printf("Fluid task Enter 3D Init configuration!\n");
-    //   fflush(stdout);
-    //   gv->stream_msg = (char**)malloc(sizeof(char*) * 19);
-
-    //   gv->lock_stream_msg = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t)* 19);
-    //   gv->stream_last_pos = (int*)malloc(sizeof(int)* 19);
-
-    //   gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
-    //   gv->stream_recv_buf = gv->stream_msg[0];
-
-    //   init_stream_msg_surface(gv, 1, 2, Q, R);
-    //   init_stream_msg_surface(gv, 3, 4, P, Q);
-    //   init_stream_msg_surface(gv, 5, 6, P, R);
-    //   init_stream_msg_line(gv,7, 10, Q);
-    //   init_stream_msg_line(gv,11, 14, P);
-    //   init_stream_msg_line(gv,15, 18, R);
-
-    //   for (i = 1; i <= 18; i++)
-    //     compute_dest_mac(gv, i, my_rank_x, my_rank_y, my_rank_z, Px, Py, Pz);
-    // }
   }
 
   //Fiber task initialization

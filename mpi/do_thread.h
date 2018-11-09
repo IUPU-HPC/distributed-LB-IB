@@ -192,7 +192,6 @@ typedef struct gv_t {
   int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z; //number of fluid task along x, y, z
   int num_fluid_tasks;
   int rankCoord[3]; //x, y, z
-  int dest_task[19];
   MPI_Comm cartcomm;
 
   // Fiber <--> Fluid influential domain
@@ -212,7 +211,9 @@ typedef struct gv_t {
   int stream_last_pos[19];
   char* stream_recv_buf;
   long stream_recv_max_bufsize;
-  int streamdir[19];
+  // int streamdir[19];
+  int streamDest[19]; //used in MPI_SendRecv when streaming
+  int streamSrc[19];
 }* GV;
 
 
