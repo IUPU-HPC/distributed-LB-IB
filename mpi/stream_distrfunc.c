@@ -36,6 +36,10 @@ void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, doubl
   GV gv = lv->gv;
   int tid = lv->tid;
 
+  int dim_x = gv->fluid_grid->x_dim;
+  int dim_y = gv->fluid_grid->y_dim;
+  int dim_z = gv->fluid_grid->z_dim;
+
   pthread_mutex_lock(&gv->lock_stream_msg[dir]);
 
   *((int*)(gv->stream_msg[dir] + gv->stream_last_pos[dir]))                     = nextX;
@@ -46,11 +50,10 @@ void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, doubl
 
   gv->stream_last_pos[dir] += sizeof(int) * 4 + sizeof(double);
 
-  // assertf(nextX != 128, "insert_msg_ERROR: nextX=%d, position=%d", nextX, gv->stream_last_pos[dir]);
-  assertf(nextY != 128, "insert_msg_ERROR: nextY=%d, position=%d", nextY, gv->stream_last_pos[dir]);
-  assertf(nextZ != 128, "insert_msg_ERROR: nextZ=%d, position=%d", nextZ, gv->stream_last_pos[dir]);
-  assertf(iPop != 128, "insert_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_last_pos[dir]);
-  assertf(df1_tosend != 128, "insert_msg_ERROR: df1_tosend=%f, position=%d", df1_tosend, gv->stream_last_pos[dir]);
+  assertf(nextX < dim_x, "insert_msg_ERROR: nextX=%d, position=%d", nextX, gv->stream_last_pos[dir]);
+  assertf(nextY < dim_y, "insert_msg_ERROR: nextY=%d, position=%d", nextY, gv->stream_last_pos[dir]);
+  assertf(nextZ < dim_z, "insert_msg_ERROR: nextZ=%d, position=%d", nextZ, gv->stream_last_pos[dir]);
+  assertf(iPop < 19, "insert_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_last_pos[dir]);
 
   // assert(gv->stream_last_pos[dir] < gv->stream_recv_max_bufsize);
 
@@ -62,7 +65,7 @@ void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, doubl
   pthread_mutex_unlock(&gv->lock_stream_msg[dir]);
 }
 
-void check_msg(LV lv, char* strem_msg, int sendcnt, int dest, int dir){
+void check_msg(LV lv, char* stream_msg, int sendcnt, int dest, int dir){
   GV gv = lv->gv;
   int tid = lv->tid;
   int my_rank = gv->taskid;
@@ -73,13 +76,17 @@ void check_msg(LV lv, char* strem_msg, int sendcnt, int dest, int dir){
   int position = 0;
   int cube_size = gv->cube_size;
 
+  int dim_x = gv->fluid_grid->x_dim;
+  int dim_y = gv->fluid_grid->y_dim;
+  int dim_z = gv->fluid_grid->z_dim;
+
   while (position < sendcnt){
 
-    int X = *((int*)(strem_msg + position));
-    int Y = *((int*)(strem_msg + position + sizeof(int)));
-    int Z = *((int*)(strem_msg + position + sizeof(int)* 2));  
-    iPop  = *((int*)(strem_msg + position + sizeof(int)* 3));
-    df1_tosend = *((double*)(strem_msg + position + sizeof(int)* 4));
+    int X = *((int*)(stream_msg + position));
+    int Y = *((int*)(stream_msg + position + sizeof(int)));
+    int Z = *((int*)(stream_msg + position + sizeof(int)* 2));  
+    iPop  = *((int*)(stream_msg + position + sizeof(int)* 3));
+    df1_tosend = *((double*)(stream_msg + position + sizeof(int)* 4));
 
     position += sizeof(int) * 4 + sizeof(double);
 
@@ -92,6 +99,12 @@ void check_msg(LV lv, char* strem_msg, int sendcnt, int dest, int dir){
     lk = Z % cube_size;
 
     toTid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//toTid is thread id in the fluid machine
+
+    assertf(X < dim_x, "check_msg_ERROR: nextX=%d, position=%d", X, gv->stream_last_pos[dir]);
+    assertf(Y < dim_y, "check_msg_ERROR: nextY=%d, position=%d", Y, gv->stream_last_pos[dir]);
+    assertf(Z < dim_z, "check_msg_ERROR: nextZ=%d, position=%d", Z, gv->stream_last_pos[dir]);
+    assertf(iPop < 19, "check_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_last_pos[dir]);
+
 
     if(position >= 413664 && position <= 413760){
     printf("Fluid%dtid%d_check_msg: dir %2d, iPop=%2d, (dest,me,toProc)=(%d,%d,%d), \
@@ -375,8 +388,9 @@ void  stream_distrfunc(LV lv){//df2
   fflush(stdout);
 
   pthread_barrier_wait(&(gv->barr));
-  // if(tid==0)
-  //   MPI_Barrier(MPI_COMM_WORLD);
+
+  if(tid==0)
+    MPI_Barrier(MPI_COMM_WORLD);
 
   //send message
   for(int iPop = 1; iPop < 19; iPop++){

@@ -107,7 +107,7 @@ void init_stream_msg(GV gv, int dir, int size){
     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
     exit(1);
   }
-  //1d, along x axis
+  
   gv->stream_msg[dir] = (char*)malloc((sizeof(int)* 3 + sizeof(double))* size);
 
 }
