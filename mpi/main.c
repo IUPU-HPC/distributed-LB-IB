@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "-steps")) {
       needs_argument(i, argc, "-steps");
-      long value = atol(argv[++i]);
+      int value = atoi(argv[++i]);
       if (value <= 0) {
         fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
         abort();
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
       // gv->fluid_grid->sub_fluid_grid = (Sub_Fluidgrid*) calloc (1, sizeof(Sub_Fluidgrid));
 
       needs_argument(i, argc, "-fluid_grid_x");
-      long value = atol(argv[++i]);
+      int value = atoi(argv[++i]);
       if (value <= 0) {
         fprintf(stderr, "error: Invalid flag \"-fluid_grid_x %ld\" must be > 0\n", value);
         abort();
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
       gv->fluid_grid->x_dim = value;
 
       needs_argument(i, argc, "-fluid_grid_y");
-      value = atol(argv[++i]);
+      value = atoi(argv[++i]);
       if (value <= 0) {
         fprintf(stderr, "error: Invalid flag \"-fluid_grid_y %ld\" must be > 0\n", value);
         abort();
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
       gv->fluid_grid->y_dim = value;
 
       needs_argument(i, argc, "-fluid_grid_z");
-      value = atol(argv[++i]);
+      value = atoi(argv[++i]);
       if (value <= 0) {
         fprintf(stderr, "error: Invalid flag \"-fluid_grid_z %ld\" must be > 0\n", value);
         abort();
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-fibersht_row_clmn")) {
       for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
         needs_argument(i, argc, "-fibersht_row");
-        long value = atol(argv[++i]);
+        int value = atoi(argv[++i]);
         if (value <= 0) {
           fprintf(stderr, "error: Invalid flag \"-fibersht_row %ld\" must be > 0\n", value);
           abort();
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
         gv->fiber_shape->sheets[j].num_rows = value;
 
         needs_argument(i, argc, "-fibersht_clmn");
-        value = atol(argv[++i]);
+        value = atoi(argv[++i]);
         if (value <= 0) {
           fprintf(stderr, "error: Invalid flag \"-fibersht_clmn %ld\" must be > 0\n", value);
           abort();
@@ -223,9 +223,9 @@ int main(int argc, char* argv[]) {
   }
 
   //Error Check for Fluid grid can be divided by fluid_task
-  if ( (gv->fluid_grid->z_dim % gv->num_fluid_task_x != 0) || 
+  if ( (gv->fluid_grid->z_dim % gv->num_fluid_task_z != 0) || 
        (gv->fluid_grid->y_dim % gv->num_fluid_task_y != 0) || 
-       (gv->fluid_grid->z_dim % gv->num_fluid_task_z != 0) ){
+       (gv->fluid_grid->x_dim % gv->num_fluid_task_x != 0) ){
     fprintf(stderr, "Check Fluid_task x: %d y: %d z: %d\n", 
                     gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
     exit(1);
@@ -282,7 +282,7 @@ int main(int argc, char* argv[]) {
   if (gv->taskid == 0){
     printf("***********distributed-LB-IB Simulation using Pthreads cube starts************\n");
     printf("provided=%d\n", provided);
-    printf("    Fluidgrid: z %ld, elem_y %ld, elem_x %ld\n", 
+    printf("    Fluidgrid: z %ld, y %ld, x %ld\n", 
       gv->fluid_grid->z_dim, gv->fluid_grid->y_dim, gv->fluid_grid->x_dim);
     printf("    Fluid task dimension: Px %d, Py %d, Pz %d\n", 
       gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
@@ -378,6 +378,7 @@ int main(int argc, char* argv[]) {
     printf("Friber task%d gen_fiber_sheet complete!\n", gv->taskid);
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
+#if 0    
     printf("Printing for Corner Points(z,y) : 51,0 \n");
     print_fiber_sub_grid(gv, 0, 51, 0, 51);
     printf("Printing for Corner Points(z,y) : 0,51 \n");
@@ -385,6 +386,7 @@ int main(int argc, char* argv[]) {
     printf("Printing for Corner Points (z,y): 51,51 \n");
     print_fiber_sub_grid(gv, 51, 51, 51, 51);
     fflush(stdout);
+#endif    
   }
   else{
     init_eqlbrmdistrfuncDF0(gv);
@@ -434,12 +436,12 @@ int main(int argc, char* argv[]) {
     printf("after Running for timesteps: %ld\n", gv->timesteps);
     printf("Printing for Corner Points(z,y) : 0 , 0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
-    printf("Printing for Corner Points(z,y) : 51, 0 \n");
-    print_fiber_sub_grid(gv, 0, 51, 0, 51);
-    printf("Printing for Corner Points(z,y) : 0 ,51 \n");
-    print_fiber_sub_grid(gv, 51, 0, 51, 0);
-    printf("Printing for Corner Points (z,y): 51,51 \n");
-    print_fiber_sub_grid(gv, 51, 51, 51, 51);
+    // printf("Printing for Corner Points(z,y) : 51, 0 \n");
+    // print_fiber_sub_grid(gv, 0, 51, 0, 51);
+    // printf("Printing for Corner Points(z,y) : 0 ,51 \n");
+    // print_fiber_sub_grid(gv, 51, 0, 51, 0);
+    // printf("Printing for Corner Points (z,y): 51,51 \n");
+    // print_fiber_sub_grid(gv, 51, 51, 51, 51);
     fflush(stdout);
   }
 

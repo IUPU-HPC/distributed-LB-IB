@@ -17,9 +17,9 @@ void init_df_inout(GV gv){
   Fluidnode     *nodes;
 
   int ksi, dim_z;
-  long BI, BJ, BK; //to identify the Sub grids
-  long cube_idx;
-  long starting_y, starting_z, stopping_y, stopping_z;//To identify buffer zone
+  int BI, BJ, BK; //to identify the Sub grids
+  int cube_idx;
+  int starting_y, starting_z, stopping_y, stopping_z;//To identify buffer zone
   int li, lj, lk, node_idx;//local access point inside cube
   int tmp_task;
 
@@ -27,9 +27,9 @@ void init_df_inout(GV gv){
   dim_z = fluidgrid->z_dim;
 
   int cube_size = gv->cube_size;
-  long num_cubes_x = gv->fluid_grid->num_cubes_x;
-  long num_cubes_y = gv->fluid_grid->num_cubes_y;
-  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   //printf("*************ENTRY OF init_df_inout\n");
   // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);

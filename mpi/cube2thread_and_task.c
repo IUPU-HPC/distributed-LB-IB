@@ -9,14 +9,15 @@
 */
 
 #include "do_thread.h"
+// #include <math.h>
 
 /*
 BI, BJ, BK: Thread Block index in whole fluid domain
 */
 int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task){
 	int tid, i, j, k;
-	long num_cubes_x, num_cubes_y, num_cubes_z, tx, ty, tz;
-	long cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
+	int num_cubes_x, num_cubes_y, num_cubes_z, tx, ty, tz;
+	int cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
 	int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z;
 
 	num_cubes_x = gv->fluid_grid->num_cubes_x;
@@ -33,10 +34,15 @@ int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task){
 	cubes_per_task_y = num_cubes_y / num_fluid_task_y; // along y: how many cubes in each task
 	cubes_per_task_z = num_cubes_z / num_fluid_task_z; // along y: how many cubes in each task
 
-	// use % to cyclic to the first thread block
-	i = (BI % (cubes_per_task_x)) / tx;
-	j = (BJ % (cubes_per_task_y)) / ty;
-	k = (BK % (cubes_per_task_z)) / tz;
+	// cyclic fluid thread division
+	i = (BI % (cubes_per_task_x)) % tx;
+	j = (BJ % (cubes_per_task_y)) % ty;
+	k = (BK % (cubes_per_task_z)) % tz;
+
+	// consecutive fluid thread division
+	// i = (BI) >> ((int)(log2(cubes_per_task_x/tx)));
+	// j = (BJ) >> ((int)(log2(cubes_per_task_y/ty)));
+	// k = (BK) >> ((int)(log2(cubes_per_task_z/tz)));
 
 	// return thread id
 	tid  = i * ty * tz + j * tz + k;
@@ -50,9 +56,9 @@ int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task){
 	return tid;
 }
 
-int cube2task(long BI, long BJ, long BK, GV gv){
-	long num_cubes_x, num_cubes_y, num_cubes_z;
-	long cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
+int cube2task(int BI, int BJ, int BK, GV gv){
+	int num_cubes_x, num_cubes_y, num_cubes_z;
+	int cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
 	int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z;
 
 	num_cubes_x = gv->fluid_grid->num_cubes_x;
@@ -83,11 +89,11 @@ int cube2task(long BI, long BJ, long BK, GV gv){
 	return dst_task;
 }
 
-int global2task(long X, long Y, long Z, GV gv){
-	long num_cubes_x, num_cubes_y, num_cubes_z;
-	long cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
+int global2task(int X, int Y, int Z, GV gv){
+	int num_cubes_x, num_cubes_y, num_cubes_z;
+	int cubes_per_task_x, cubes_per_task_y, cubes_per_task_z;
 	int  num_fluid_task_x, num_fluid_task_y, num_fluid_task_z;
-	long BI, BJ, BK;
+	int BI, BJ, BK;
 	int cube_size = gv->cube_size;
 
 	BI = X / cube_size;

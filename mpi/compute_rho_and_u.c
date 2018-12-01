@@ -21,10 +21,10 @@ void compute_rho_and_u(LV lv){
 
   int ksi;
   double s1, s2, s3, s4;
-  long BI, BJ, BK; //to identify the Sub grids
-  long cube_idx;
-  long starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
-  long  li, lj, lk, node_idx;//local access point inside cube
+  int BI, BJ, BK; //to identify the Sub grids
+  int cube_idx;
+  int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
+  int  li, lj, lk, node_idx;//local access point inside cube
 
   int P = gv->tx;
   int Q = gv->ty;
@@ -33,9 +33,9 @@ void compute_rho_and_u(LV lv){
   fluidgrid = gv->fluid_grid;
 
   int cube_size = gv->cube_size;
-  long num_cubes_x = gv->fluid_grid->num_cubes_x;
-  long num_cubes_y = gv->fluid_grid->num_cubes_y;
-  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
   int my_rank, temp_mac_rank;
   my_rank = gv->taskid;
   s1 = s2 = s3 = s4 = 0;

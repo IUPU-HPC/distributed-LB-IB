@@ -21,47 +21,6 @@ static inline double get_cur_time()
   return t;
 }
 
-int check_1d(int x, int y, int z, int* dir){
-
-  if ( (y == 1) && (z == 1) ){
-    if(dir!=NULL)
-      *dir = X_transfer_1D;
-    return 1;
-  }
-  else if( (x == 1) && (z == 1) ){
-    if(dir!=NULL)
-      *dir = Y_transfer_1D;
-    return 1;
-  }
-  else if ( (x == 1) && (y == 1) ){
-    if(dir!=NULL)
-      *dir = Z_transfer_1D;
-    return 1;
-  }
-  else
-    return 0;
-}
-
-int check_2d(int x, int y, int z, int* dir){
-  if(x == 1){
-    if(dir!=NULL)
-      *dir = Y_transfer_2D;
-    return 1;
-  }
-  else if (y == 1) {
-    if(dir!=NULL)
-      *dir = Z_transfer_2D;
-    return 1;
-  }
-  else if (z == 1) {
-    if(dir!=NULL)
-      *dir = X_transfer_2D;
-    return 1;
-  }
-  else
-    return 0;
-}
-
 void* do_thread(void* v){
   LV lv = (LV)v;
   GV gv = lv->gv;
@@ -177,7 +136,7 @@ void* do_thread(void* v){
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
-      stream_distrfunc(gv, lv);
+      stream_distrfunc(lv);
       // pthread_barrier_wait(&(gv->barr));
       // if(tid==0)
       //   MPI_Barrier(MPI_COMM_WORLD);
@@ -265,12 +224,12 @@ void* do_thread(void* v){
       printf("Timesteps:%ld complete!\n", gv->time - 1);
       printf("Printing for Corner Points(z,y) : 0,0 \n");
       print_fiber_sub_grid(gv, 0, 0, 0, 0);
-      printf("Printing for Corner Points(z,y) : 51,0 \n");
-      print_fiber_sub_grid(gv, 0, 51, 0, 51);
-      printf("Printing for Corner Points(z,y) : 0,51 \n");
-      print_fiber_sub_grid(gv, 51, 0, 51, 0);
-      printf("Printing for Corner Points (z,y): 51,51 \n");
-      print_fiber_sub_grid(gv, 51, 51, 51, 51);
+      // printf("Printing for Corner Points(z,y) : 51,0 \n");
+      // print_fiber_sub_grid(gv, 0, 51, 0, 51);
+      // printf("Printing for Corner Points(z,y) : 0,51 \n");
+      // print_fiber_sub_grid(gv, 51, 0, 51, 0);
+      // printf("Printing for Corner Points (z,y): 51,51 \n");
+      // print_fiber_sub_grid(gv, 51, 51, 51, 51);
     }
 #endif //DEBUG_PRINT
 

@@ -39,10 +39,10 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   Fiber* fiberarray;
 
   Fluidnode* nodes;
-  long BI, BJ, BK;
-  long li, lj, lk;
-  long total_sub_grids, dim_x, dim_y, dim_z;
-  long cube_idx, node_idx;
+  int BI, BJ, BK;
+  int li, lj, lk;
+  int total_sub_grids, dim_x, dim_y, dim_z;
+  int cube_idx, node_idx;
   int  P, Q, R, total_threads;
 
   /*MPI changes*/
@@ -63,9 +63,9 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   dim_z = gv->fluid_grid->z_dim;
 
   int cube_size = gv->cube_size;
-  long num_cubes_x = gv->fluid_grid->num_cubes_x;
-  long num_cubes_y = gv->fluid_grid->num_cubes_y;
-  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
   total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
 
   //Annuling Forces on Fluid grid ::TOO Expensive
@@ -118,14 +118,14 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
     int position = 0;
     while (position < gv->ifd_recv_count){
 
-      long X = *((long*)(gv->ifd_recv_buf + position));
-      long Y = *((long*)(gv->ifd_recv_buf + position + sizeof(long)));
-      long Z = *((long*)(gv->ifd_recv_buf + position + sizeof(long)* 2));
-      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(long)* 3));
-      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(long)* 3 + sizeof(double)));
-      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(long)* 3 + sizeof(double)* 2));
+      int X = *((int*)(gv->ifd_recv_buf + position));
+      int Y = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
+      int Z = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 2));
+      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3));
+      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3 + sizeof(double)));
+      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3 + sizeof(double)* 2));
 
-      position += sizeof(long)* 3 + sizeof(double)* 3;
+      position += sizeof(int)* 3 + sizeof(double)* 3;
 
       BI = X / cube_size;
       BJ = Y / cube_size;

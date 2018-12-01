@@ -18,20 +18,20 @@ void bounceback_rigidwalls(LV lv){
   Fluidgrid     *fluidgrid;
   Fluidnode     *nodes;
 
-  long BI, BJ, BK; //to identify the Sub grids
+  int BI, BJ, BK; //to identify the Sub grids
   int  cube_size;
-  long cube_idx;
-  long starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
-  long li, lj, lk, node_idx;//local access point inside cube
-  long dim_z;
+  int cube_idx;
+  int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
+  int li, lj, lk, node_idx;//local access point inside cube
+  int dim_z;
 
   fluidgrid      = gv->fluid_grid;
   dim_z          = fluidgrid->z_dim;
 
   cube_size   = gv->cube_size;
-  long num_cubes_x = gv->fluid_grid->num_cubes_x;
-  long num_cubes_y = gv->fluid_grid->num_cubes_y;
-  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   int P = gv->tx;
   int Q = gv->ty;

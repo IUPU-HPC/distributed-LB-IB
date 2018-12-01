@@ -96,7 +96,7 @@ typedef struct fiber_t {
 typedef struct fiber_sheet_t {
   Fiber* fibers; // i.e., an array of fibers
   double width, height; // TODO: NOT NEEDED. floating point values, width is the dimension in z, height is the dimension in y.
-  long num_cols, num_rows; /* number of fibres along width or column should be 512 for 1024:*/
+  int num_cols, num_rows; /* number of fibres along width or column should be 512 for 1024:*/
   /* bottom left corner: located at <min_y, min_z> */
   double x_orig; // starting point for fibersheet x0 = 20
   double y_orig; // starting point for fibersheet y0 = 21.5
@@ -133,15 +133,15 @@ typedef struct fluid_surface_t {
 /* A sub fluid grid adding up together to form the entire fluid grid
 The bigger fluid grid composed of smaller cubes of sub fluid grid */
 typedef struct sub_fluid_grid_t {
-  long sub_coordx_start, sub_coordx_end;  // To identify the cube along X :accessed by FluidGrid->SubFluidGrid->Surfaces->sub_x_dim
-  long sub_coordy_start, sub_coordy_end;  // To identify the cube along Y direction (or #columns) accessed by FluidGrid->SubFluidGrid->Surfaces->sub_y_dim
-  long sub_coordz_start, sub_coordz_end;  // To identify the cube along Z direction (or #rows)    accessed by FluidGrid->SubFluidGrid->Surfaces->sub_z_dim
+  int sub_coordx_start, sub_coordx_end;  // To identify the cube along X :accessed by FluidGrid->SubFluidGrid->Surfaces->sub_x_dim
+  int sub_coordy_start, sub_coordy_end;  // To identify the cube along Y direction (or #columns) accessed by FluidGrid->SubFluidGrid->Surfaces->sub_y_dim
+  int sub_coordz_start, sub_coordz_end;  // To identify the cube along Z direction (or #rows)    accessed by FluidGrid->SubFluidGrid->Surfaces->sub_z_dim
   Fluidnode* nodes; // element
   bool isboundary;  // To check if this subgrid is part of inlet, outlet or boundary to handle LBM boundary cases
    //=k input from the user, shluld be dim_x,y , z :Some cube might not be k*K*K
-  long grid_dim_x;
-  long grid_dim_y;
-  long grid_dim_z;
+  int grid_dim_x;
+  int grid_dim_y;
+  int grid_dim_z;
   //int subgridID;//To identify individual subgrid identified by identified by globalI/cube_size, globalJ/cube_size, globalK/cube_size
 } Sub_Fluidgrid;
 /*PTHREAD_Change*/
@@ -149,10 +149,10 @@ typedef struct sub_fluid_grid_t {
 /* A fluid grid is simply a stack of fluid surfaces, where surface itself is a 2D matrix */
 
 typedef struct fluid_grid_t {
-  long x_dim; //Surface dimension along X direction (How many surfaces a long the X direction)
-  long y_dim; //Surface dimension along Y direction (or #columns)
-  long z_dim; //Surface dimension along Z direction (or #rows)
-  long num_cubes_x, num_cubes_y, num_cubes_z;
+  int x_dim; //Surface dimension along X direction (How many surfaces a int the X direction)
+  int y_dim; //Surface dimension along Y direction (or #columns)
+  int z_dim; //Surface dimension along Z direction (or #rows)
+  int num_cubes_x, num_cubes_y, num_cubes_z;
   Fluidsurface* inlet;  //with constant values*/
   Fluidsurface* outlet; //with constant values*/
   /*Added following for Pthread version*//*PTHREAD_Change*/
@@ -168,8 +168,8 @@ typedef struct gv_t {
   /* Constant parameters used in LBM-IB */
   double tau, nu_l, u_l, rho_l, L_l, M_l, g_l, Ks_l, Kb_l, Kst_l;
   double Re, cs_l, Ma, Kn, Kshat, Ksthat, Kbhat, Mhat, Fr;
-  long dt, time, time1, timesteps, TIME_WR, TIME_WR1, N_WR;
-  long ib, ie, jb, je, kb, ke; // For Fluid Grid's actual computation part
+  int dt, time, time1, timesteps, TIME_WR, TIME_WR1, N_WR;
+  int ib, ie, jb, je, kb, ke; // For Fluid Grid's actual computation part
 
 /*PTHREAD_Change*/
   //thread
@@ -196,8 +196,8 @@ typedef struct gv_t {
 
   // Fiber <--> Fluid influential domain
   char** ifd_bufpool;          //fiber task pack message in bufferpool, and then send message to fluid tasks 
-  long* ifd_bufpool_msg_size;  //each message size
-  long* ifd_last_pos;          //Track last position of each fluid process's buffer
+  int* ifd_bufpool_msg_size;  //each message size
+  int* ifd_last_pos;          //Track last position of each fluid process's buffer
   char* ifd_recv_buf;
   int ifd_recv_count;          //Track number of char in received message
   pthread_mutex_t* lock_ifd_fluid_task_msg;
@@ -210,7 +210,8 @@ typedef struct gv_t {
   pthread_mutex_t lock_stream_msg[19];
   int stream_last_pos[19];
   char* stream_recv_buf;
-  long stream_recv_max_bufsize;
+  int stream_recv_max_bufsize;
+  int stream_msg_recv_cnt;
   // int streamdir[19];
   int streamDest[19]; //used in MPI_SendRecv when streaming
   int streamSrc[19];
@@ -248,9 +249,9 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
 /*cube2thread not used in MPI version*/
 int cube2thread(int BI, int BJ, int BK, int num_cubes_x, int num_cubes_y, int num_cubes_z, int P, int Q, int R);
 /*For MPI*/
-int cube2task(long BI, long BJ, long BK, GV gv);
+int cube2task(int BI, int BJ, int BK, GV gv);
 int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task);
-int global2task(long x, long y, long z, GV gv);
+int global2task(int x, int y, int z, GV gv);
 
 /*Fiber Distribution Function: Map a fiber row to each thread
   fiber_row -ith row*/
@@ -300,7 +301,7 @@ void compute_eqlbrmdistrfuncDF1(LV); //eqn10 for df1
 
 /*One way Message Passing from fluid to fluid machine.
 */
-void stream_distrfunc(GV, LV);           //eqn10 for df2
+void stream_distrfunc(LV);           //eqn10 for df2
 
 /*Local to fluid machine*/
 void bounceback_rigidwalls(LV);      //after streaming, special handling of boundary fluid nodes

@@ -47,7 +47,7 @@ double t[19] = {
 };
 
 void init_gv_constant(GV gv){
-  long dim_x, dim_y, dim_z;
+  int dim_x, dim_y, dim_z;
 
   // gv->timesteps= 5; // add default value
   //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
@@ -60,9 +60,9 @@ void init_gv_constant(GV gv){
 
   // fiber also needs fluid grid dimension infomation
   int cube_size = gv->cube_size;
-  long num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
-  long num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
-  long num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
 
   gv->ib = 2;       //0 and 1 are used for buffer zone
   gv->ie = dim_x - 3; //dim_x-1 (i.e., the last node), dim_x-2 are used for buffer zone
@@ -97,18 +97,18 @@ void init_gv_constant(GV gv){
   //printf("GV->Ks_l:::::%f\n",gv->Ks_l);
 }
 
-void init_stream_msg(GV gv, int dir, long size){
+void init_stream_msg(GV gv, int dir, int size){
   int cube_size =  gv->cube_size;
   int i;
 
-  gv->stream_last_pos[dir] = 0;     // Initialize gv->ifd_last_pos
+  gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
   // Initialize mutex lock_stream_msg
   if (pthread_mutex_init(&gv->lock_stream_msg[dir], NULL)){
     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
     exit(1);
   }
   //1d, along x axis
-  gv->stream_msg[dir] = (char*)malloc((sizeof(long)* 3 + sizeof(double))* size);
+  gv->stream_msg[dir] = (char*)malloc((sizeof(int)* 3 + sizeof(double))* size);
 
 }
 
@@ -116,20 +116,20 @@ void init_stream_msg_surface(GV gv, int start_dir, int end_dir, int dim_1, int d
   int cube_size =  gv->cube_size;
   int i;
   for (i = start_dir; i <= end_dir; i++){
-    gv->stream_last_pos[i] = 0;     // Initialize gv->ifd_last_pos
+    gv->stream_last_pos[i] = 0;     // Initialize gv->stream_last_pos
     // Initialize mutex lock_stream_msg
     if (pthread_mutex_init(&gv->lock_stream_msg[i], NULL)){
       fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
       exit(1);
     }
     //1d, along x axis
-    gv->stream_msg[i] = (char*)malloc((sizeof(long)* 3 + sizeof(double))* cube_size * dim_1 * cube_size * dim_2 * 5);
+    gv->stream_msg[i] = (char*)malloc((sizeof(int)* 3 + sizeof(double))* cube_size * dim_1 * cube_size * dim_2 * 5);
   }
 }
 
 // void init_stream_msg_surface(GV gv, int dir, int dim_1, int dim_2){
 
-//   gv->stream_last_pos[dir] = 0;     // Initialize gv->ifd_last_pos
+//   gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
 //   // Initialize mutex lock_stream_msg
 //   if (pthread_mutex_init(&gv->lock_stream_msg[dir], NULL)){
 //     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
@@ -143,7 +143,7 @@ void init_stream_msg_line(GV gv, int start_dir, int end_dir, int length){
   int cube_size =  gv->cube_size;
   int i;
   for (i = start_dir; i <= end_dir; i++){
-    gv->stream_last_pos[i] = 0;     // Initialize gv->ifd_last_pos
+    gv->stream_last_pos[i] = 0;     // Initialize gv->stream_last_pos
     // Initialize mutex lock_stream_msg
     if (pthread_mutex_init(&gv->lock_stream_msg[i], NULL)){
       fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
@@ -155,7 +155,7 @@ void init_stream_msg_line(GV gv, int start_dir, int end_dir, int length){
 }
 
 // void init_stream_msg_line(GV gv, int dir, int length){
-//   gv->stream_last_pos[dir] = 0;     // Initialize gv->ifd_last_pos
+//   gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
 //   // Initialize mutex lock_stream_msg
 //   if (pthread_mutex_init(&gv->lock_stream_msg[dir], NULL)){
 //     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
@@ -166,11 +166,11 @@ void init_stream_msg_line(GV gv, int start_dir, int end_dir, int length){
 // }
 
 void init_gv(GV gv) {
-  long i, j;
-  long BI, BJ, BK; //to identify the Sub grids
-  long cube_idx, node_idx;
+  int i, j;
+  int BI, BJ, BK; //to identify the Sub grids
+  int cube_idx, node_idx;
   int temp_taskid;
-  long li, lj, lk; //local access point inside cube
+  int li, lj, lk; //local access point inside cube
   int P, Q, R;
   int Px, Py, Pz;
   int my_rank; //my_rank_x, my_rank_y, my_rank_z;
@@ -188,9 +188,9 @@ void init_gv(GV gv) {
   Py = gv->num_fluid_task_y;
   Pz = gv->num_fluid_task_z;
 
-  long dim_x = fluid_grid->x_dim;
-  long dim_y = fluid_grid->y_dim;
-  long dim_z = fluid_grid->z_dim;
+  int dim_x = fluid_grid->x_dim;
+  int dim_y = fluid_grid->y_dim;
+  int dim_z = fluid_grid->z_dim;
 
   my_rank   = gv->taskid;
   // my_rank_x = gv->my_rank_x;
@@ -201,7 +201,7 @@ void init_gv(GV gv) {
   int ifd_size = 64; //4*4*4
   gv->ifd_max_bufsize = 0;
   for(i = 0; i < num_fiber_tasks; i++){
-    gv->ifd_max_bufsize += (sizeof(long) * 3 + sizeof(double) * 3) * ifd_size *
+    gv->ifd_max_bufsize += (sizeof(int) * 3 + sizeof(double) * 3) * ifd_size *
                         (gv->fiber_shape->sheets[i].num_rows) * (gv->fiber_shape->sheets[i].num_cols);
   }
 
@@ -215,16 +215,22 @@ void init_gv(GV gv) {
     gv->ifd_recv_buf = (char*) malloc(sizeof(char) * gv->ifd_max_bufsize);
 
     // Initilize stream_msg
-    int max_stream_msg_size = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 5; //max_stream_msg_size: stream a 2D surface to neighbour
+    int max_stream_msg_size = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 5; //TOO BIG: max_stream_msg_size: stream a 2D surface to neighbour
+    // int max_stream_msg_size = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 2; //max_stream_msg_size: stream a 2D surface to neighbour
+
     // printf("stream_max_dim=%d\n", stream_max_dim);
-    gv->stream_recv_max_bufsize = (sizeof(long) * 4 + sizeof(double)) * max_stream_msg_size;
+    gv->stream_recv_max_bufsize = (sizeof(int) * 4 + sizeof(double)) * max_stream_msg_size;
 
     // use msg[0] as recv buffer
     gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
     gv->stream_recv_buf = gv->stream_msg[0];
-    // printf("Here! stream_recv_max_bufsize=%d\n", gv->stream_recv_max_bufsize);
-    // fflush(stdout);
+    gv->stream_msg_recv_cnt = 0;
 
+    if (my_rank == 0){
+      printf("Fluid%d: stream_recv_max_bufsize=%d\n", my_rank, gv->stream_recv_max_bufsize);
+      fflush(stdout);
+    }
+    
     int destCoord[3], srcCoord[3];
     for (int iPop = 0; iPop < 19; ++iPop) {
       destCoord[0] = gv->rankCoord[0] + c[iPop][0];
@@ -242,11 +248,12 @@ void init_gv(GV gv) {
       gv->streamDest[iPop] = dest;
       gv->streamSrc[iPop] = src;
 
+#if 0
       printf("Fluid%2d: iPop=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n", 
         gv->rank[0], iPop, destCoord[0], destCoord[1], destCoord[2], dest,
         srcCoord[0], srcCoord[1], srcCoord[2], src);
       fflush(stdout);
-
+#endif
       // if(gv->rank[0] != dest){
         
       //   gv->streamdir[iPop] = dest;
@@ -281,13 +288,13 @@ void init_gv(GV gv) {
 
     /*MPI changes*/
     gv->ifd_bufpool = (char **) malloc(sizeof(char*) * num_fluid_tasks);
-    gv->ifd_bufpool_msg_size = (long *) malloc(sizeof(long) * num_fluid_tasks);
-    gv->ifd_last_pos = (long*) malloc(sizeof(long) * num_fluid_tasks);
+    gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
+    gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
     gv->lock_ifd_fluid_task_msg = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * num_fluid_tasks);
     gv->num_influenced_macs = 0;
     gv->influenced_macs = (int*) malloc(sizeof(int) * num_fluid_tasks);
 
-    long max_msg_size = (sizeof(long) * 3 + sizeof(double) * 3) * ifd_size *
+    int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * ifd_size *
                         (gv->fiber_shape->sheets[gv->rank[1]].num_rows) * (gv->fiber_shape->sheets[gv->rank[1]].num_cols);
 
     printf("Fiber%d of %d: Init num_rows=%d, num_cols=%d, max_msg_size=%ld\n", 

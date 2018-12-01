@@ -37,7 +37,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   tid = lv->tid;
 
   int     i = 0, j = 0, inneri = 0, innerj = 0, innerk = 0;//inner i corresponding to fluid index
-  long    istart, istop, jstart, jstop, kstart, kstop;
+  int    istart, istop, jstart, jstop, kstart, kstop;
   double  dx = 1.0, dy = 1.0, dz = 1.0; //fluid distance
   double  rx = 0.0, ry = 0.0, rz = 0.0; //local temporary variable
 
@@ -47,10 +47,10 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   double  tmp_dist; //distance
 
   Fluidnode     *nodes;
-  long BI, BJ, BK;
-  long li, lj, lk;
-  long total_sub_grids, dim_x, dim_y, dim_z;
-  long cube_idx, node_idx;
+  int BI, BJ, BK;
+  int li, lj, lk;
+  int total_sub_grids, dim_x, dim_y, dim_z;
+  int cube_idx, node_idx;
   int P, Q, R, total_threads;
   /* Todo: Move the following variables to GV to save time */
   double  PI = 3.14159265358979;
@@ -76,9 +76,9 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   dim_z = gv->fluid_grid->z_dim;
   
   int cube_size = gv->cube_size;
-  long num_cubes_x = gv->fluid_grid->num_cubes_x;
-  long num_cubes_y = gv->fluid_grid->num_cubes_y;
-  long num_cubes_z = gv->fluid_grid->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   // printf("fiber_SpreadForce: num_cubes_x %ld\n", num_cubes_x);
 
@@ -126,14 +126,14 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           //   tid, inneri, innerj, innerk, ifd2FluidProc, gv->ifd_last_pos[ifd2FluidProc]);
           // fflush(stdout);
 
-          *((long*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                   = inneri;
-          *((long*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)))    = innerj;
-          *((long*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long)* 2)) = innerk;
-          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long) * 3))                      = elastic_force_x;
-          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long) * 3 + sizeof(double)))     = elastic_force_y;
-          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(long) * 3 + sizeof(double) * 2)) = elastic_force_z;
+          *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                   = inneri;
+          *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)))    = innerj;
+          *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 2)) = innerk;
+          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int) * 3))                      = elastic_force_x;
+          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int) * 3 + sizeof(double)))     = elastic_force_y;
+          *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int) * 3 + sizeof(double) * 2)) = elastic_force_z;
 
-          gv->ifd_last_pos[ifd2FluidProc] += sizeof(long) * 3 + sizeof(double) * 3;
+          gv->ifd_last_pos[ifd2FluidProc] += sizeof(int) * 3 + sizeof(double) * 3;
 
           pthread_mutex_unlock(&gv->lock_ifd_fluid_task_msg[ifd2FluidProc]);
 

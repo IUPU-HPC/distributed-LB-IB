@@ -26,13 +26,13 @@ void gen_fiber_sheet(Fibersheet* sheet){
   
   double width = sheet->width;
   double height = sheet->height; 
-  long num_cols = sheet->num_cols;
-  long num_rows = sheet->num_rows;;
+  int num_cols = sheet->num_cols;
+  int num_rows = sheet->num_rows;;
   double x_orig = sheet->x_orig;
   double y_orig = sheet->y_orig;
   double z_orig = sheet->z_orig;
 
-  long row, col;
+  int row, col;
   Fiber *fiber;
 
   double zdist = width  / (num_cols - 1);
