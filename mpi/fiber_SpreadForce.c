@@ -22,7 +22,6 @@
 
 #include "do_thread.h"
 #include "timer.h"
-#include <assert.h>
 
 /* Step1: Influential domain for force-spreading and velocity interpolation. */
 /* Step2: Do actual force spreading. */

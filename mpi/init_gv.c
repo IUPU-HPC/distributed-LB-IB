@@ -97,7 +97,7 @@ void init_gv_constant(GV gv){
   //printf("GV->Ks_l:::::%f\n",gv->Ks_l);
 }
 
-void init_stream_msg(GV gv, int dir, int size){
+void init_stream_msg(GV gv, int dir, int points){
   int cube_size =  gv->cube_size;
   int i;
 
@@ -108,62 +108,10 @@ void init_stream_msg(GV gv, int dir, int size){
     exit(1);
   }
   
-  gv->stream_msg[dir] = (char*)malloc((sizeof(int)* 3 + sizeof(double))* size);
+  gv->stream_msg[dir] = (char*) malloc ((sizeof(int)* 4 + sizeof(double))* points);
+  // printf("Fluid%d: Init stream_msg[%d] = %d\n", gv->taskid, dir, (sizeof(int)* 4 + sizeof(double))* points);
 
 }
-
-void init_stream_msg_surface(GV gv, int start_dir, int end_dir, int dim_1, int dim_2){
-  int cube_size =  gv->cube_size;
-  int i;
-  for (i = start_dir; i <= end_dir; i++){
-    gv->stream_last_pos[i] = 0;     // Initialize gv->stream_last_pos
-    // Initialize mutex lock_stream_msg
-    if (pthread_mutex_init(&gv->lock_stream_msg[i], NULL)){
-      fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
-      exit(1);
-    }
-    //1d, along x axis
-    gv->stream_msg[i] = (char*)malloc((sizeof(int)* 3 + sizeof(double))* cube_size * dim_1 * cube_size * dim_2 * 5);
-  }
-}
-
-// void init_stream_msg_surface(GV gv, int dir, int dim_1, int dim_2){
-
-//   gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
-//   // Initialize mutex lock_stream_msg
-//   if (pthread_mutex_init(&gv->lock_stream_msg[dir], NULL)){
-//     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
-//     exit(1);
-//   }
-//   gv->stream_msg[dir] = (char*)malloc((sizeof(int)* 7 + sizeof(double))* cube_size * dim_1 * cube_size * dim_2 * 5);
-
-// }
-
-void init_stream_msg_line(GV gv, int start_dir, int end_dir, int length){
-  int cube_size =  gv->cube_size;
-  int i;
-  for (i = start_dir; i <= end_dir; i++){
-    gv->stream_last_pos[i] = 0;     // Initialize gv->stream_last_pos
-    // Initialize mutex lock_stream_msg
-    if (pthread_mutex_init(&gv->lock_stream_msg[i], NULL)){
-      fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
-      exit(1);
-    }
-    //1d, along x axis
-    gv->stream_msg[i] = (char*)malloc((sizeof(int)* 3 + sizeof(double))* cube_size * length);
-  }
-}
-
-// void init_stream_msg_line(GV gv, int dir, int length){
-//   gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
-//   // Initialize mutex lock_stream_msg
-//   if (pthread_mutex_init(&gv->lock_stream_msg[dir], NULL)){
-//     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
-//     exit(1);
-//   }
-
-//   gv->stream_msg[dir] = (char*)malloc((sizeof(int)* 7 + sizeof(double))* cube_size * length);
-// }
 
 void init_gv(GV gv) {
   int i, j;
@@ -197,6 +145,8 @@ void init_gv(GV gv) {
   // my_rank_y = gv->my_rank_y;
   // my_rank_z = gv->my_rank_z;
 
+  // printf("Task%d: Enter init_gv\n", my_rank);
+
   // determine the max msg size received by a fluid task
   int ifd_size = 64; //4*4*4
   gv->ifd_max_bufsize = 0;
@@ -205,7 +155,6 @@ void init_gv(GV gv) {
                         (gv->fiber_shape->sheets[i].num_rows) * (gv->fiber_shape->sheets[i].num_cols);
   }
 
-  printf("Task%d: Enter init_gv\n", my_rank);
   // Fluid task
   if (gv->taskid < gv->num_fluid_tasks){
 
@@ -215,11 +164,9 @@ void init_gv(GV gv) {
     gv->ifd_recv_buf = (char*) malloc(sizeof(char) * gv->ifd_max_bufsize);
 
     // Initilize stream_msg
-    int max_stream_msg_size = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 5; //TOO BIG: max_stream_msg_size: stream a 2D surface to neighbour
-    // int max_stream_msg_size = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 2; //max_stream_msg_size: stream a 2D surface to neighbour
+    int max_stream_msg_points = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 5; //TOO BIG: max_stream_msg_points: stream a 2D surface to neighbour
 
-    // printf("stream_max_dim=%d\n", stream_max_dim);
-    gv->stream_recv_max_bufsize = (sizeof(int) * 4 + sizeof(double)) * max_stream_msg_size;
+    gv->stream_recv_max_bufsize = (sizeof(int) * 4 + sizeof(double)) * max_stream_msg_points;
 
     // use msg[0] as recv buffer
     gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
@@ -269,7 +216,7 @@ void init_gv(GV gv) {
       //   gv->streamdir[iPop] = -1;
       // }
 
-      init_stream_msg(gv, iPop, max_stream_msg_size); //need to optimize
+      init_stream_msg(gv, iPop, max_stream_msg_points); //need to optimize
     }
   }
 

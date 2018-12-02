@@ -122,12 +122,12 @@ void  compute_bendingforce(LV lv) {
       if (tid == 0){
         printf("Inside BF -- Printing for Corner Points(z,y) : 0,0 \n");
         print_fiber_sub_grid(gv, 0, 0, 0, 0);
-        // printf("Inside BF -- Printing for Corner Points(z,y) : 51,0 \n");
-        // print_fiber_sub_grid(gv, 0, 51, 0, 51);
-        // printf("Inside BF -- Printing for Corner Points(z,y) : 0,51 \n");
-        // print_fiber_sub_grid(gv, 51, 0, 51, 0);
-        // printf("Inside BF -- Printing for Corner Points (z,y): 51,51 \n");
-        // print_fiber_sub_grid(gv, 51, 51, 51, 51);
+        printf("Inside BF -- Printing for Corner Points(z,y) : 51,0 \n");
+        print_fiber_sub_grid(gv, 0, 51, 0, 51);
+        printf("Inside BF -- Printing for Corner Points(z,y) : 0,51 \n");
+        print_fiber_sub_grid(gv, 51, 0, 51, 0);
+        printf("Inside BF -- Printing for Corner Points (z,y): 51,51 \n");
+        print_fiber_sub_grid(gv, 51, 51, 51, 51);
       }
       pthread_barrier_wait(&(gv->barr));
 #endif //DEBUG_PRINT

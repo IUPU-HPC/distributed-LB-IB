@@ -256,7 +256,7 @@ int main(int argc, char* argv[]) {
   // gv->total_tasks = gv->num_fluid_task_x * gv->num_fluid_task_y * gv->num_fluid_task_z + gv->num_fibersht;
   gv->threads_per_task = gv->tx * gv->ty * gv->tz;
 
-  int ierr, taskid;
+  int ierr;
   int provided;
 
   ierr = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
   init_gv(gv);
   MPI_Barrier(MPI_COMM_WORLD);
-  printf("Task%d Pass init gv!\n", taskid);
+  printf("Task%d Pass init gv!\n", gv->taskid);
   fflush(stdout);
 
   //allocating memory for mutex
@@ -378,7 +378,7 @@ int main(int argc, char* argv[]) {
     printf("Friber task%d gen_fiber_sheet complete!\n", gv->taskid);
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
-#if 0    
+#if 1   
     printf("Printing for Corner Points(z,y) : 51,0 \n");
     print_fiber_sub_grid(gv, 0, 51, 0, 51);
     printf("Printing for Corner Points(z,y) : 0,51 \n");
