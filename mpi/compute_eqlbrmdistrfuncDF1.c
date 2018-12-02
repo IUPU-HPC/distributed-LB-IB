@@ -75,10 +75,12 @@ void compute_eqlbrmdistrfuncDF1(LV lv){
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
     if (gv->taskid == cube2task(BI, BJ, BK, gv)){
+
     cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
     nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
     starting_x = starting_y = starting_z = 0;
     stopping_x = stopping_y = stopping_z = cube_size - 1;
+
     if (BI == 0) starting_x = 2;//ib
     if (BI == num_cubes_x - 1) stopping_x = cube_size - 3;//ie
     if (BJ == 0) starting_y = 2;//jb
@@ -91,6 +93,7 @@ void compute_eqlbrmdistrfuncDF1(LV lv){
     for (lk = starting_z; lk <= stopping_z; ++lk){
       node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube.
       computeEquilibrium(nodes+node_idx);
+
       // for (ksi = 0; ksi <= 18; ksi++){
       //   if (ksi == 0){
       //     nodes[node_idx].dfeq[ksi] =
@@ -184,8 +187,9 @@ void compute_eqlbrmdistrfuncDF1(LV lv){
         }//lk loop
       }// if machine check
   }//For BK
-#ifdef DEBUG_PRINT
-  // printf("****************compute_eqlbrmdistrfuncDF1 EXIT my_rankis :%d ***************\n", gv->my_rank);
+
+#if 0
+  printf("****************compute_eqlbrmdistrfuncDF1 EXIT my_rankis :%d ***************\n", gv->my_rank);
 #endif //DEBUG_PRINT
 
 }

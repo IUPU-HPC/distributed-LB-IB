@@ -396,7 +396,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
     //   MPI_Barrier(MPI_COMM_WORLD);
   }
 
-#ifdef DEBUG_PRINT
+#if 0
   printf("****************stream_distfunc() Exit*******\n");
-#endif //DEBUG_PRINT
+#endif
 }

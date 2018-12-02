@@ -137,7 +137,7 @@ void* do_thread(void* v){
       }
 #endif //DEBUG_PRINT
       stream_distrfunc(lv);
-      // pthread_barrier_wait(&(gv->barr));
+      pthread_barrier_wait(&(gv->barr));
       // if(tid==0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
