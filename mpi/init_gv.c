@@ -64,7 +64,7 @@ void init_gv_constant(GV gv){
   int num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
   int num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
 
-  gv->ib = 2;       //0 and 1 are used for buffer zone
+  gv->ib = 2;         //0 and 1 are used for buffer zone
   gv->ie = dim_x - 3; //dim_x-1 (i.e., the last node), dim_x-2 are used for buffer zone
   gv->jb = 2;
   gv->je = dim_y - 3;

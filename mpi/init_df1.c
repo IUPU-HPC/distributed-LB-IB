@@ -32,16 +32,14 @@ void init_df1(GV gv) {
       Fluidnode* nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       starting_x = starting_y = starting_z = 0;
       stopping_x = stopping_y = stopping_z = cube_size - 1;
-      if (BI == 0) starting_x = 2;
 
+      if (BI == 0) starting_x = 2;
       if (BI == num_cubes_x - 1) stopping_x = cube_size - 3;
 
       if (BJ == 0) starting_y = 2;
-
       if (BJ == num_cubes_y - 1) stopping_y = cube_size - 3;
 
       if (BK == 0) starting_z = 2;
-
       if (BK == num_cubes_z - 1) stopping_z = cube_size - 3;
 
       for (li = starting_x; li <= stopping_x; ++li)

@@ -145,25 +145,24 @@ void* do_thread(void* v){
         printf("Fluid Task%d: After streaming\n", my_rank);
         fflush(stdout);
       }
-
 #endif //DEBUG_PRINT
 
-// //2018-11-06
-// //       //Comment Here
-// //       bounceback_rigidwalls(lv);
-// //       pthread_barrier_wait(&(gv->barr));
-// //       MPI_Barrier(MPI_COMM_WORLD);
-// // #ifdef DEBUG_PRINT
-// //       printf("After bounceback\n");
-// // #endif //DEBUG_PRINT
+      bounceback_rigidwalls(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if(tid==0)
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("After bounceback\n");
+#endif //DEBUG_PRINT
 
-// //       compute_rho_and_u(lv);
-// //       pthread_barrier_wait(&(gv->barr));
-// //       MPI_Barrier(MPI_COMM_WORLD);
-// // #ifdef DEBUG_PRINT
-// //       printf("After compute rho and u \n");
-// // #endif //DEBUG_PRINT
-// //2018-11-06      
+      compute_rho_and_u(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if(tid==0)
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("After compute rho and u \n");
+#endif //DEBUG_PRINT
+
     }
 
 // //2018-11-06    

@@ -125,7 +125,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           //   tid, inneri, innerj, innerk, ifd2FluidProc, gv->ifd_last_pos[ifd2FluidProc]);
           // fflush(stdout);
 
-          *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                   = inneri;
+          *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                  = inneri;
           *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)))    = innerj;
           *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 2)) = innerk;
           *((double*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int) * 3))                      = elastic_force_x;
