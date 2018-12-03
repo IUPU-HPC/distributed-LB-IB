@@ -337,6 +337,6 @@ void* do_thread(void* v); //IB-LBM simulation moved to do_thread called via pthe
 int check_1d(int x, int y, int z, int* dir);
 int check_2d(int x, int y, int z, int* dir);
 
-static inline double get_cur_time();
+// static inline double get_cur_time();
 
 #endif //DO_THREAD_H

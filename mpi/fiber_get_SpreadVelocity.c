@@ -84,6 +84,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
 
+  double t0 = 0, t1 = 0, t_search = 0;
+
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
   fiberarray = gv->fiber_shape->sheets[0].fibers;
@@ -184,31 +186,45 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           //node_idx = (inneri%cube_size) *cube_size*cube_size +(innerj%cube_size) *cube_size +innerk%cube_size;
           node_idx = (li) * cube_size * cube_size +(lj) * cube_size + lk;
-          nodes    = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
 
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
 
-          double vel_x, vel_y, vel_z;
+          double vel_x = 0, vel_y = 0, vel_z = 0;
 
-          search_velocity(gv->ifd_bufpool[ifd2FluidProc], gv->ifd_last_pos[ifd2FluidProc], inneri, innerj, innerk, &vel_x, &vel_y, &vel_z);
+          t0 = Timer::get_cur_time();
+          search_velocity(gv->ifd_bufpool[ifd2FluidProc], gv->ifd_last_pos[ifd2FluidProc], inneri, innerj, innerk, &vel_x, &vel_y, &vel_z); //need to optimize
+          t1 = Timer::get_cur_time();
+          t_search += t1 - t0;
 
           s1 += vel_x * tmp; 
       	  s2 += vel_y * tmp;
           s3 += vel_z * tmp;
 
         }//for innerk ends
-
-        fiberarray[i].nodes[j].x += gv->dt * s1;
-      	fiberarray[i].nodes[j].y += gv->dt * s2;
-      	fiberarray[i].nodes[j].z += gv->dt * s3;
-
       } //for fiberclmn ends
     }//if fiber2thread ends
   }//for fiber row ends
 
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
+
+  // if(tid == 0){
+  	printf("Fiber%d prepare to final update location, t_search=%f\n", my_rank, t_search);
+  // }
+  for (i = 0; i < total_fibers_row; ++i){
+    if (fiber2thread(i, total_fibers_row, total_threads) == tid){
+      for (j = 0; j < total_fibers_clmn; ++j){
+        fiberarray[i].nodes[j].x += gv->dt * s1;
+      	fiberarray[i].nodes[j].y += gv->dt * s2;
+      	fiberarray[i].nodes[j].z += gv->dt * s3;
+      } //for fiberclmn ends
+    }//if fiber2thread ends
+  }//for fiber row ends
+
+  // wait until all fiber threads complete computation
+  pthread_barrier_wait(&(gv->barr));
+
   double time_elapsed = Timer::time_end();
   printf("Fiber task%d tid%d: T_prepare_ifd_send_msg=%f\n", gv->taskid, tid, time_elapsed);
   fflush(stdout);
