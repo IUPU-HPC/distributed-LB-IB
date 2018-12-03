@@ -148,7 +148,7 @@ void init_gv(GV gv) {
   // printf("Task%d: Enter init_gv\n", my_rank);
 
   // determine the max msg size received by a fluid task
-  int ifd_size = 64; //4*4*4
+  int ifd_size = 64; //4*4*4, x,y,z: (-2,2)
   gv->ifd_max_bufsize = 0;
   for(i = 0; i < num_fiber_tasks; i++){
     gv->ifd_max_bufsize += (sizeof(int) * 3 + sizeof(double) * 3) * ifd_size *

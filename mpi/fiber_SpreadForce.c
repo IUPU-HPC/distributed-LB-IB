@@ -81,7 +81,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
   // printf("fiber_SpreadForce: num_cubes_x %ld\n", num_cubes_x);
 
-  total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
+  total_sub_grids = (dim_x * dim_y * dim_z) / pow(cube_size, 3);
 
   P = gv->tx;
   Q = gv->ty;
@@ -101,8 +101,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         kstart = floor(fiberarray[i].nodes[j].z / dz - 2) + 1; //z dimension
         kstop = kstart + 3;
 
-        for (inneri = istart; inneri <= istop; inneri++)//x direction
-        for (innerj = jstart; innerj <= jstop; innerj++)//y direction
+        for (inneri = istart; inneri <= istop; inneri++) //x direction
+        for (innerj = jstart; innerj <= jstop; innerj++) //y direction
         for (innerk = kstart; innerk <= kstop; innerk++){//z direction
 
           /*Used for calculating eqn 21 ....PN*/
@@ -119,7 +119,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
 
-          pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd2FluidProc]);
+          pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd2FluidProc]); //Have repeated (inneri, innerj, innerk) inserted here; Can be updated!
 
           // printf("Tid%d: Fluid(%d, %d, %d) ifd_last_pos[%d]=%ld\n", 
           //   tid, inneri, innerj, innerk, ifd2FluidProc, gv->ifd_last_pos[ifd2FluidProc]);
@@ -158,7 +158,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         // gv->bufferpool_msg_size[toProc] = gv->ifd_last_pos[toProc];
 
         gv->influenced_macs[gv->num_influenced_macs] = toProc;
-        printf("Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d,\n",
+        printf("Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d\n",
           my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize,
           gv->num_influenced_macs, toProc);
         fflush(stdout);
@@ -169,7 +169,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
         gv->num_influenced_macs++;
         // set ifd_last_pos to default value 0
-        gv->ifd_last_pos[toProc] = 0;
+        // gv->ifd_last_pos[toProc] = 0;
       }
       else{
         char stop = 100;
@@ -184,7 +184,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
       }
     }
     double time_elapsed = Timer::time_end();
-    printf("Fiber task%d: send_msg_time=%f,\n", my_rank, time_elapsed);
+    printf("Fiber task%d: SpreadForce_send_msg_time=%f\n", my_rank, time_elapsed);
     fflush(stdout);
   }
   // 2018-10-06

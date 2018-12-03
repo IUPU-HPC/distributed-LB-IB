@@ -22,12 +22,9 @@
 
 #include "do_thread.h"
 
-/* Step1: Influential domain for force-spreading and velocity interpolation. */
-/* Step2: Do actual force spreading. */
-// eqn 19 left assign
-void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
+void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
 #ifdef DEBUG_PRINT
-  // printf("****Inside fluid_get_SpreadForce******\n");
+  // printf("****Inside fluid_SpreadVelocity******\n");
   fflush(stdout);
 #endif //DEBUG_PRINT
   int tid;
@@ -42,7 +39,6 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   int li, lj, lk;
   int total_sub_grids, dim_x, dim_y, dim_z;
   int cube_idx, node_idx;
-  int  P, Q, R, total_threads;
 
   /*MPI changes*/
   int temp_mac_rank, fluid_owner_mac;
@@ -67,62 +63,39 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
   total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
 
-  //Annuling Forces on Fluid grid :: Necessary to annul in every time step, because it is between fluid and fiber
   int fluid_mac_rank;
 
-  for (BI = 0; BI <num_cubes_x; BI++)
-  for (BJ = 0; BJ <num_cubes_y; BJ++)
-  for (BK = 0; BK <num_cubes_z; BK++){
-    if (gv->taskid == cube2task(BI, BJ, BK, gv)){
-      cube_idx = BI*num_cubes_y*num_cubes_z + BJ*num_cubes_z + BK;
-      for (li = 0; li< cube_size; li++)
-      for (lj = 0; lj< cube_size; lj++)
-      for (lk = 0; lk< cube_size; lk++){
-        node_idx = li* cube_size * cube_size + lj * cube_size + lk;
-        gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_x = 0.0e0;
-        gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_y = 0.0e0;
-        gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_z = 0.0e0;
-      }
-    }//if cube2thread ends
-  }
-
-
   // fluid task starts
-  // fluid task thread 0 do receive
-  if (tid == 0){
-#ifdef DEBUG_PRINT
-    printf("Fluid task%d gv->ifd_max_bufsize=%d\n", my_rank, gv->ifd_max_bufsize);
-#endif //DEBUG_PRINT
-    MPI_Recv(gv->ifd_recv_buf, gv->ifd_max_bufsize, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD, &status);
-    MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
-    printf("Fluid task%d tid%d receive a message with ifd_recv_count=%d\n", my_rank, tid, gv->ifd_recv_count);
-    fflush(stdout);
-  }
-
-  // All other thread wait until thread 0 finish receiving msg
-  pthread_barrier_wait(&(gv->barr));
-
-
   if (gv->ifd_recv_count == 1){
     // receive stop message
-// #ifdef DEBUG_PRINT
-//   printf("**** Fluid task%d_tid%d: fluid_get_SpreadForce recv STOP and Exit******\n", my_rank, tid);
-// #endif //DEBUG_PRINT
+  	char stop = 100;
+
+#ifdef DEBUG_PRINT
+        printf("Fluid%d: send EMPTY msg to %d ifd_max_bufsize=%d\n",
+          my_rank, fiber_mac_rank, gv->ifd_max_bufsize);
+        fflush(stdout);
+#endif //DEBUG_PRINT
+
+    MPI_Send(&stop, 1, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD);
+
     return;
   }
   else{
 // #ifdef DEBUG_PRINT
-//   printf("**** Fluid task%d_tid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
+//   printf("**** Fluid task%d_tid%d: fluid_SpreadVelocity prepare MSG******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
     int position = 0;
     while (position < gv->ifd_recv_count){
 
       int X = *((int*)(gv->ifd_recv_buf + position));
       int Y = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
-      int Z = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 2));
-      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3));
-      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3 + sizeof(double)));
-      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3 + sizeof(double)* 2));
+      int Z = *((int*)(gv->ifd_recv_buf + position + sizeof(int) * 2));
+
+#if 0      
+      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3));
+      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double)));
+      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double) * 2));
+#endif
 
       position += sizeof(int)* 3 + sizeof(double)* 3;
 
@@ -154,13 +127,27 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 task will recv wrong cube
         // Don't need lock here
         // pthread_mutex_lock(&(gv->lock_Fluid[owner_tid]));
-        nodes[node_idx].elastic_force_x += elastic_force_x;
-        nodes[node_idx].elastic_force_y += elastic_force_y;
-        nodes[node_idx].elastic_force_z += elastic_force_z;
+        *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3)) = nodes[node_idx].vel_x;
+        *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double))) = nodes[node_idx].vel_y;
+        *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double) * 2)) = nodes[node_idx].vel_z;
         // pthread_mutex_unlock(&(gv->lock_Fluid[owner_tid]));
       }
 
     }
+
+    pthread_barrier_wait(&(gv->barr));
+
+    if(tid == 0){
+    	printf("Fluid%d: send velocity to Fiber task%d, sendcnt=%d, ifd_max_bufsize=%d\n",
+          my_rank, fiber_mac_rank, gv->ifd_recv_count, gv->ifd_max_bufsize);
+        fflush(stdout);
+
+        assert(gv->ifd_recv_count <= gv->ifd_max_bufsize);
+
+        MPI_Send(gv->ifd_recv_buf, gv->ifd_recv_count, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD);
+    }
+
+    pthread_barrier_wait(&(gv->barr));
 
   }
 

@@ -24,11 +24,10 @@ void moveFiberSheet(LV lv){
   tid = lv->tid;
   int total_threads = gv->total_threads;
 
-  double       s1, s2, s3, dx, dy, dz, dx1, dy1, dz1;
-  int          gi, gj, gk, i2, j2, k2, istart, jstart, kstart, jf, kf;
-  int          total_fibers_row, total_fibers_clmn;
-  Fiber        *fiberarray;
-
+  double s1, s2, s3, dx, dy, dz, dx1, dy1, dz1;
+  int    gi, gj, gk, i2, j2, k2, istart, jstart, kstart, jf, kf;
+  int    total_fibers_row, total_fibers_clmn;
+  Fiber  *fiberarray;
 
   int i;
   dx = 1.0;
@@ -39,19 +38,19 @@ void moveFiberSheet(LV lv){
   dy1 = 1.0 / dy;
   dz1 = 1.0 / dz;
 
-  double  PI = 3.14159265358979;
-  double  c_x = PI / (2.0*dx);
-  double  c_y = PI / (2.0*dy);
-  double  c_z = PI / (2.0*dz);
-  double  c_64 = 1.0 / (6.4e1);
-  double   rx = 0.0;
-  double   ry = 0.0;
-  double   rz = 0.0;
+  double PI = 3.14159265358979;
+  double c_x = PI / (2.0 * dx);
+  double c_y = PI / (2.0 * dy);
+  double c_z = PI / (2.0 * dz);
+  double c_64 = 1.0 / (6.4e1);
+  double rx = 0.0;
+  double ry = 0.0;
+  double rz = 0.0;
 
   Fluidnode *nodes;
-  int        BI, BJ, BK, cube_size, cube_idx, node_idx;
-  int        num_cubes_x, num_cubes_y, num_cubes_z;
-  int        li, lj, lk;
+  int BI, BJ, BK, cube_size, cube_idx, node_idx;
+  int num_cubes_x, num_cubes_y, num_cubes_z;
+  int li, lj, lk;
 
   istart = 0;
   jstart = 0;
@@ -59,7 +58,6 @@ void moveFiberSheet(LV lv){
   s1 = 0;
   s2 = 0;
   s3 = 0;
-
 
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
@@ -71,9 +69,9 @@ void moveFiberSheet(LV lv){
   num_cubes_z = gv->num_cubes_z;
 
   //double s1_buffer[total_fibers_row*64 +1], s2_buffer[total_fibers_row*64 +1], s3_buffer[total_fibers_row*64 +1];
-  double *s1_buffer = malloc(((total_fibers_clmn* total_fibers_row) * 64 + 1)* sizeof(double));
-  double *s2_buffer = malloc(((total_fibers_clmn* total_fibers_row) * 64 + 1)* sizeof(double));
-  double *s3_buffer = malloc(((total_fibers_clmn* total_fibers_row) * 64 + 1)* sizeof(double));
+  double *s1_buffer = malloc(((total_fibers_clmn * total_fibers_row) * 64 + 1) * sizeof(double));
+  double *s2_buffer = malloc(((total_fibers_clmn * total_fibers_row) * 64 + 1) * sizeof(double));
+  double *s3_buffer = malloc(((total_fibers_clmn * total_fibers_row) * 64 + 1) * sizeof(double));
 
   int position, pos_from_fluid;
   int bufferSize = (gv->num_macs) * 1000;
@@ -84,7 +82,9 @@ void moveFiberSheet(LV lv){
   int my_rank = gv->my_rank;
   int fiber_mac_rank = gv->num_macs - 1;
   MPI_Status status;
-  s1_buffer[0] = -1; s2_buffer[0] = -2; s3_buffer[0] = -3;
+  s1_buffer[0] = -1; 
+  s2_buffer[0] = -2; 
+  s3_buffer[0] = -3;
   int fluid_mac_rank;
   char recv_history[gv->num_macs - 1];
   for (i = 0; i <= gv->num_macs - 1; i++){
@@ -92,6 +92,7 @@ void moveFiberSheet(LV lv){
   }
 
   if (my_rank == fiber_mac_rank){
+
     for (jf = 0; jf < total_fibers_row; jf++) {
       if (fiber2thread(jf, total_fibers_row, total_threads) == tid){
         for (kf = 0; kf < total_fibers_clmn; kf++){
@@ -162,18 +163,16 @@ void moveFiberSheet(LV lv){
         }// for fiber clmn ends
       }//if fiber2thread ends
     }//for fiber row ends
-    //recvng partial sums from all fluid machine
 
-
-  }
+  }//recvng partial sums from all fluid machine
   else {
 
     //Srring up s buffers for all fluid machines to be 0. another way was inside while commented right now.....
     for (jf = 0; jf < total_fibers_row; jf++)
       for (kf = 0; kf < total_fibers_clmn; kf++){
-        s1_buffer[jf*total_fibers_clmn + kf + 1] = 0.0;
-        s2_buffer[jf*total_fibers_clmn + kf + 1] = 0.0;
-        s3_buffer[jf*total_fibers_clmn + kf + 1] = 0.0;
+        s1_buffer[jf * total_fibers_clmn + kf + 1] = 0.0;
+        s2_buffer[jf * total_fibers_clmn + kf + 1] = 0.0;
+        s3_buffer[jf * total_fibers_clmn + kf + 1] = 0.0;
       }
     //s1_buffer[total_fibers_row*64 +1]=0.0;   s2_buffer[total_fibers_row*64 +1]=0.0;     s3_buffer[total_fibers_row*64 +1]=0.0;
     //if(my_rank== gv->owner_fluid_mac){
@@ -200,16 +199,19 @@ void moveFiberSheet(LV lv){
         cube_idx = BI *num_cubes_y *num_cubes_z + BJ *num_cubes_z + BK;
         nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
         node_idx = (li)*cube_size*cube_size + (lj)*cube_size + lk;
-        s1_buffer[0] = -1; s2_buffer[0] = -2; s3_buffer[0] = -3;
 
-        s1_buffer[jf*total_fibers_clmn + kf + 1] +=
-          nodes[node_idx].vel_x*(1.0 + cos(c_x*rx))*(1.0 + cos(c_y*ry))*(1.0 + cos(c_z*rz))*c_64;
+        s1_buffer[0] = -1;
+        s2_buffer[0] = -2;
+        s3_buffer[0] = -3;
 
-        s2_buffer[jf*total_fibers_clmn + kf + 1] +=
-          nodes[node_idx].vel_y*(1.0 + cos(c_x*rx))*(1.0 + cos(c_y*ry))*(1.0 + cos(c_z*rz))*c_64;
+        s1_buffer[jf * total_fibers_clmn + kf + 1] +=
+          nodes[node_idx].vel_x * (1.0 + cos(c_x*rx)) * (1.0 + cos(c_y*ry)) * (1.0 + cos(c_z*rz)) * c_64;
 
-        s3_buffer[jf*total_fibers_clmn + kf + 1] +=
-          nodes[node_idx].vel_z*(1.0 + cos(c_x*rx))*(1.0 + cos(c_y*ry))*(1.0 + cos(c_z*rz))*c_64;
+        s2_buffer[jf * total_fibers_clmn + kf + 1] +=
+          nodes[node_idx].vel_y * (1.0 + cos(c_x*rx)) * (1.0 + cos(c_y*ry)) * (1.0 + cos(c_z*rz)) * c_64;
+
+        s3_buffer[jf * total_fibers_clmn + kf + 1] +=
+          nodes[node_idx].vel_z * (1.0 + cos(c_x*rx)) * (1.0 + cos(c_y*ry)) * (1.0 + cos(c_z*rz)) * c_64;
 
       }
       if (itr_stop == 1)
@@ -233,7 +235,6 @@ void moveFiberSheet(LV lv){
     MPI_Send(s2_buffer, bufferlen, MPI_DOUBLE, fiber_mac_rank, 0, MPI_COMM_WORLD);
     MPI_Send(s3_buffer, bufferlen, MPI_DOUBLE, fiber_mac_rank, 0, MPI_COMM_WORLD);
 
-
   }
   if (my_rank == fiber_mac_rank) MPI_Barrier(MPI_COMM_WORLD);
 
@@ -249,14 +250,13 @@ void moveFiberSheet(LV lv){
           for (kf = 0; kf < total_fibers_clmn; kf++){
 
             if (s1_buffer[0] == -1)
-              fiberarray[jf].nodes[kf].x += gv->dt * s1_buffer[jf*total_fibers_row + kf + 1];// +1  since at 0 there is a flag
+              fiberarray[jf].nodes[kf].x += gv->dt * s1_buffer[jf * total_fibers_row + kf + 1]; // +1  since at 0 there is a flag
 
             if (s2_buffer[0] == -2)
-              fiberarray[jf].nodes[kf].y += gv->dt * s2_buffer[jf*total_fibers_row + kf + 1];// +1  since at 0 there is a flag
+              fiberarray[jf].nodes[kf].y += gv->dt * s2_buffer[jf * total_fibers_row + kf + 1]; // +1  since at 0 there is a flag
 
             if (s3_buffer[0] == -3)
-              fiberarray[jf].nodes[kf].z += gv->dt *  s3_buffer[jf*total_fibers_row + kf + 1];// +1  since at 0 there is a flag
-
+              fiberarray[jf].nodes[kf].z += gv->dt * s3_buffer[jf * total_fibers_row + kf + 1]; // +1  since at 0 there is a flag
 
             // printf("recvng");
           }

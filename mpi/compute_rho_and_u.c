@@ -34,7 +34,7 @@ void compute_rho_and_u(LV lv){
   Fluidnode *nodes;
 
   int ksi;
-  double s1, s2, s3, s4;
+  double s1, s2, s3, s4; //sum of df2, df2[x,y,z] * c[ksi][x,y,z]
   int BI, BJ, BK; //to identify the Sub grids
   int cube_idx;
   int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z; //To identify buffer zone
@@ -87,8 +87,7 @@ void compute_rho_and_u(LV lv){
                   s3 = c[0][1] * nodes[node_idx].df2[0];
                   s4 = c[0][2] * nodes[node_idx].df2[0];
 
-                  for (ksi = 1; ksi <= 18; ksi++)
-                  {
+                  for (ksi = 1; ksi <= 18; ksi++){
                     s1 += nodes[node_idx].df2[ksi];
                     s2 += c[ksi][0] * nodes[node_idx].df2[ksi];
                     s3 += c[ksi][1] * nodes[node_idx].df2[ksi];
