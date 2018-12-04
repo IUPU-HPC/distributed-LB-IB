@@ -16,48 +16,47 @@ void replace_old_DF(LV lv){
   GV gv = lv->gv;
   tid = lv->tid;
 
-  Fluidgrid     *fluidgrid;
-  Fluidnode     *nodes;
+  Fluidgrid *fluidgrid;
+  Fluidnode *nodes;
 
-  int           ksi;
-  int           BI, BJ, BK; //to identify the Sub grids
-  int           cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
-  int           starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
-  int           li, lj, lk, node_idx;//local access point inside cube
+  int ksi;
+  int BI, BJ, BK; //to identify the Sub grids
+  int cube_size, cube_idx;
+  int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
+  int li, lj, lk, node_idx;//local access point inside cube
 
-  int P = gv->P;
-  int Q = gv->Q;
-  int R = gv->R;
-  int my_rank = gv->my_rank;
+  int P = gv->tx;
+  int Q = gv->ty;
+  int R = gv->tz;
+  int my_rank = gv->taskid;
   int temp_mac_rank;
 
   fluidgrid = gv->fluid_grid;
 
   cube_size = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   /* replacing the old d.f. values by the newly computed ones */
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
-    if (cube2thread_and_machine(BI, BJ, BK, gv, &temp_mac_rank) == tid){
+    if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
       if (my_rank == temp_mac_rank){
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
         nodes = fluidgrid->sub_fluid_grid[cube_idx].nodes;
+
         starting_x = starting_y = starting_z = 0;
         stopping_x = stopping_y = stopping_z = cube_size - 1;
-        if (BI == 0) starting_x = 1;//ib-1
 
+        if (BI == 0) starting_x = 1;//ib-1
         if (BI == num_cubes_x - 1) stopping_x = cube_size - 2;//ie+1
 
         if (BJ == 0) starting_y = 1;//jb-1
-
         if (BJ == num_cubes_y - 1) stopping_y = cube_size - 2;//je+1
 
         if (BK == 0) starting_z = 1;//kb-1
-
         if (BK == num_cubes_z - 1) stopping_z = cube_size - 2;//ke+1
 
         for (li = starting_x; li <= stopping_x; ++li)

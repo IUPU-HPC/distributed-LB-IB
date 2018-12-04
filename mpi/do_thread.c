@@ -151,7 +151,7 @@ void* do_thread(void* v){
 
       bounceback_rigidwalls(lv);
       pthread_barrier_wait(&(gv->barr));
-      // if(tid==0)
+      // if (tid == 0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
       printf("Fluid Task%d: After bounceback\n");
@@ -159,7 +159,7 @@ void* do_thread(void* v){
 
       compute_rho_and_u(lv);
       pthread_barrier_wait(&(gv->barr));
-      // if(tid==0)
+      // if (tid == 0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
       printf("Fluid Task%d: After compute rho and u \n");
@@ -184,7 +184,7 @@ void* do_thread(void* v){
       // t6 += t1 - t0;
     }
     pthread_barrier_wait(&(gv->barr));
-    // if(tid==0)
+    // if (tid == 0)
     //   MPI_Barrier(MPI_COMM_WORLD);
     t1 = get_cur_time();
     t5 += t1 - t0;
@@ -193,29 +193,32 @@ void* do_thread(void* v){
     printf("Task%d: After moving fibersheet \n", my_rank);
 #endif //DEBUG_PRINT
 
-//2018-11-06  
-//     copy_inout_to_df2(lv);
-//     pthread_barrier_wait(&(gv->barr));
-//     if (tid == 0) MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//     printf("After  copy_inout_to_df2 \n");
-// #endif //DEBUG_PRINT
+    // Fluid tasks
+    if(my_rank < num_fluid_tasks){
+      // copy_inout_to_df2(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if (tid == 0) 
+          // MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("After  copy_inout_to_df2 \n");
+#endif //DEBUG_PRINT
 
-//     replace_old_DF(lv);
-//     pthread_barrier_wait(&(gv->barr));
-//     if (tid == 0) MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//     printf("After  replace_old_DF \n");
-// #endif //DEBUG_PRINT
+      replace_old_DF(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if (tid == 0) 
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("After  replace_old_DF \n");
+#endif //DEBUG_PRINT
 
-//     periodicBC(lv);
-//     pthread_barrier_wait(&(gv->barr));
-//     if (tid == 0) MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//     printf("After PeriodicBC\n");
-// #endif //DEBUG_PRINT
-
-//2018-11-06
+      periodicBC(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if (tid == 0) 
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("After PeriodicBC\n");
+#endif //DEBUG_PRINT
+    }
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;

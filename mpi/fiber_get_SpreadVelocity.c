@@ -114,7 +114,6 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
   Timer::time_start();
 
-#if 1
   //fiber task thread 0 send the message out
   if (tid == 0){
     Timer::time_start();
@@ -141,11 +140,9 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
       }
     }
     double time_elapsed = Timer::time_end();
-    printf("Fiber task%d: recv_velocity_msg_time=%f,\n", my_rank, time_elapsed);
+    printf("Fiber task%d: recv_velocity_msg_time=%f\n", my_rank, time_elapsed);
     fflush(stdout);
   }
-
-#endif
 
   // other fiber threads wait until tid=0 complete receive
   pthread_barrier_wait(&(gv->barr));

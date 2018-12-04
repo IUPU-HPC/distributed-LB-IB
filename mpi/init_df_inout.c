@@ -13,8 +13,8 @@
 /* Called only once before simulation starts */
 void init_df_inout(GV gv){
   //printf("****************Inside copy_df_to_inout*************\n");
-  Fluidgrid     *fluidgrid;
-  Fluidnode     *nodes;
+  Fluidgrid *fluidgrid;
+  Fluidnode *nodes;
 
   int ksi, dim_z;
   int BI, BJ, BK; //to identify the Sub grids

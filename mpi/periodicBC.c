@@ -23,42 +23,43 @@ void periodicBC(LV lv){
   Fluidgrid     *fluidgrid;
   Fluidnode     *nodes_first, *nodes_last;
   int           BI, BJ, BJ_first, BJ_last, BK, BK_first, BK_last;
-  int           num_cubes_x, num_cubes_y, num_cubes_z, cube_size;
+  int           cube_size;
   int           li, lj, lk;
   int           cube_idx_first, cube_idx_last, node_idx_first, node_idx_last;
   int           starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
 
-  int P = gv->P;
-  int Q = gv->Q;
-  int R = gv->R;
-  int my_rank = gv->my_rank;
+  int P = gv->tx;
+  int Q = gv->ty;
+  int R = gv->tz;
+  int my_rank = gv->taskid;
   int temp_mac_rank;
 
   fluidgrid = gv->fluid_grid;
 
   cube_size = gv->cube_size;
-  num_cubes_x = gv->num_cubes_x;
-  num_cubes_y = gv->num_cubes_y;
-  num_cubes_z = gv->num_cubes_z;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
-  BJ_first = 0; BJ_last = num_cubes_y - 1;
+  BJ_first = 0; 
+  BJ_last = num_cubes_y - 1;
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BK = 0; BK < num_cubes_z; ++BK){
     //if(cube2thread(BI, BJ_first, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R)==tid){
-    if (cube2thread_and_machine(BI, BJ_first, BK, gv, &temp_mac_rank) == tid){
+    if (cube2thread_and_task(BI, BJ_first, BK, gv, &temp_mac_rank) == tid){
       if (my_rank == temp_mac_rank){
         cube_idx_first = BI * num_cubes_y * num_cubes_z + BJ_first * num_cubes_z + BK;
         nodes_first = fluidgrid->sub_fluid_grid[cube_idx_first].nodes;
 
-
         cube_idx_last = BI * num_cubes_y * num_cubes_z + BJ_last * num_cubes_z + BK;
         nodes_last = fluidgrid->sub_fluid_grid[cube_idx_last].nodes;
 
-
         starting_x = starting_z = 0;
         stopping_x = stopping_z = cube_size - 1;
+
         if (BI == 0) starting_x = 3;//ib+1
         if (BI == num_cubes_x - 1) stopping_x = cube_size - 4;//ie-1
+
         if (BK == 0) starting_z = gv->kb;//kb-1
         if (BK == num_cubes_z - 1) stopping_z = cube_size - 3;//ke
 
@@ -81,17 +82,20 @@ void periodicBC(LV lv){
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ){
     //if(cube2thread(BI, BJ, BK_first, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) == tid){
-    if (cube2thread_and_machine(BI, BJ, BK_first, gv, &temp_mac_rank) == tid){
+    if (cube2thread_and_task(BI, BJ, BK_first, gv, &temp_mac_rank) == tid){
       if (my_rank == temp_mac_rank){
         cube_idx_first = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK_first;
         cube_idx_last = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK_last;
+
         nodes_first = fluidgrid->sub_fluid_grid[cube_idx_first].nodes;
         nodes_last = fluidgrid->sub_fluid_grid[cube_idx_last].nodes;
+
         starting_x = starting_y = 0;
         stopping_x = stopping_y = cube_size - 1;
 
         if (BI == 0) starting_x = 3;//ib+1
         if (BI == num_cubes_x - 1) stopping_x = cube_size - 4;//ie-1
+
         if (BJ == 0) starting_y = gv->jb;//jb
         if (BJ == num_cubes_z - 1) stopping_y = cube_size - 3;//ke
 
@@ -101,9 +105,7 @@ void periodicBC(LV lv){
           node_idx_last = li * cube_size * cube_size + lj * cube_size + cube_size - 2;//ke+1
           for (ksi = 0; ksi <= 18; ksi++){
             nodes_first[node_idx_first].df2[ksi] = nodes_last[li*cube_size*cube_size + lj*cube_size + cube_size - 3].df2[ksi];//j*dim_z +gv->ke
-
             nodes_last[node_idx_last].df2[ksi] = nodes_first[li*cube_size*cube_size + lj*cube_size + gv->kb].df2[ksi];//j*dim_z +gv->kb
-
           }//ksi
         }//lj
       }//if machine chek

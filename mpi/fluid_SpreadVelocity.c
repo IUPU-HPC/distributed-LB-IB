@@ -61,7 +61,7 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
   int num_cubes_x = gv->fluid_grid->num_cubes_x;
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
-  total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
+  total_sub_grids = (dim_x * dim_y * dim_z) / pow(cube_size, 3);
 
   int fluid_mac_rank;
 

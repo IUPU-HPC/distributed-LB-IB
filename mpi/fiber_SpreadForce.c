@@ -166,8 +166,9 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
+#if 0         
           int position = (j + i * total_fibers_clmn) * ifd_size * (sizeof(int) * 3 + sizeof(double) * 3);
-
+#endif 
           pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd2FluidProc]); //Have repeated (inneri, innerj, innerk) inserted here; Can be updated!
 
           // printf("Tid%d: Fluid(%d, %d, %d) ifd_last_pos[%d]=%ld\n", 
