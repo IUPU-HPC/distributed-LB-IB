@@ -401,7 +401,7 @@ int main(int argc, char* argv[]) {
   // print_fluid_sub_grid(gv, 127, 127, 127, 127, 127, 127, gv->cube_size);
   // print_fluid_cube(gv, 4, 0, 0, 4, 0, 0, gv->cube_size);
 
-  Timer::time_start();
+  double t_start = Timer::get_cur_time();
 
   //Shared Distribution to Thread in each machine
   pthread_t *threads;
@@ -446,9 +446,9 @@ int main(int argc, char* argv[]) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  double time_elapsed = Timer::time_end();
+  double time_elapsed = Timer::get_cur_time();
 
-  printf("Task%d: TOTAL TIME TAKEN IN Seconds: %f\n", gv->taskid, time_elapsed);
+  printf("Task%d: TOTAL TIME TAKEN IN Seconds: %f\n", gv->taskid, time_elapsed - t_start);
   fflush(stdout);
 
   if(gv->taskid < gv->num_fluid_tasks) MPI_Comm_free(&gv->cartcomm);

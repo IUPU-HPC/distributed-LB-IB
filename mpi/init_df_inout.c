@@ -35,7 +35,8 @@ void init_df_inout(GV gv){
   // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
 
   /* inlet, copy once */
-  li = gv->ib; BI = 0;
+  li = gv->ib;
+  BI = 0;
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
     tmp_task = cube2task(BI, BJ, BK, gv);
@@ -56,7 +57,8 @@ void init_df_inout(GV gv){
   }
 
   /* outlet, copy once */
-  li = cube_size - 1; BI = num_cubes_x - 1;//ie
+  li = cube_size - 1;
+  BI = num_cubes_x - 1;//ie
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
     tmp_task = cube2task(BI, BJ, BK, gv);

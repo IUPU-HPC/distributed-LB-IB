@@ -153,6 +153,6 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
 
 
 #ifdef DEBUG_PRINT
-  printf("**** Fluid task%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
+  printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank, tid);
 #endif //DEBUG_PRINT
 }

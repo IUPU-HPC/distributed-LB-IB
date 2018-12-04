@@ -44,7 +44,7 @@ void copy_inout_to_df2(LV lv){
   li = gv->ib;
   BI = 0;
   for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_x; BK++){
+    for (BK = 0; BK < num_cubes_z; BK++){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -63,7 +63,8 @@ void copy_inout_to_df2(LV lv){
             for (lk = starting_z; lk <= stopping_z; ++lk){
               node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube. li =gv->ib
               for (ksi = 0; ksi <= 18; ksi++)
-                nodes[node_idx].df2[ksi] = gv->fluid_grid->inlet->nodes[((BJ * cube_size + lj) * dim_z + BK * cube_size + lk)].df_inout[0][ksi];//is this correct?
+                nodes[node_idx].df2[ksi] = 
+                  gv->fluid_grid->inlet->nodes[((BJ * cube_size + lj) * dim_z + BK * cube_size + lk)].df_inout[0][ksi]; //is this correct?
             }//lk
         }//if machine chek
       }//if cube2thread ends
@@ -74,7 +75,7 @@ void copy_inout_to_df2(LV lv){
   li = gv->ib - 1;
   BI = 0;
   for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_x; BK++){
+    for (BK = 0; BK < num_cubes_z; BK++){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -94,18 +95,18 @@ void copy_inout_to_df2(LV lv){
               node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube. li =gv->ib-1
               for (ksi = 0; ksi <= 18; ksi++)
                 nodes[node_idx].df2[ksi] = 
-                    gv->fluid_grid->inlet->nodes[((BJ*cube_size + lj)*dim_z + BK*cube_size + lk)].df_inout[0][ksi];
-        }//lk
-      }//if machine chek
-    }//if cube2thread ends
-  }
+                  gv->fluid_grid->inlet->nodes[((BJ*cube_size + lj)*dim_z + BK*cube_size + lk)].df_inout[0][ksi];
+            }//lk
+        }//if machine chek
+      }//if cube2thread ends
+    }
 
   /* outlet */
   //i=gv->ie;
   li = cube_size - 3;
   BI = num_cubes_x - 1;
   for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_x; BK++){
+    for (BK = 0; BK < num_cubes_z; BK++){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -126,16 +127,16 @@ void copy_inout_to_df2(LV lv){
               for (ksi = 0; ksi <= 18; ksi++)
                 nodes[node_idx].df2[ksi] = 
                   gv->fluid_grid->outlet->nodes[((BJ*cube_size + lj)*dim_z + BK*cube_size + lk)].df_inout[1][ksi];
-        }//lk
-      }//if machine chek
-    }//if cube2thread ends
-  }
+            }//lk
+        }//if machine chek
+      }//if cube2thread ends
+    }
 
   //i=gv->ie+1;
   li = cube_size - 2;
   BI = num_cubes_x - 1;
   for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_x; BK++){
+    for (BK = 0; BK < num_cubes_z; BK++){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -156,10 +157,10 @@ void copy_inout_to_df2(LV lv){
               for (ksi = 0; ksi <= 18; ksi++)
                 nodes[node_idx].df2[ksi] = 
                   gv->fluid_grid->outlet->nodes[((BJ*cube_size + lj)*dim_z + BK*cube_size + lk)].df_inout[1][ksi];
-        }//lk
-      }//if machine chek
-    }//if cube2thread ends
-  }
+            }//lk
+        }//if machine chek
+      }//if cube2thread ends
+    }
 
   //printf("*********************** copy_inout_to_df2 Exit ***********\n");
 }

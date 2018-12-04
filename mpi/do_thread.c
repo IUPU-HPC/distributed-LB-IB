@@ -169,6 +169,7 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
     if (tid == 0)
       MPI_Barrier(MPI_COMM_WORLD);
+    pthread_barrier_wait(&(gv->barr));
 
     // move_fiber
     if (my_rank < num_fluid_tasks){
@@ -183,24 +184,27 @@ void* do_thread(void* v){
       // t1 = get_cur_time();
       // t6 += t1 - t0;
     }
+
     pthread_barrier_wait(&(gv->barr));
-    // if (tid == 0)
-    //   MPI_Barrier(MPI_COMM_WORLD);
+    if (tid == 0)
+      MPI_Barrier(MPI_COMM_WORLD);
+    pthread_barrier_wait(&(gv->barr));
+
     t1 = get_cur_time();
     t5 += t1 - t0;
     t6 += t1 - t0;
 #ifdef DEBUG_PRINT
-    printf("Task%d: After moving fibersheet \n", my_rank);
+    printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
     // Fluid tasks
     if(my_rank < num_fluid_tasks){
-      // copy_inout_to_df2(lv);
+      copy_inout_to_df2(lv);
       pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
           // MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("After  copy_inout_to_df2 \n");
+      printf("Task%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
       replace_old_DF(lv);
@@ -208,7 +212,7 @@ void* do_thread(void* v){
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("After  replace_old_DF \n");
+      printf("Task%dtid%d: After replace_old_DF \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
       periodicBC(lv);
@@ -216,7 +220,7 @@ void* do_thread(void* v){
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("After PeriodicBC\n");
+      printf("Task%dtid%d: After PeriodicBC\n", my_rank, tid);
 #endif //DEBUG_PRINT
     }
 

@@ -84,7 +84,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
 
-  double t0 = 0, t1 = 0, t_search = 0;
+  double t0 = 0, t1 = 0, t_search = 0, t2 = 0, t3 = 0;
 
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
@@ -112,7 +112,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   int recv_cnt; // SpreadVelocity_recv_count
   double s1 = 0, s2 = 0, s3 = 0;
 
-  Timer::time_start();
+  t2 = Timer::get_cur_time();
 
   //fiber task thread 0 send the message out
   if (tid == 0){
@@ -223,8 +223,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
 
-  double time_elapsed = Timer::time_end();
-  printf("Fiber task%d tid%d: T_prepare_ifd_send_msg=%f\n", gv->taskid, tid, time_elapsed);
+  t3 = Timer::get_cur_time();
+  printf("Fiber%dtid%d: T_get_SpreadVelocity=%f\n", gv->taskid, tid, t3 - t2);
   fflush(stdout);
 
   //reset
