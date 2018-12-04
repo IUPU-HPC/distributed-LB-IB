@@ -19,12 +19,12 @@ void copy_inout_to_df2(LV lv){
   Fluidgrid     *fluidgrid;
   Fluidnode     *nodes;
 
-  int           ksi;
-  int           BI, BJ, BK; //to identify the Sub grids
-  int           cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
-  int           starting_y, starting_z, stopping_y, stopping_z;//To identify buffer zone
-  int           li, lj, lk, node_idx;//local access point inside cube
-  int           dim_z;
+  int ksi;
+  int BI, BJ, BK; //to identify the Sub grids
+  int cube_size, num_cubes_x, num_cubes_y, num_cubes_z, cube_idx;
+  int starting_y, starting_z, stopping_y, stopping_z;//To identify buffer zone
+  int li, lj, lk, node_idx;//local access point inside cube
+  int dim_z;
 
   int P = gv->P;
   int Q = gv->Q;

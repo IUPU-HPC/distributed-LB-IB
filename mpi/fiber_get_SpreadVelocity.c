@@ -176,6 +176,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           /*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
           tmp = c_64 * (1.0e0 + cos(c_x*rx)) * (1.0e0 + cos(c_y*ry))*(1.0e0 + cos(c_z*rz));
 
+#if 0
           BI = inneri / cube_size; //BI should be inneri/cube_size but BI_end seems correct
           BJ = innerj / cube_size; 
           BK = innerk / cube_size; 
@@ -186,7 +187,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           //node_idx = (inneri%cube_size) *cube_size*cube_size +(innerj%cube_size) *cube_size +innerk%cube_size;
           node_idx = (li) * cube_size * cube_size +(lj) * cube_size + lk;
-
+#endif
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
 

@@ -23,6 +23,41 @@
 #include "do_thread.h"
 #include "timer.h"
 
+#if 0
+void annul_ifd_msg(char* msg, int ifd_size, int point_size){
+  for(i = 0; i < ; i){
+
+  }
+
+}
+
+void insert_ifd_msg(char* msg, int position, int point_size, int inneri, int innerj, int innerk, double elastic_force_x, double elastic_force_y, double elastic_force_z){
+
+  for(int i = 0; i < 64 * point_size; i += point_size){
+    int X = *((int*)(msg + position + i));
+    int Y = *((int*)(msg + position + i + sizeof(int)));
+    int Z = *((int*)(msg + position + i + sizeof(int) * 2));
+
+    if ( X == -1 && Y == -1 && Z == -1){ // init state
+      *((int*)(msg + position + i)) = inneri;
+      *((int*)(msg + position + i + sizeof(int))) = innerj;
+      *((int*)(msg + position + i + sizeof(int) * 2)) = innerk;
+      *((double*)(msg + position + i + sizeof(int) * 3)) += elastic_force_x;
+      *((double*)(msg + position + i + sizeof(int) * 3) + sizeof(double)) += elastic_force_y;
+      *((double*)(msg + position + i + sizeof(int) * 3) + sizeof(double) * 2) += elastic_force_z;
+      return;
+    }
+    
+    if( X==inneri && Y==innerj && Z==innerk ){ //same fluid point add up elastic force
+      *((double*)(msg + position + i + sizeof(int) * 3)) += elastic_force_x;
+      *((double*)(msg + position + i + sizeof(int) * 3) + sizeof(double)) += elastic_force_y;
+      *((double*)(msg + position + i + sizeof(int) * 3) + sizeof(double) * 2) += elastic_force_z;
+      return;
+    }
+  }
+}
+#endif
+
 /* Step1: Influential domain for force-spreading and velocity interpolation. */
 /* Step2: Do actual force spreading. */
 // eqn 19 21, ..
@@ -57,6 +92,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   double  c_y = PI / (2.0*dy);
   double  c_z = PI / (2.0*dz);
   double  cf = 1.0 / (64.0*dx*dy*dz);
+  int ifd_size = 64;
+  int point_size = sizeof(int) * 3 + sizeof(double) * 3;
 
   /*MPI changes*/
   int ifd2FluidProc;
@@ -88,6 +125,17 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   R = gv->tz;
   total_threads = P*Q*R; //gv->total_threads
 
+#if 0
+  //Annul coordinate(x,y,z) in ifd_bufpool to -1, elastic(x,y,z) to 0
+  for (int toProc = 0; toProc < num_fluid_tasks; toProc++){
+    if(tid == (toProc%total_threads))
+      annul_ifd_msg(gv->ifd_bufpool[toProc], point_size);
+  }
+#endif
+
+  // wait until all fiber threads complete computation
+  pthread_barrier_wait(&(gv->barr));
+
   Timer::time_start();
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
@@ -118,13 +166,18 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
+          int position = (j + i * total_fibers_clmn) * ifd_size * (sizeof(int) * 3 + sizeof(double) * 3);
 
           pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd2FluidProc]); //Have repeated (inneri, innerj, innerk) inserted here; Can be updated!
 
           // printf("Tid%d: Fluid(%d, %d, %d) ifd_last_pos[%d]=%ld\n", 
           //   tid, inneri, innerj, innerk, ifd2FluidProc, gv->ifd_last_pos[ifd2FluidProc]);
           // fflush(stdout);
-
+#if 0
+          // map ifd_fluid_coordinate to a specific location in the message
+          insert_ifd_msg(gv->ifd_bufpool[ifd2FluidProc], position, point_size, inneri, innerj, innerk, elastic_force_x, elastic_force_y, elastic_force_z);
+#endif          
+          // naive implementation
           *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc]))                  = inneri;
           *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)))    = innerj;
           *((int*)(gv->ifd_bufpool[ifd2FluidProc] + gv->ifd_last_pos[ifd2FluidProc] + sizeof(int)* 2)) = innerk;
