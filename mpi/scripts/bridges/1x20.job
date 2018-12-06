@@ -20,11 +20,11 @@ export nproc_per_mac=21
 
 PBS_O_HOME=$HOME
 PBS_O_WORKDIR=$(pwd)
-export SCRATCH_DIR=${SCRATCH}/distributed-lb-ib/${SLURM_JOBID}
+export SCRATCH_DIR=${SCRATCH}/distributed-LB-IB/${SLURM_JOBID}
 
 # bridges
 groupname=$(id -Gn)
-export SCRATCH_DIR=/pylon5/ac561jp/qoofyk/syn/${SLURM_JOBID}
+export SCRATCH_DIR=/pylon5/ac561jp/qoofyk/distributed-LB-IB/${SLURM_JOBID}
 EMPTY_DIR=/pylon5/ac561jp/qoofyk/empty/
 
 BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/distributed-lb-ib
@@ -66,3 +66,5 @@ fiber_y0=21.5
 fiber_z0=11.5
 
 num_proc=$(( fluid_task_x * fluid_task_y * fluid_task_z + num_fibersht))
+
+source ${PBS_O_WORKDIR}/scripts/bridges/common.sh

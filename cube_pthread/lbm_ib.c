@@ -504,7 +504,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
  /*PTHREAD_Change*/
 
   // TODO: export
-  gv->TIME_STOP = 30;  
+  gv->TIME_STOP = 10;  
   
   //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
 
@@ -2978,7 +2978,7 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-     periodicBC(lv);
+     // periodicBC(lv);
      #ifdef DEBUG_PRINT
      printf("After PeriodicBC\n");
      #endif //DEBUG_PRINT
