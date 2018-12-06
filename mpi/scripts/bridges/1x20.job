@@ -1,0 +1,68 @@
+#!/bin/bash
+#SBATCH --job-name="1x1x20"
+#SBATCH --output="results/1x1x20.%j.out"
+#SBATCH --partition=RM
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=28
+#SBATCH -t 00:3:00
+#SBATCH --export=ALL
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+# send mail to this address
+#SBATCH --mail-user=qoofyk@gmail.com
+
+#This job runs with 4 nodes, 24 cores per node for a total of 48 cores.
+#ibrun in verbose mode will give binding detail 
+##################parameter setting#################
+directory="1x1x20"
+export nproc_per_mac=21
+
+PBS_O_HOME=$HOME
+PBS_O_WORKDIR=$(pwd)
+export SCRATCH_DIR=${SCRATCH}/distributed-lb-ib/${SLURM_JOBID}
+
+# bridges
+groupname=$(id -Gn)
+export SCRATCH_DIR=/pylon5/ac561jp/qoofyk/syn/${SLURM_JOBID}
+EMPTY_DIR=/pylon5/ac561jp/qoofyk/empty/
+
+BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/distributed-lb-ib
+
+######################################################################
+
+timestep=5
+
+#fluid
+fluid_grid_z=64
+fluid_grid_y=64
+fluid_grid_x=1280
+fluid_task_y=1
+fluid_task_z=1
+fluid_task_x=20
+cube_size=4
+thread_per_task_x=2
+thread_per_task_y=2
+thread_per_task_z=2
+
+# #fiber
+# num_fibersht=1
+# fiber_width=10
+# fiber_height=10
+# fiber_row=13
+# fiber_clmn=13
+# fiber_x0=10
+# fiber_y0=10
+# fiber_z0=5
+
+#fiber
+num_fibersht=1
+fiber_width=20
+fiber_height=20
+fiber_row=52
+fiber_clmn=52
+fiber_x0=20
+fiber_y0=21.5
+fiber_z0=11.5
+
+num_proc=$(( fluid_task_x * fluid_task_y * fluid_task_z + num_fibersht))

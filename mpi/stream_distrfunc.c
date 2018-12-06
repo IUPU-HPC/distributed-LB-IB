@@ -188,6 +188,9 @@ void streaming_on_direction(LV lv, int dir, int dest, int src){
       MPI_CHAR, src, dir,
       gv->cartcomm, &status);
     MPI_Get_count(&status, MPI_CHAR, &gv->stream_msg_recv_cnt);
+
+    // reset gv->stream_last_pos[dir]
+    gv->stream_last_pos[dir] = 0;
   }
 
   //all threads in each fluid machine start working on stream_recv_buf
