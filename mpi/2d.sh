@@ -1,12 +1,24 @@
 timestep=1
 
+# #fluid
+# fluid_grid_z=64
+# fluid_grid_y=640
+# fluid_grid_x=640
+# fluid_task_z=1
+# fluid_task_y=10
+# fluid_task_x=10
+# cube_size=4
+# thread_per_task_x=2
+# thread_per_task_y=2
+# thread_per_task_z=2
+
 #fluid
-fluid_grid_z=64
-fluid_grid_y=640
-fluid_grid_x=640
-fluid_task_z=1
-fluid_task_y=10
-fluid_task_x=10
+fluid_grid_z=256
+fluid_grid_y=256
+fluid_grid_x=64
+fluid_task_z=4
+fluid_task_y=4
+fluid_task_x=1
 cube_size=4
 thread_per_task_x=2
 thread_per_task_y=2

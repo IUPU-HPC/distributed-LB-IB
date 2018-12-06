@@ -212,7 +212,7 @@ void* do_thread(void* v){
       printf("Fluid%dtid%d: After replace_old_DF \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
-      periodicBC(lv);
+      // periodicBC(lv);
       pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);

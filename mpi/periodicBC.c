@@ -1,14 +1,30 @@
-/*  -- Scalable LB-IB --
-    Indiana University Purdue University Indianapolis, USA
-
-    @file
-
-    @date
-
-    @author Yuankun Fu
-*/
+/*  -- Distributed-LB-IB --
+ * Copyright 2018 Indiana University Purdue University Indianapolis 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *   
+ * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
+ *
+ * @file:
+ *
+ * @date:
+ */
 
 #include "do_thread.h"
+
+/* This kernel needs modification using MPI, since fluid points are not in the same process 
+   It could be merged in the streaming kernel, using the periodic transfer there.
+*/
 
 void periodicBC(LV lv){
   /* use periodic boundary condition on y and z directions,as a result of this, we are actually
@@ -19,14 +35,14 @@ void periodicBC(LV lv){
   GV gv = lv->gv;
   tid = lv->tid;
 
-  int           ksi;
-  Fluidgrid     *fluidgrid;
-  Fluidnode     *nodes_first, *nodes_last;
-  int           BI, BJ, BJ_first, BJ_last, BK, BK_first, BK_last;
-  int           cube_size;
-  int           li, lj, lk;
-  int           cube_idx_first, cube_idx_last, node_idx_first, node_idx_last;
-  int           starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
+  int        ksi;
+  Fluidgrid  *fluidgrid;
+  Fluidnode  *nodes_first, *nodes_last;
+  int        BI, BJ, BJ_first, BJ_last, BK, BK_first, BK_last;
+  int        cube_size;
+  int        li, lj, lk;
+  int        cube_idx_first, cube_idx_last, node_idx_first, node_idx_last;
+  int        starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
 
   int P = gv->tx;
   int Q = gv->ty;
@@ -78,7 +94,8 @@ void periodicBC(LV lv){
 
   /* along z-direction, z=1 & n3-1 */
 
-  BK_first = 0; BK_last = num_cubes_z - 1;
+  BK_first = 0; 
+  BK_last = num_cubes_z - 1;
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ){
     //if(cube2thread(BI, BJ, BK_first, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) == tid){
