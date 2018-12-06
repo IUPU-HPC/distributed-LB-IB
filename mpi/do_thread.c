@@ -143,86 +143,93 @@ void* do_thread(void* v){
       // if(tid==0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      if(tid==0){
-        printf("Fluid Task%d: After streaming\n", my_rank);
+      // if(tid==0){
+        printf("Fluid%dtid%d: After streaming\n", my_rank, tid);
         fflush(stdout);
-      }
+      // }
 #endif //DEBUG_PRINT
 
-      bounceback_rigidwalls(lv);
-      pthread_barrier_wait(&(gv->barr));
+      // bounceback_rigidwalls(lv);
+      // pthread_barrier_wait(&(gv->barr));
       // if (tid == 0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Fluid Task%d: After bounceback\n");
+      printf("Fluid Task%d: After bounceback_rigidwalls\n", my_rank);
 #endif //DEBUG_PRINT
 
-      compute_rho_and_u(lv);
-      pthread_barrier_wait(&(gv->barr));
+      // compute_rho_and_u(lv);
+      // pthread_barrier_wait(&(gv->barr));
       // if (tid == 0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Fluid Task%d: After compute rho and u \n");
+      printf("Fluid Task%d: After compute_rho_and_u\n", my_rank);
 #endif //DEBUG_PRINT
     }
 
-    pthread_barrier_wait(&(gv->barr));
-    if (tid == 0)
-      MPI_Barrier(MPI_COMM_WORLD);
-    pthread_barrier_wait(&(gv->barr));
+    // pthread_barrier_wait(&(gv->barr));
+    // if (tid == 0)
+    //   MPI_Barrier(MPI_COMM_WORLD);
+    // pthread_barrier_wait(&(gv->barr));
 
     // move_fiber
     if (my_rank < num_fluid_tasks){
       t0 = get_cur_time();
-      fluid_SpreadVelocity(lv);
-      // t1 = get_cur_time();
-      // t5 += t1 - t0;
+      // fluid_SpreadVelocity(lv);
+      t1 = get_cur_time();
+      t5 += t1 - t0;
     }
     else{
       t0 = get_cur_time();
-      fiber_get_SpreadVelocity(lv);
-      // t1 = get_cur_time();
-      // t6 += t1 - t0;
+      // fiber_get_SpreadVelocity(lv);
+      t1 = get_cur_time();
+      t6 += t1 - t0;
     }
 
-    pthread_barrier_wait(&(gv->barr));
-    if (tid == 0)
-      MPI_Barrier(MPI_COMM_WORLD);
-    pthread_barrier_wait(&(gv->barr));
+    // pthread_barrier_wait(&(gv->barr));
+    // if (tid == 0)
+    //   MPI_Barrier(MPI_COMM_WORLD);
+    // pthread_barrier_wait(&(gv->barr));
 
-    t1 = get_cur_time();
-    t5 += t1 - t0;
-    t6 += t1 - t0;
 #ifdef DEBUG_PRINT
     printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
     // Fluid tasks
     if(my_rank < num_fluid_tasks){
-      copy_inout_to_df2(lv);
-      pthread_barrier_wait(&(gv->barr));
+      // copy_inout_to_df2(lv);
+      // pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
           // MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
       printf("Task%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
-      replace_old_DF(lv);
-      pthread_barrier_wait(&(gv->barr));
+      // replace_old_DF(lv);
+      // pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
       printf("Task%dtid%d: After replace_old_DF \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
-      periodicBC(lv);
-      pthread_barrier_wait(&(gv->barr));
+      // periodicBC(lv);
+      // pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
       printf("Task%dtid%d: After PeriodicBC\n", my_rank, tid);
 #endif //DEBUG_PRINT
     }
+
+
+    t0 = get_cur_time();
+    // pthread_barrier_wait(&(gv->barr));
+    // if (tid == 0){
+    //   MPI_Barrier(MPI_COMM_WORLD);
+    // }
+    // pthread_barrier_wait(&(gv->barr));
+    t1 = get_cur_time();
+    tail += t1 - t0;
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;
@@ -240,14 +247,7 @@ void* do_thread(void* v){
       // print_fiber_sub_grid(gv, 51, 51, 51, 51);
     }
 #endif //DEBUG_PRINT
-
-    t0 = get_cur_time();
-    pthread_barrier_wait(&(gv->barr));
-    if (tid == 0){
-      MPI_Barrier(MPI_COMM_WORLD);
-    }
-    t1 = get_cur_time();
-    tail += t1 - t0;
+    
   }
 
   double time_elapsed = Timer::time_end();

@@ -263,6 +263,9 @@ int main(int argc, char* argv[]) {
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &gv->total_tasks);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->taskid);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &gv->rank[0]);
+  MPI_Get_processor_name(gv->processor_name, &gv->namelen);
+  printf("Hello world! I’m rank %d of %d on %s\n", gv->rank[0], gv->size[0], gv->processor_name);
+  fflush(stdout);
 
   gv->num_fluid_tasks = gv->total_tasks - gv->fiber_shape->num_sheets;
 
@@ -452,7 +455,7 @@ int main(int argc, char* argv[]) {
   fflush(stdout);
 
   if(gv->taskid < gv->num_fluid_tasks) MPI_Comm_free(&gv->cartcomm);
-  MPI_Comm_free(&mygroup);
+    MPI_Comm_free(&mygroup);
 
   MPI_Finalize();
 

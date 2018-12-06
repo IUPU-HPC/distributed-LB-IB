@@ -194,7 +194,8 @@ typedef struct gv_t {
 /*MPI Changes*/
   //task
   int taskid; //my_rank is the rank assigned by COMM_WORLS to diff machines..to be stored in GV.
-  int rank[3], size[3]; //rank[0]: Global rank id; rank[1]: Group rank id
+  int rank[3], size[3], namelen; //rank[0]: Global rank id; rank[1]: Group rank id
+  char processor_name[128];
   int total_tasks;// Total number of tasks
   int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z; //number of fluid task along x, y, z
   int num_fluid_tasks;
