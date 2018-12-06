@@ -116,7 +116,7 @@ void* do_thread(void* v){
 
 #ifdef DEBUG_PRINT
       if(tid==0){
-        printf("Fluid Task%d: Start compute DF1\n", my_rank);
+        printf("Fluid%d: Start compute DF1\n", my_rank);
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
@@ -126,7 +126,7 @@ void* do_thread(void* v){
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
       if(tid==0){
-        printf("Fluid Task%d: After compute DF1\n", my_rank);
+        printf("Fluid%d: After compute DF1\n", my_rank);
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
@@ -134,7 +134,7 @@ void* do_thread(void* v){
 
 #ifdef DEBUG_PRINT
       if(tid==0){
-        printf("Fluid Task%d: Start streaming\n", my_rank);
+        printf("Fluid%d: Start streaming\n", my_rank);
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
@@ -149,38 +149,38 @@ void* do_thread(void* v){
       // }
 #endif //DEBUG_PRINT
 
-      // bounceback_rigidwalls(lv);
-      // pthread_barrier_wait(&(gv->barr));
+      bounceback_rigidwalls(lv);
+      pthread_barrier_wait(&(gv->barr));
       // if (tid == 0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Fluid Task%d: After bounceback_rigidwalls\n", my_rank);
+      printf("Fluid%d: After bounceback_rigidwalls\n", my_rank);
 #endif //DEBUG_PRINT
 
-      // compute_rho_and_u(lv);
-      // pthread_barrier_wait(&(gv->barr));
+      compute_rho_and_u(lv);
+      pthread_barrier_wait(&(gv->barr));
       // if (tid == 0)
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Fluid Task%d: After compute_rho_and_u\n", my_rank);
+      printf("Fluid%d: After compute_rho_and_u\n", my_rank);
 #endif //DEBUG_PRINT
     }
 
     // pthread_barrier_wait(&(gv->barr));
-    // if (tid == 0)
-    //   MPI_Barrier(MPI_COMM_WORLD);
-    // pthread_barrier_wait(&(gv->barr));
+    if (tid == 0)
+      MPI_Barrier(MPI_COMM_WORLD);
+    pthread_barrier_wait(&(gv->barr));
 
     // move_fiber
     if (my_rank < num_fluid_tasks){
       t0 = get_cur_time();
-      // fluid_SpreadVelocity(lv);
+      fluid_SpreadVelocity(lv);
       t1 = get_cur_time();
       t5 += t1 - t0;
     }
     else{
       t0 = get_cur_time();
-      // fiber_get_SpreadVelocity(lv);
+      fiber_get_SpreadVelocity(lv);
       t1 = get_cur_time();
       t6 += t1 - t0;
     }
@@ -196,40 +196,30 @@ void* do_thread(void* v){
 
     // Fluid tasks
     if(my_rank < num_fluid_tasks){
-      // copy_inout_to_df2(lv);
-      // pthread_barrier_wait(&(gv->barr));
+      copy_inout_to_df2(lv);
+      pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
           // MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Task%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
+      printf("Fluid%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
-      // replace_old_DF(lv);
-      // pthread_barrier_wait(&(gv->barr));
+      replace_old_DF(lv);
+      pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Task%dtid%d: After replace_old_DF \n", my_rank, tid);
+      printf("Fluid%dtid%d: After replace_old_DF \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
-      // periodicBC(lv);
-      // pthread_barrier_wait(&(gv->barr));
+      periodicBC(lv);
+      pthread_barrier_wait(&(gv->barr));
       // if (tid == 0) 
       //   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef DEBUG_PRINT
-      printf("Task%dtid%d: After PeriodicBC\n", my_rank, tid);
+      printf("Fluid%dtid%d: After PeriodicBC\n", my_rank, tid);
 #endif //DEBUG_PRINT
     }
-
-
-    t0 = get_cur_time();
-    // pthread_barrier_wait(&(gv->barr));
-    // if (tid == 0){
-    //   MPI_Barrier(MPI_COMM_WORLD);
-    // }
-    // pthread_barrier_wait(&(gv->barr));
-    t1 = get_cur_time();
-    tail += t1 - t0;
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;
@@ -247,6 +237,14 @@ void* do_thread(void* v){
       // print_fiber_sub_grid(gv, 51, 51, 51, 51);
     }
 #endif //DEBUG_PRINT
+
+    t0 = get_cur_time();
+    if (tid == 0){
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+    pthread_barrier_wait(&(gv->barr));
+    t1 = get_cur_time();
+    tail += t1 - t0;
     
   }
 

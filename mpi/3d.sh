@@ -1,12 +1,12 @@
 timestep=1
 
 #fluid
-fluid_grid_z=192
-fluid_grid_y=192
-fluid_grid_x=192
-fluid_task_z=3
-fluid_task_y=3
-fluid_task_x=3
+fluid_grid_z=256
+fluid_grid_y=256
+fluid_grid_x=256
+fluid_task_z=4
+fluid_task_y=4
+fluid_task_x=4
 cube_size=4
 thread_per_task_x=2
 thread_per_task_y=2
