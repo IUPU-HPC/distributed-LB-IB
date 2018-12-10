@@ -35,7 +35,7 @@ fiber_z0=11.5
 num_proc=$(( fluid_task_x * fluid_task_y * fluid_task_z + num_fibersht))
 
 
-mpirun -np $num_proc -ppn 11 ./distributed-lb-ib -steps $timestep \
+mpirun -np $num_proc ./distributed-lb-ib -steps $timestep \
 -fluid_grid_xyz ${fluid_grid_x} ${fluid_grid_y} ${fluid_grid_z} \
 -cube_size $cube_size \
 -fluid_task_xyz ${fluid_task_x} ${fluid_task_y} ${fluid_task_z} \

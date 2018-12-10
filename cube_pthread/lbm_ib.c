@@ -502,9 +502,6 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
     }
   }
  /*PTHREAD_Change*/
-
-  // TODO: export
-  gv->TIME_STOP = 10;  
   
   //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
 
@@ -2702,7 +2699,6 @@ void* do_thread(void* v){
   GV gv = lv->gv;
   int barrcheck;
   int tid   = lv->tid;
-   
      
   #ifdef DEBUG_PRINT    
   printf("Inside do_thread :Started by Threadid: %d\n",lv->tid);
@@ -2995,7 +2991,8 @@ void* do_thread(void* v){
 
     pthread_barrier_wait(&(gv->barr));
 
-    #ifdef DEBUG_PRINT
+    #if 1
+    if(tid == 0)
      printf("End of time step %d\n", gv->time);
     #endif //DEBUG_PRINT
      
@@ -3046,47 +3043,204 @@ int cube2thread(int BI, int BJ, int BK, int num_cubes_x, int num_cubes_y, int nu
  /*return 0;//for 1 thread*/
 }
 
- int main(int argc, char* argv[]) {
+void needs_argument(int i, int argc, const char *flag) {
+  if (i+1 >= argc) {
+    fprintf(stderr, "error: Flag \"%s\" requires an argument\n", flag);
+    abort();
+  }
+}
+
+int main(int argc, char* argv[]) {
+  LV lvs;
+  GV gv;
+  gv = (GV) calloc (1, sizeof(*gv));
+
+  // Parse command line
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "-steps")) {
+      needs_argument(i, argc, "-steps");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-steps %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->TIME_STOP = value;
+    }
+
+    if (!strcmp(argv[i], "-fluid_grid_xyz")) {
+      gv->fluid_grid = (Fluidgrid*) calloc(1, sizeof(Fluidgrid));
+      // gv->fluid_grid->sub_fluid_grid = (Sub_Fluidgrid*) calloc (1, sizeof(Sub_Fluidgrid));
+
+      needs_argument(i, argc, "-fluid_grid_x");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_x %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->fluid_grid->x_dim = value;
+
+      needs_argument(i, argc, "-fluid_grid_y");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_y %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->fluid_grid->y_dim = value;
+
+      needs_argument(i, argc, "-fluid_grid_z");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_z %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->fluid_grid->z_dim = value;
+    }
+
+    if (!strcmp(argv[i], "-cube_size")) {
+      needs_argument(i, argc, "-cube_size");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-cube_size %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->cube_size = value;
+    }
+
+    if (!strcmp(argv[i], "-thread_per_task_xyz")) {
+      needs_argument(i, argc, "-thread_per_task_x");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_x %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->P = value;
+
+      needs_argument(i, argc, "-thread_per_task_y");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_y %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->Q = value;
+
+      needs_argument(i, argc, "-thread_per_task_z");
+      value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-thread_per_task_z %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->R = value;
+    }
+
+    if (!strcmp(argv[i], "-num_fibersht")) {
+      needs_argument(i, argc, "-num_fibersht");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-num_fibersht %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->fiber_shape = (Fibershape*) calloc (1, sizeof(Fibershape));
+      gv->fiber_shape->num_sheets = value;
+      gv->fiber_shape->sheets = (Fibersheet*) calloc (value, sizeof(Fibersheet));
+    }
+
+    if (!strcmp(argv[i], "-fibersht_width_height")) {
+      for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
+        needs_argument(i, argc, "-fibersht_width");
+        double value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_width %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].width = value;
+
+        needs_argument(i, argc, "-fibersht_height");
+        value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_height %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].height = value;
+      }
+    }
+
+    if (!strcmp(argv[i], "-fibersht_row_clmn")) {
+      for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
+        needs_argument(i, argc, "-fibersht_row");
+        int value = atoi(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_row %d\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].num_rows = value;
+
+        needs_argument(i, argc, "-fibersht_clmn");
+        value = atoi(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_clmn %d\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].num_cols = value;
+      }
+    }
+
+    if (!strcmp(argv[i], "-fibersht_xyz_0")) {
+      for(int j = 0; j < gv->fiber_shape->num_sheets; j++){
+        needs_argument(i, argc, "-fibersht_x0");
+        double value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_x0 %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].x_orig = value;
+
+        needs_argument(i, argc, "-fibersht_y0");
+        value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_y0 %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].y_orig = value;
+
+        needs_argument(i, argc, "-fibersht_z0");
+        value = atof(argv[++i]);
+        if (value <= 0) {
+          fprintf(stderr, "error: Invalid flag \"-fibersht_z0 %f\" must be > 0\n", value);
+          abort();
+        }
+        gv->fiber_shape->sheets[j].z_orig = value;
+      }
+    }
+  }
+
    printf("***********IB Simulation using Pthreads cube v 4.1 starts************\n");
    int i;
-   //Error Chek#1
-   if(argc != 15) {
-     fprintf(stderr, 
-	     "Usage: %s -> fibersheet_width, fibersheet_height, \
-                           total_fibers_row, total_fibers_clmn, \
-                           FluidgridZDim, FluidgridYDim, FluidGridXDim, \
-                           fibersheet_xo,  fibersheet_yo,  fibersheet_zo \
-                           cubedimension \
-                            P, Q, R  \n", 
-	     argv[0]); //Enter #fiber and #gripoints
-     exit(1);
-   }
-
-   double fibersheet_w     = atof(argv[1]);
-   double fibersheet_h     = atof(argv[2]);
-   int total_fibers_row    = atoi(argv[3]);  /* no of fibres along height */
-   int total_fibers_clmn   = atoi(argv[4]);  /* no of fibres along width  or column should be 512 for 1024:*/
-
-   int fluidgrid_z         = atoi(argv[5]); // along z
-   int fluidgrid_y         = atoi(argv[6]); // along y
-   int fluidgrid_x         = atoi(argv[7]); // along x
-   double fibersheet_xo    = atof(argv[8]); //initial position of the fiber sheet chosen somewher in the middle of grid 
-   double fibersheet_yo    = atof(argv[9]);  
-   double fibersheet_zo    = atof(argv[10]);
    
-   int k_cubedim           = atoi(argv[11]);
+   double fibersheet_w     = gv->fiber_shape->sheets[0].width;
+   double fibersheet_h     = gv->fiber_shape->sheets[0].height;
+   int total_fibers_row    = gv->fiber_shape->sheets[0].num_rows;  /* no of fibres along height */
+   int total_fibers_clmn   = gv->fiber_shape->sheets[0].num_cols;  /* no of fibres along width  or column should be 512 for 1024:*/
+
+   int fluidgrid_z         = gv->fluid_grid->x_dim; // along z
+   int fluidgrid_y         = gv->fluid_grid->y_dim; // along y
+   int fluidgrid_x         = gv->fluid_grid->z_dim; // along x
+   double fibersheet_xo    = gv->fiber_shape->sheets[0].x_orig; //initial position of the fiber sheet chosen somewher in the middle of grid 
+   double fibersheet_yo    = gv->fiber_shape->sheets[0].y_orig;  
+   double fibersheet_zo    = gv->fiber_shape->sheets[0].z_orig;
+   
+   int k_cubedim           = gv->cube_size;
    //int total_threads       = atoi(argv[12]);
 
-   int P                   =atoi(argv[12]);
-   int Q                   =atoi(argv[13]);
-   int R                   =atoi(argv[14]);
+   int P                   = gv->P;
+   int Q                   = gv->Q;
+   int R                   = gv->R;
 
-   int total_threads       = P*Q*R;
-   printf("*****INPUT*********\n");
-   printf("fibersheet_w:%f , fibersheet_h :%f, fibers_row: %d, fibers_clmn:%d \n ",fibersheet_w,fibersheet_w,total_fibers_row,total_fibers_row );
-printf("elem_z:%d , elem_y :%d, elem_x: %d\n ",fluidgrid_z,fluidgrid_y,fluidgrid_x);
-printf("fibersheet_xo:%f , fibersheet_yo :%f, fibersheet_zo: %f\n ",fibersheet_xo,fibersheet_yo,fibersheet_zo);
-printf("P :%d, Q:%d, R:%d \n TuningFactor:cubedim::%d \n",P,Q,R, k_cubedim);
+  int total_threads       = P*Q*R;
+  printf("*****INPUT*********\n");
+  printf("fibersheet_w:%f , fibersheet_h :%f, fibers_row: %d, fibers_clmn:%d \n ",fibersheet_w,fibersheet_w,total_fibers_row,total_fibers_row );
+  printf("elem_z:%d , elem_y :%d, elem_x: %d\n ", fluidgrid_z, fluidgrid_y, fluidgrid_x);
+  printf("fibersheet_xo:%f , fibersheet_yo :%f, fibersheet_zo: %f\n ", fibersheet_xo, fibersheet_yo, fibersheet_zo);
+  printf("P :%d, Q:%d, R:%d \n TuningFactor:cubedim::%d \n",P,Q,R, k_cubedim);
 
   printf("***********total_threads = P*Q*R =%d  ************\n\n",total_threads);
   //Error Chek#2
@@ -3110,11 +3264,6 @@ printf("P :%d, Q:%d, R:%d \n TuningFactor:cubedim::%d \n",P,Q,R, k_cubedim);
     exit(1);
    }
 
-   
-
-   LV lvs;
-   GV gv;
-  
    Fibershape* fiber_shape = gen_fiber_shape(fibersheet_w, fibersheet_h, 
 					     total_fibers_clmn, total_fibers_row,
 					     fibersheet_xo, fibersheet_yo, fibersheet_zo);
@@ -3122,7 +3271,6 @@ printf("P :%d, Q:%d, R:%d \n TuningFactor:cubedim::%d \n",P,Q,R, k_cubedim);
   
    Fluidgrid*  fluid_grid = gen_fluid_grid(fluidgrid_x, fluidgrid_y, fluidgrid_z, k_cubedim);
    
-   gv = (GV) calloc(1, sizeof(*gv));
    init_gv(gv, fiber_shape, fluid_grid, k_cubedim);
 
    gv->P   = P;

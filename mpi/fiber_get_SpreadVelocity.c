@@ -208,7 +208,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   pthread_barrier_wait(&(gv->barr));
 
   // if(tid == 0){
-  	printf("Fiber%d prepare to final update location, t_search=%f\n", my_rank, t_search);
+  	printf("Fiber%dtid%d prepare to final update location, t_search=%f\n", my_rank, tid, t_search);
   // }
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){

@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-steps");
       int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-steps %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-steps %d\" must be > 0\n", value);
         abort();
       }
       gv->timesteps = value;
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_grid_x");
       int value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_grid_x %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_x %d\" must be > 0\n", value);
         abort();
       }
       gv->fluid_grid->x_dim = value;
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_grid_y");
       value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_grid_y %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_y %d\" must be > 0\n", value);
         abort();
       }
       gv->fluid_grid->y_dim = value;
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
       needs_argument(i, argc, "-fluid_grid_z");
       value = atoi(argv[++i]);
       if (value <= 0) {
-        fprintf(stderr, "error: Invalid flag \"-fluid_grid_z %ld\" must be > 0\n", value);
+        fprintf(stderr, "error: Invalid flag \"-fluid_grid_z %d\" must be > 0\n", value);
         abort();
       }
       gv->fluid_grid->z_dim = value;
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
         needs_argument(i, argc, "-fibersht_row");
         int value = atoi(argv[++i]);
         if (value <= 0) {
-          fprintf(stderr, "error: Invalid flag \"-fibersht_row %ld\" must be > 0\n", value);
+          fprintf(stderr, "error: Invalid flag \"-fibersht_row %d\" must be > 0\n", value);
           abort();
         }
         gv->fiber_shape->sheets[j].num_rows = value;
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
         needs_argument(i, argc, "-fibersht_clmn");
         value = atoi(argv[++i]);
         if (value <= 0) {
-          fprintf(stderr, "error: Invalid flag \"-fibersht_clmn %ld\" must be > 0\n", value);
+          fprintf(stderr, "error: Invalid flag \"-fibersht_clmn %d\" must be > 0\n", value);
           abort();
         }
         gv->fiber_shape->sheets[j].num_cols = value;
@@ -389,13 +389,19 @@ int main(int argc, char* argv[]) {
     printf("Printing for Corner Points (z,y): 51,51 \n");
     print_fiber_sub_grid(gv, 51, 51, 51, 51);
     fflush(stdout);
-#endif    
+#endif
+    char filename[80];
+    sprintf(filename, "Fiber%d_init.dat", gv->taskid);
+    save_fiber_sub_grid(gv, 0, 0, 51, 51, filename);
   }
   else{
     init_eqlbrmdistrfuncDF0(gv);
     init_df1(gv);
     init_df_inout(gv);
     printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
+    char filename[80];
+    sprintf(filename, "Fluid%d_init.dat", gv->taskid);
+    save_fluid_sub_grid(gv, 0, 0, 0, 63, 63, 63, filename);
   }
 
   // check_point : fluid grid info
@@ -439,12 +445,12 @@ int main(int argc, char* argv[]) {
     printf("after Running for timesteps: %ld\n", gv->timesteps);
     printf("Printing for Corner Points(z,y) : 0 , 0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
-    // printf("Printing for Corner Points(z,y) : 51, 0 \n");
-    // print_fiber_sub_grid(gv, 0, 51, 0, 51);
-    // printf("Printing for Corner Points(z,y) : 0 ,51 \n");
-    // print_fiber_sub_grid(gv, 51, 0, 51, 0);
-    // printf("Printing for Corner Points (z,y): 51,51 \n");
-    // print_fiber_sub_grid(gv, 51, 51, 51, 51);
+    printf("Printing for Corner Points(z,y) : 51, 0 \n");
+    print_fiber_sub_grid(gv, 0, 51, 0, 51);
+    printf("Printing for Corner Points(z,y) : 0 ,51 \n");
+    print_fiber_sub_grid(gv, 51, 0, 51, 0);
+    printf("Printing for Corner Points (z,y): 51,51 \n");
+    print_fiber_sub_grid(gv, 51, 51, 51, 51);
     fflush(stdout);
   }
 

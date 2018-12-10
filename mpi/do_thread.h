@@ -235,15 +235,20 @@ typedef struct lv_t{
 /* Debug help function */
 //print range of cubes ip: global i, j,k , iend, jend ,kend
 void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
-  int end_x, int end_y, int end_z,
-  int cube_size);
+  int end_x, int end_y, int end_z);
 
 /* Debug help function */
 void print_fiber_sub_grid(GV gv, int start_y, int start_z,
  int end_y,   int end_z);
 void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
-  int BI_end, int BJ_end, int BK_end,
-  int cube_size);
+  int BI_end, int BJ_end, int BK_end);
+
+void save_fiber_sub_grid(GV gv, int start_y, int start_z,
+                         int end_y, int end_z, char fName[]);
+
+void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
+                         int end_x, int end_y, int end_z,
+                         char fName[]);
 
 /* Debug help function */
 /* Requires following 2 more Debug Help Functions
