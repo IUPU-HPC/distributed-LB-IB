@@ -31,6 +31,7 @@ void* do_thread(void* v){
   double t0, t1;
   double t2=0, t2_1=0, t3=0, t3_1=0, t4=0, t5=0, t6=0, tail=0;
   double startTime=0, endTime=0;
+  char filename[80];
 
   Timer::time_start();
 
@@ -55,7 +56,7 @@ void* do_thread(void* v){
       t2_1 += t1 - t0;
 
 #ifdef DEBUG_PRINT
-    printf("Fiber task %d Tid%d finish calculate local force\n", my_rank, tid);
+    printf("Fiber%dtid%d finish calculate local force\n", my_rank, tid);
 #endif //DEBUG_PRINT
     }
     else{ //fluid tasks wait here
@@ -72,7 +73,7 @@ void* do_thread(void* v){
     if (my_rank >= num_fluid_tasks){
 #ifdef DEBUG_PRINT
       if(tid==0){
-        printf("Fiber Task%d Tid%d: Start fiber_SpreadForce\n", my_rank, tid);
+        printf("Fiber%dtid%d: Start fiber_SpreadForce\n", my_rank, tid);
         fflush(stdout);
       }
 #endif //DEBUG_PRINT      
@@ -86,7 +87,7 @@ void* do_thread(void* v){
     else{
 #ifdef DEBUG_PRINT
       if(tid==0){
-        printf("Fluid Task%d Tid%d: Start fluid_get_SpreadForce\n", my_rank, tid);
+        printf("Fluid%dtid%d: Start fluid_get_SpreadForce\n", my_rank, tid);
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
@@ -111,130 +112,148 @@ void* do_thread(void* v){
     }
 #endif //DEBUG_PRINT
 
-    // Fluid tasks
-    if(my_rank < num_fluid_tasks){
-
-#ifdef DEBUG_PRINT
-      if(tid==0){
-        printf("Fluid%d: Start compute DF1\n", my_rank);
-        fflush(stdout);
-      }
-#endif //DEBUG_PRINT
-      compute_eqlbrmdistrfuncDF1(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if(tid==0)
-      //   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      if(tid==0){
-        printf("Fluid%d: After compute DF1\n", my_rank);
-        fflush(stdout);
-      }
-#endif //DEBUG_PRINT
-
-
-#ifdef DEBUG_PRINT
-      if(tid==0){
-        printf("Fluid%d: Start streaming\n", my_rank);
-        fflush(stdout);
-      }
-#endif //DEBUG_PRINT
-      stream_distrfunc(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if(tid==0)
-      //   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      // if(tid==0){
-        printf("Fluid%dtid%d: After streaming\n", my_rank, tid);
-        fflush(stdout);
-      // }
-#endif //DEBUG_PRINT
-
-      bounceback_rigidwalls(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if (tid == 0)
-      //   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      printf("Fluid%d: After bounceback_rigidwalls\n", my_rank);
-#endif //DEBUG_PRINT
-
-      compute_rho_and_u(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if (tid == 0)
-      //   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      printf("Fluid%d: After compute_rho_and_u\n", my_rank);
-#endif //DEBUG_PRINT
-    }
-
-    // pthread_barrier_wait(&(gv->barr));
-    if (tid == 0)
-      MPI_Barrier(MPI_COMM_WORLD);
-    pthread_barrier_wait(&(gv->barr));
-
-    // move_fiber
+#ifdef SAVE
     if (my_rank < num_fluid_tasks){
-      t0 = get_cur_time();
-      fluid_SpreadVelocity(lv);
-      t1 = get_cur_time();
-      t5 += t1 - t0;
+      if (tid == 0){
+        sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", gv->taskid, gv->time);
+        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      }  
     }
     else{
-      t0 = get_cur_time();
-      fiber_get_SpreadVelocity(lv);
-      t1 = get_cur_time();
-      t6 += t1 - t0;
+      if (tid == 0){
+        sprintf(filename, "Fiber%d_SpreadForce_step%d.dat", gv->taskid, gv->time);
+        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      }
     }
+#endif
 
-    // pthread_barrier_wait(&(gv->barr));
-    // if (tid == 0)
-    //   MPI_Barrier(MPI_COMM_WORLD);
-    // pthread_barrier_wait(&(gv->barr));
+// // VERIFY
+//     // Fluid tasks
+//     if(my_rank < num_fluid_tasks){
 
-#ifdef DEBUG_PRINT
-    printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
-#endif //DEBUG_PRINT
+// #ifdef DEBUG_PRINT
+//       if(tid==0){
+//         printf("Fluid%d: Start compute DF1\n", my_rank);
+//         fflush(stdout);
+//       }
+// #endif //DEBUG_PRINT
+//       compute_eqlbrmdistrfuncDF1(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if(tid==0)
+//       //   MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       if(tid==0){
+//         printf("Fluid%d: After compute DF1\n", my_rank);
+//         fflush(stdout);
+//       }
+// #endif //DEBUG_PRINT
 
-    // Fluid tasks
-    if(my_rank < num_fluid_tasks){
-      copy_inout_to_df2(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if (tid == 0) 
-          // MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      printf("Fluid%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
-#endif //DEBUG_PRINT
 
-      replace_old_DF(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if (tid == 0) 
-      //   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      printf("Fluid%dtid%d: After replace_old_DF \n", my_rank, tid);
-#endif //DEBUG_PRINT
+// #ifdef DEBUG_PRINT
+//       if(tid==0){
+//         printf("Fluid%d: Start streaming\n", my_rank);
+//         fflush(stdout);
+//       }
+// #endif //DEBUG_PRINT
+//       stream_distrfunc(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if(tid==0)
+//       //   MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       // if(tid==0){
+//         printf("Fluid%dtid%d: After streaming\n", my_rank, tid);
+//         fflush(stdout);
+//       // }
+// #endif //DEBUG_PRINT
 
-      // periodicBC(lv);
-      pthread_barrier_wait(&(gv->barr));
-      // if (tid == 0) 
-      //   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef DEBUG_PRINT
-      printf("Fluid%dtid%d: After PeriodicBC\n", my_rank, tid);
-#endif //DEBUG_PRINT
-    }
+//       bounceback_rigidwalls(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if (tid == 0)
+//       //   MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       printf("Fluid%d: After bounceback_rigidwalls\n", my_rank);
+// #endif //DEBUG_PRINT
+
+//       compute_rho_and_u(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if (tid == 0)
+//       //   MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       printf("Fluid%d: After compute_rho_and_u\n", my_rank);
+// #endif //DEBUG_PRINT
+//     }
+
+//     // pthread_barrier_wait(&(gv->barr));
+//     if (tid == 0)
+//       MPI_Barrier(MPI_COMM_WORLD);
+//     pthread_barrier_wait(&(gv->barr));
+
+//     // move_fiber
+//     if (my_rank < num_fluid_tasks){
+//       t0 = get_cur_time();
+//       fluid_SpreadVelocity(lv);
+//       t1 = get_cur_time();
+//       t5 += t1 - t0;
+//     }
+//     else{
+//       t0 = get_cur_time();
+//       fiber_get_SpreadVelocity(lv);
+//       t1 = get_cur_time();
+//       t6 += t1 - t0;
+//     }
+
+//     // pthread_barrier_wait(&(gv->barr));
+//     // if (tid == 0)
+//     //   MPI_Barrier(MPI_COMM_WORLD);
+//     // pthread_barrier_wait(&(gv->barr));
+
+// #ifdef DEBUG_PRINT
+//     printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
+// #endif //DEBUG_PRINT
+
+//     // Fluid tasks
+//     if(my_rank < num_fluid_tasks){
+//       copy_inout_to_df2(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if (tid == 0) 
+//           // MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       printf("Fluid%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
+// #endif //DEBUG_PRINT
+
+//       replace_old_DF(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if (tid == 0) 
+//       //   MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       printf("Fluid%dtid%d: After replace_old_DF \n", my_rank, tid);
+// #endif //DEBUG_PRINT
+
+//       // periodicBC(lv);
+//       pthread_barrier_wait(&(gv->barr));
+//       // if (tid == 0) 
+//       //   MPI_Barrier(MPI_COMM_WORLD);
+// #ifdef DEBUG_PRINT
+//       printf("Fluid%dtid%d: After PeriodicBC\n", my_rank, tid);
+// #endif //DEBUG_PRINT
+//     }
+
+// // VERIFY
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;
 
-#ifdef DEBUG_PRINT
+#if 0
     if ( (my_rank >= num_fluid_tasks) && (tid == 0)){
       printf("Timesteps:%ld complete!\n", gv->time - 1);
       printf("Printing for Corner Points(z,y) : 0,0 \n");
       print_fiber_sub_grid(gv, 0, 0, 0, 0);
-      // printf("Printing for Corner Points(z,y) : 51,0 \n");
-      // print_fiber_sub_grid(gv, 0, 51, 0, 51);
-      // printf("Printing for Corner Points(z,y) : 0,51 \n");
-      // print_fiber_sub_grid(gv, 51, 0, 51, 0);
-      // printf("Printing for Corner Points (z,y): 51,51 \n");
-      // print_fiber_sub_grid(gv, 51, 51, 51, 51);
+      printf("Printing for Corner Points(z,y) : 51,0 \n");
+      print_fiber_sub_grid(gv, 0, 51, 0, 51);
+      printf("Printing for Corner Points(z,y) : 0,51 \n");
+      print_fiber_sub_grid(gv, 51, 0, 51, 0);
+      printf("Printing for Corner Points (z,y): 51,51 \n");
+      print_fiber_sub_grid(gv, 51, 51, 51, 51);
     }
 #endif //DEBUG_PRINT
 

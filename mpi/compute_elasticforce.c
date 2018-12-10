@@ -24,7 +24,6 @@ void   compute_elasticforce(LV lv) { //emabarassingly parallel
   int total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
   Fiber *fiberarray = gv->fiber_shape->sheets[0].fibers;
 
-
   // Adding up Streching Force and Bending Force
   for (i = 0; i<total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){

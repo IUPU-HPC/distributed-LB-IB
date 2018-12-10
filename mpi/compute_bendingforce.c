@@ -118,7 +118,7 @@ void  compute_bendingforce(LV lv) {
 
   pthread_barrier_wait(&(gv->barr));
 
-#ifdef DEBUG_PRINT
+#if 0
       if (tid == 0){
         printf("Inside BF -- Printing for Corner Points(z,y) : 0,0 \n");
         print_fiber_sub_grid(gv, 0, 0, 0, 0);

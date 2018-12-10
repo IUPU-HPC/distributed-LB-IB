@@ -56,7 +56,7 @@
 * Using Block Distribution on Threads for both 1D (FIber to thread:fiber2thread ) and 3D (Fluid_Sub_cube to thread :cube2thread)
 */
 
-
+#define SAVE
 #define DEBUG_PRINT
 #define lookup_fluid_start_x 20
 #define lookup_fluid_start_y 11

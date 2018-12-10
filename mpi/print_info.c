@@ -65,7 +65,6 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
           node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
           node->bend_force_x, node->bend_force_y, node->bend_force_z);
       }
-      printf("\n");
     }
   }
   fclose(oFile);

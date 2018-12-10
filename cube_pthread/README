@@ -14,8 +14,8 @@ Running the executable
 	$ ./file  arg1 arg2 srg3 arg4 arg5 arg6 arg7 arg8 arg9 arg10 arg11 
 arg1 = fibersheet width
 arg2 = fibersheet height
-arg3 = total fibers (along height of sheet)
-arg4 = total fibers(gridpoints) along width of sheet
+arg3 = total fibers (along height of sheet).
+arg4 = total fibers(gridpoints) along width of sheet. NOTE: wdith & height / rows & columns < 1.
 arg5- arg7 = fluidgrid dimensions 
 arg8- arg11  = Initial position of fibersheet in fluidgrid domain i.e x0,y0,z0 resp
 arg 12 = Number of Threads

@@ -379,9 +379,9 @@ int main(int argc, char* argv[]) {
   // Fiber print corner points
   if (gv->taskid >= gv->num_fluid_tasks){
     printf("Friber task%d gen_fiber_sheet complete!\n", gv->taskid);
+#if 0    
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
-#if 1   
     printf("Printing for Corner Points(z,y) : 51,0 \n");
     print_fiber_sub_grid(gv, 0, 51, 0, 51);
     printf("Printing for Corner Points(z,y) : 0,51 \n");
@@ -390,18 +390,23 @@ int main(int argc, char* argv[]) {
     print_fiber_sub_grid(gv, 51, 51, 51, 51);
     fflush(stdout);
 #endif
+
+#ifdef SAVE
     char filename[80];
     sprintf(filename, "Fiber%d_init.dat", gv->taskid);
-    save_fiber_sub_grid(gv, 0, 0, 51, 51, filename);
+    save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+#endif    
   }
   else{
     init_eqlbrmdistrfuncDF0(gv);
     init_df1(gv);
     init_df_inout(gv);
     printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
+#ifdef SAVE    
     char filename[80];
     sprintf(filename, "Fluid%d_init.dat", gv->taskid);
-    save_fluid_sub_grid(gv, 0, 0, 0, 63, 63, 63, filename);
+    save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+#endif    
   }
 
   // check_point : fluid grid info
@@ -440,6 +445,7 @@ int main(int argc, char* argv[]) {
 #endif //DEBUG_PRINT
   }
 
+#if 0
   // Fiber print corner points
   if (gv->taskid >= gv->num_fluid_tasks){
     printf("after Running for timesteps: %ld\n", gv->timesteps);
@@ -453,7 +459,8 @@ int main(int argc, char* argv[]) {
     print_fiber_sub_grid(gv, 51, 51, 51, 51);
     fflush(stdout);
   }
-
+#endif
+  
   MPI_Barrier(MPI_COMM_WORLD);
   double time_elapsed = Timer::get_cur_time();
 
