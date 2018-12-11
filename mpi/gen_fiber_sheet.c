@@ -42,10 +42,10 @@ void gen_fiber_sheet(Fibersheet* sheet){
   /* allocate memory for fibers in each sheet */
 
   // fiber_mac malloc nodes
-  sheet->fibers = (Fiber*) malloc(num_rows * sizeof(Fiber));
+  sheet->fibers = (Fiber*) calloc(num_rows, sizeof(Fiber));
   for (row = 0; row < num_rows; ++row) {
     fiber = sheet->fibers + row;       // The row-th fiber
-    fiber->nodes = (Fibernode*) malloc(num_cols * sizeof(Fibernode));
+    fiber->nodes = (Fibernode*) calloc(num_cols, sizeof(Fibernode));
     /* Fill in the contents of the points in each fiber */
     for (col = 0; col < num_cols; ++col){
       //If fiber nodes' coordinates are given by a user, remove 3 lines below.

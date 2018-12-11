@@ -361,7 +361,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   for (BI = BI_start; BI <= BI_end; ++BI)
     for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
       for (BK = BK_start; BK <= BK_end; ++BK) {
-        fprintf(oFile, "(BI,BJ,BK): {vel_x, vel_y, vel_z} ||  {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
+        fprintf(oFile, "(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
         for (li = 0; li < cube_size; li++)
@@ -370,9 +370,12 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
               node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
 
               fprintf(oFile, "For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, my_rank);
+              int X = BI * cube_size + li;
+              int Y = BJ * cube_size + lj;
+              int Z = BK * cube_size + lk;
               for (ksi = 0; ksi < 19; ksi++){
-                fprintf(oFile, "Rank-%d- (%d,%d,%d, %d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.12f || {%.24f,%.24f,%.24f}\n",
-                  my_rank, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
+                fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.6f} || %.6f || {%.6f,%.24f,%.24f}\n",
+                  X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                   node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                   node->rho,
                   node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
@@ -420,14 +423,15 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
   k = 0;
   fiber_array = gv->fiber_shape->sheets[k].fibers;
 
-  fprintf(oFile, "Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_X, BF_y, BF_z\n", k);
+  fprintf(oFile, "Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_x, BF_y, BF_z || EF_x, EF_y, EF_z\n", k);
   for (i = start_y; i <= end_y; ++i) {
     for (j = start_z; j <= end_z; ++j) {
       node = fiber_array[i].nodes + j;
-      fprintf(oFile, "(%d, %d):{%f,%f,%f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
+      fprintf(oFile, "(%2d,%2d):{%f,%f,%f} || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f\n",
         i, j, node->x, node->y, node->z,
         node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
-        node->bend_force_x, node->bend_force_y, node->bend_force_z);
+        node->bend_force_x, node->bend_force_y, node->bend_force_z,
+        node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
     }
   }
 
@@ -624,7 +628,7 @@ Fibershape*  gen_fiber_shape(GV gv, double w, double h, int num_cols, int num_ro
 
   // TODO: Modify to multi sheets
   // allocate memory for fiber sheets. assumption: Only One Sheet For Now!!!!!
-  shape->sheets = (Fibersheet*) malloc(sizeof(*shape->sheets) * shape->num_sheets); 
+  // shape->sheets = (Fibersheet*) malloc(sizeof(*shape->sheets) * shape->num_sheets); 
 
   /* allocate memory for fibers in each sheet */
   for (i = 0; i < shape->num_sheets; ++i) {
@@ -636,10 +640,10 @@ Fibershape*  gen_fiber_shape(GV gv, double w, double h, int num_cols, int num_ro
     sheet->x_orig   = x_orig;
     sheet->y_orig   = y_orig;
     sheet->z_orig   = z_orig;
-    sheet->fibers   = (Fiber*) malloc(num_rows * sizeof(*sheet->fibers));
+    sheet->fibers   = (Fiber*) calloc(num_rows, sizeof(*sheet->fibers));
     for (row = 0; row < num_rows; ++row) {	
       fiber = sheet->fibers + row;       // The row-th fiber
-      fiber->nodes = (Fibernode*) malloc(num_cols * sizeof(*fiber->nodes));
+      fiber->nodes = (Fibernode*) calloc(num_cols, sizeof(*fiber->nodes));
       /* Fill in the contents of the points in each fiber */
       for (col = 0; col < num_cols; ++col){
         /* z-coordinate of sheet is from (center of z-direction - sheet height) to (center of z-direction);
@@ -897,9 +901,9 @@ void compute_bendingforce(LV lv) {
 }
      
 void compute_stretchingforce(LV lv) { 
-  #ifdef DEBUG_PRINT
-    printf("****Inside compute_stretchingforce*******\n");
-  #endif //DEBUG_PRINT
+#ifdef DEBUG_PRINT
+  printf("****Inside compute_stretchingforce*******\n");
+#endif //DEBUG_PRINT
 
   int tid;
   GV gv = lv->gv;   
@@ -967,35 +971,34 @@ void compute_stretchingforce(LV lv) {
     } //if fiber2thread ends
   } //end of total_fibers along row i.e fibers along z axis
 
-   //Need a barrier
-   //Error Chek#5
-   pthread_barrier_wait(&(gv->barr));
-    /* barrcheck = pthread_barrier_wait(&barr);
-    if(barrcheck != 0 && barrcheck != PTHREAD_BARRIER_SERIAL_THREAD)
-    {
-        fprintf(stderr,"Could not wait on barrier\n");
-        exit(1);
-    }*/
+  //Need a barrier
+  //Error Chek#5
+  pthread_barrier_wait(&(gv->barr));
+  /* barrcheck = pthread_barrier_wait(&barr);
+  if(barrcheck != 0 && barrcheck != PTHREAD_BARRIER_SERIAL_THREAD){
+      fprintf(stderr,"Could not wait on barrier\n");
+      exit(1);
+  }*/
 
   // Computing Streching Force along the direction normal to fibers
   stretching_const = gv->Ks_l/(ds2 * ds2);	
   for (j = 0; j < total_fibers_clmn; ++j){  //for the j-th point	
     for (i = 1; i < total_fibers_row-1; ++i){ //for the i-th fiber, middle fibers
       if (fiber2thread(i, total_fibers_row, total_threads) == tid ){
-      tangx_top = fiberarray[i+1].nodes[j].x - fiberarray[i].nodes[j].x;
-      tangy_top = fiberarray[i+1].nodes[j].y - fiberarray[i].nodes[j].y;
-      tangz_top = fiberarray[i+1].nodes[j].z - fiberarray[i].nodes[j].z;
-      tangx_bottom = fiberarray[i-1].nodes[j].x - fiberarray[i].nodes[j].x;
-      tangy_bottom = fiberarray[i-1].nodes[j].y - fiberarray[i].nodes[j].y;
-      tangz_bottom = fiberarray[i-1].nodes[j].z - fiberarray[i].nodes[j].z;
-      dist_top = sqrt(tangx_top * tangx_top + tangy_top * tangy_top + tangz_top * tangz_top);
-      dist_bottom = sqrt(tangx_bottom * tangx_bottom + tangy_bottom * tangy_bottom + tangz_bottom * tangz_bottom);
-      fiberarray[i].nodes[j].stretch_force_x += stretching_const * ((dist_top - ds2) * (tangx_top / dist_top)
-                                                + (dist_bottom - ds2) * (tangx_bottom / dist_bottom));
-      fiberarray[i].nodes[j].stretch_force_y += stretching_const*((dist_top - ds2) * (tangy_top / dist_top)
-                                                + (dist_bottom - ds2) * (tangy_bottom/dist_bottom));
-      fiberarray[i].nodes[j].stretch_force_z += stretching_const*((dist_top - ds2) * (tangz_top / dist_top)
-                                                + (dist_bottom - ds2) * (tangz_bottom / dist_bottom));
+        tangx_top = fiberarray[i+1].nodes[j].x - fiberarray[i].nodes[j].x;
+        tangy_top = fiberarray[i+1].nodes[j].y - fiberarray[i].nodes[j].y;
+        tangz_top = fiberarray[i+1].nodes[j].z - fiberarray[i].nodes[j].z;
+        tangx_bottom = fiberarray[i-1].nodes[j].x - fiberarray[i].nodes[j].x;
+        tangy_bottom = fiberarray[i-1].nodes[j].y - fiberarray[i].nodes[j].y;
+        tangz_bottom = fiberarray[i-1].nodes[j].z - fiberarray[i].nodes[j].z;
+        dist_top = sqrt(tangx_top * tangx_top + tangy_top * tangy_top + tangz_top * tangz_top);
+        dist_bottom = sqrt(tangx_bottom * tangx_bottom + tangy_bottom * tangy_bottom + tangz_bottom * tangz_bottom);
+        fiberarray[i].nodes[j].stretch_force_x += stretching_const * ((dist_top - ds2) * (tangx_top / dist_top)
+                                                  + (dist_bottom - ds2) * (tangx_bottom / dist_bottom));
+        fiberarray[i].nodes[j].stretch_force_y += stretching_const*((dist_top - ds2) * (tangy_top / dist_top)
+                                                  + (dist_bottom - ds2) * (tangy_bottom/dist_bottom));
+        fiberarray[i].nodes[j].stretch_force_z += stretching_const*((dist_top - ds2) * (tangz_top / dist_top)
+                                                  + (dist_bottom - ds2) * (tangz_bottom / dist_bottom));
     } // if fiber2thread ends
    }
     
@@ -1022,16 +1025,16 @@ void compute_stretchingforce(LV lv) {
     }
   }
 
-  #ifdef DEBUG_PRINT
-    printf("**** compute_stretchingforce Exit*******\n");
-  #endif //DEBUG_PRINT
+#ifdef DEBUG_PRINT
+  printf("**** compute_stretchingforce Exit*******\n");
+#endif //DEBUG_PRINT
 }
 
 
 void compute_elasticforce(LV lv) { //emabarassingly parallel
-  #ifdef DEBUG_PRINT
+#ifdef DEBUG_PRINT
    printf("****Inside compute_elasticforce*******\n");
-  #endif //DEBUG_PRINT
+#endif //DEBUG_PRINT
 
   int tid;
   GV gv = lv->gv;   
@@ -1058,9 +1061,9 @@ void compute_elasticforce(LV lv) { //emabarassingly parallel
     } // if fiber2thread ends
    } // end of total_fibers i.e fibers along x axis	
    
-   #ifdef DEBUG_PRINT
+#ifdef DEBUG_PRINT
      printf("**** compute_elasticforce Exit*******\n");
-   #endif //DEBUG_PRINT
+#endif //DEBUG_PRINT
 }
 
 
@@ -2788,6 +2791,7 @@ void* do_thread(void* v){
   int barrcheck;
   int tid   = lv->tid;
   char filename[80];
+  int my_rank;
      
   #ifdef DEBUG_PRINT    
   printf("Inside do_thread :Started by Threadid: %d\n",lv->tid);
@@ -2822,6 +2826,14 @@ void* do_thread(void* v){
         fprintf(stderr,"Could not wait on barrier\n");
         exit(1);
     }*/
+#if 0
+    if (tid == 0){
+      my_rank = 1;
+      sprintf(filename, "Fiber%d_bending_force%d.dat", my_rank, gv->time);
+      save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
 
      compute_stretchingforce(lv);
      printf("Tid%d: After compute_streching_force.\n", tid);
@@ -2844,6 +2856,14 @@ void* do_thread(void* v){
         fprintf(stderr,"Could not wait on barrier\n");
         exit(1);
     }*/
+#if 0
+    if (tid == 0){
+      my_rank = 1;
+      sprintf(filename, "Fiber%d_streching_force%d.dat", my_rank, gv->time);
+      save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
 
      compute_elasticforce(lv);
      printf("Tid%d: B4 get_influence_domain\n", tid);
@@ -2866,7 +2886,15 @@ void* do_thread(void* v){
         fprintf(stderr,"Could not wait on barrier\n");
         exit(1);
     }*/
-     
+#if 0
+    if (tid == 0){
+      my_rank = 1;
+      sprintf(filename, "Fiber%d_elasitc_force%d.dat", my_rank, gv->time);
+      save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
+
      get_influentialdomain_fluid_grid_and_SpreadForce(lv);
      #ifdef DEBUG_PRINT
      printf("After get_influence_domain\n");
@@ -2893,12 +2921,12 @@ void* do_thread(void* v){
 
 #ifdef SAVE
     if (tid == 0){
-      int rank = 0;
-      sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", rank, gv->time);
+      my_rank = 0;
+      sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
       save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
 
-      rank = 1;
-      sprintf(filename, "Fiber%d_SpreadForce_step%d.dat", rank, gv->time);
+      my_rank = 1;
+      sprintf(filename, "Fiber%d_SpreadForce_step%d.dat", my_rank, gv->time);
       save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
     }
 #endif
@@ -3434,17 +3462,17 @@ int main(int argc, char* argv[]) {
   init_df1(gv);   
   init_df_inout(gv);
 
-#ifdef SAVE
+#if 0 //PASS init
   char filename[80];
-  int rank = 0;
-  sprintf(filename, "Fluid%d_init.dat", rank);
+  int my_rank = 0;
+  sprintf(filename, "Fluid%d_init.dat", my_rank);
   save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-  printf("Pass save Fluid%d_init.dat\n", rank);
+  printf("Pass save Fluid%d_init.dat\n", my_rank);
 
-  rank = 1;
-  sprintf(filename, "Fiber%d_init.dat", rank);
+  my_rank = 1;
+  sprintf(filename, "Fiber%d_init.dat", my_rank);
   save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
-  printf("Pass save Fiber%d_init.dat\n", rank);
+  printf("Pass save Fiber%d_init.dat\n", my_rank);
 #endif   
 
    double startTime = get_cur_time();

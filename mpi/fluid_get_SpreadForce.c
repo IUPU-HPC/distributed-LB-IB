@@ -50,6 +50,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   int my_rank = gv->taskid;
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
+  int toProc, X, Y, Z;
 
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
@@ -70,14 +71,23 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   //Annuling Forces on Fluid grid :: Necessary to annul in every time step, because it is between fluid and fiber
   int fluid_mac_rank;
 
-  for (BI = 0; BI <num_cubes_x; BI++)
-  for (BJ = 0; BJ <num_cubes_y; BJ++)
-  for (BK = 0; BK <num_cubes_z; BK++){
-    if (gv->taskid == cube2task(BI, BJ, BK, gv)){
+  for (BI = 0; BI < num_cubes_x; BI++)
+  for (BJ = 0; BJ < num_cubes_y; BJ++)
+  for (BK = 0; BK < num_cubes_z; BK++){
+    owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
+
+    if (tid == owner_tid && my_rank == toProc){
+
       cube_idx = BI*num_cubes_y*num_cubes_z + BJ*num_cubes_z + BK;
-      for (li = 0; li< cube_size; li++)
-      for (lj = 0; lj< cube_size; lj++)
-      for (lk = 0; lk< cube_size; lk++){
+      for (li = 0; li < cube_size; li++)
+      for (lj = 0; lj < cube_size; lj++)
+      for (lk = 0; lk < cube_size; lk++){
+#if 0
+        X = BI * cube_size + li;
+        Y = BJ * cube_size + lj;
+        Z = BK * cube_size + lk; 
+        printf("Tid%d write (%d, %d, %d)\n", tid, X, Y, Z);
+#endif
         node_idx = li* cube_size * cube_size + lj * cube_size + lk;
         gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_x = 0.0e0;
         gv->fluid_grid->sub_fluid_grid[cube_idx].nodes[node_idx].elastic_force_y = 0.0e0;
@@ -117,14 +127,14 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
     int position = 0;
     while (position < gv->ifd_recv_count){
 
-      int X = *((int*)(gv->ifd_recv_buf + position));
-      int Y = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
-      int Z = *((int*)(gv->ifd_recv_buf + position + sizeof(int)* 2));
-      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3));
-      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3 + sizeof(double)));
-      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int)* 3 + sizeof(double)* 2));
+      X = *((int*)(gv->ifd_recv_buf + position));
+      Y = *((int*)(gv->ifd_recv_buf + position + sizeof(int)));
+      Z = *((int*)(gv->ifd_recv_buf + position + sizeof(int) * 2));
+      elastic_force_x = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3));
+      elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double)));
+      elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double)* 2));
 
-      position += sizeof(int)* 3 + sizeof(double)* 3;
+      position += sizeof(int) * 3 + sizeof(double) * 3;
 
       BI = X / cube_size;
       BJ = Y / cube_size;
@@ -142,7 +152,6 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       node_idx = li * cube_size * cube_size + lj * cube_size + lk;
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
-      int toProc;
       owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//owner_tid is thread id in the fluid task
 
       // printf("(my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
@@ -158,6 +167,8 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
         nodes[node_idx].elastic_force_y += elastic_force_y;
         nodes[node_idx].elastic_force_z += elastic_force_z;
         // pthread_mutex_unlock(&(gv->lock_Fluid[owner_tid]));
+        // printf("Tid%d update (%d,%d,%d) || elastic_force (%.6f,%.24f,%.24f)\n", 
+        //   tid, X, Y, Z, elastic_force_x, elastic_force_y, elastic_force_z);
       }
 
     }

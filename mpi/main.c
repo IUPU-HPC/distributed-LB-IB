@@ -391,22 +391,22 @@ int main(int argc, char* argv[]) {
     fflush(stdout);
 #endif
 
-#ifdef SAVE
-    char filename[80];
-    sprintf(filename, "Fiber%d_init.dat", gv->taskid);
-    save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
-#endif    
+// #ifdef SAVE //PASS
+//     char filename[80];
+//     sprintf(filename, "Fiber%d_init.dat", gv->taskid);
+//     save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+// #endif    
   }
   else{
     init_eqlbrmdistrfuncDF0(gv);
     init_df1(gv);
     init_df_inout(gv);
     printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
-#ifdef SAVE    
-    char filename[80];
-    sprintf(filename, "Fluid%d_init.dat", gv->taskid);
-    save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-#endif    
+// #ifdef SAVE //PASS
+//     char filename[80];
+//     sprintf(filename, "Fluid%d_init.dat", gv->taskid);
+//     save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+// #endif    
   }
 
   // check_point : fluid grid info
@@ -460,7 +460,7 @@ int main(int argc, char* argv[]) {
     fflush(stdout);
   }
 #endif
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
   double time_elapsed = Timer::get_cur_time();
 

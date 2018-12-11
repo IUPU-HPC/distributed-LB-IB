@@ -31,14 +31,15 @@ void print_fiber_sub_grid(GV gv, int start_y, int start_z,
 
   for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
     fiber_array = gv->fiber_shape->sheets[k].fibers;
-    printf("Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_X, BF_y, BF_z\n", k);
+    printf("Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_X, BF_y, BF_z || EF_X, EF_y, EF_z\n", k);
     for (i = start_y; i <= end_y; ++i) {
       for (j = start_z; j <= end_z; ++j) {
         node = fiber_array[i].nodes + j;
-        printf("(%d, %d):{%f,%f,%f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
+        printf("(%2d,%2d):{%f,%f,%f} || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f\n",
           i, j, node->x, node->y, node->z,
           node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
-          node->bend_force_x, node->bend_force_y, node->bend_force_z);
+          node->bend_force_x, node->bend_force_y, node->bend_force_z,
+          node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
       }
       printf("\n");
     }
@@ -50,20 +51,21 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
                          int end_y, int end_z, char fName[]) {
   FILE* oFile = fopen(fName, "w");
 
-    /*Assuming one fiber sheet!!*/
+  /*Assuming one fiber sheet!!*/
   Fiber     *fiber_array;
   int        i, j, k;
   Fibernode *node;
   for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
     fiber_array = gv->fiber_shape->sheets[k].fibers;
-    fprintf(oFile, "Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_X, BF_y, BF_z\n", k);
+    fprintf(oFile, "Fiber_sheets[%d] (i,j): {cord_x, cord_y, cord_z} || SF_x, SF_y, SF_z || BF_x, BF_y, BF_z || EF_x, EF_y, EF_z\n", k);
     for (i = start_y; i <= end_y; ++i) {
       for (j = start_z; j <= end_z; ++j) {
         node = fiber_array[i].nodes + j;
-        fprintf(oFile, "(%d, %d):{%f,%f,%f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
+        fprintf(oFile, "(%2d,%2d):{%f,%f,%f} || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f\n",
           i, j, node->x, node->y, node->z,
           node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
-          node->bend_force_x, node->bend_force_y, node->bend_force_z);
+          node->bend_force_x, node->bend_force_y, node->bend_force_z,
+          node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);
       }
     }
   }
@@ -225,7 +227,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
         if (gv->taskid == temp_taskid){ //MPI changes
 
           // printf("temp_taskid = %d\n", temp_taskid);
-          fprintf(oFile, "(BI,BJ,BK): {vel_x, vel_y, vel_z} ||  {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
+          fprintf(oFile, "(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           for (li = 0; li < cube_size; li++)
@@ -234,9 +236,12 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
                 node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
                 //if( li == start_x%cube_size && lj ==start_y%cube_size && lk ==start_z%cube_size ){
                 fprintf(oFile, "For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, gv->taskid);
+                int X = BI * cube_size + li;
+                int Y = BJ * cube_size + lj;
+                int Z = BK * cube_size + lk;
                 for (ksi = 0; ksi < 19; ksi++){
-                  fprintf(oFile, "Rank-%d- (%d,%d,%d, %d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.12f || {%.24f,%.24f,%.24f}\n",
-                    gv->taskid, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
+                  fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.6f} || %.6f || {%.6f,%.24f,%.24f}\n",
+                    X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                     node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                     node->rho,
                     node->elastic_force_x, node->elastic_force_y, node->elastic_force_z);

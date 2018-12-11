@@ -34,15 +34,23 @@ int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task){
 	cubes_per_task_y = num_cubes_y / num_fluid_task_y; // along y: how many cubes in each task
 	cubes_per_task_z = num_cubes_z / num_fluid_task_z; // along y: how many cubes in each task
 
+	int Block_size_x  =  cubes_per_task_x / tx;
+ 	int Block_size_y  =  cubes_per_task_y / ty;
+ 	int Block_size_z  =  cubes_per_task_z / tz;
+
 	// cyclic fluid thread division
-	i = (BI % (cubes_per_task_x)) % tx;
-	j = (BJ % (cubes_per_task_y)) % ty;
-	k = (BK % (cubes_per_task_z)) % tz;
+	// i = (BI % (cubes_per_task_x)) % tx;
+	// j = (BJ % (cubes_per_task_y)) % ty;
+	// k = (BK % (cubes_per_task_z)) % tz;
 
 	// consecutive fluid thread division
 	// i = (BI) >> ((int)(log2(cubes_per_task_x/tx)));
 	// j = (BJ) >> ((int)(log2(cubes_per_task_y/ty)));
 	// k = (BK) >> ((int)(log2(cubes_per_task_z/tz)));
+
+	i = (BI % cubes_per_task_x) / Block_size_x;
+	j = (BJ % cubes_per_task_y) / Block_size_y;
+	k = (BK % cubes_per_task_z) / Block_size_z;
 
 	// return thread id
 	tid  = i * ty * tz + j * tz + k;

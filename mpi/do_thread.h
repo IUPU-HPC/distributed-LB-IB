@@ -58,6 +58,9 @@
 
 #define SAVE
 #define DEBUG_PRINT
+
+#define PI 3.14159265358979
+
 #define lookup_fluid_start_x 20
 #define lookup_fluid_start_y 11
 #define lookup_fluid_start_z 20

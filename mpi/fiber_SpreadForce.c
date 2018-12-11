@@ -71,7 +71,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   tid = lv->tid;
 
   int     i = 0, j = 0, inneri = 0, innerj = 0, innerk = 0;//inner i corresponding to fluid index
-  int    istart, istop, jstart, jstop, kstart, kstop;
+  int     istart, istop, jstart, jstop, kstart, kstop;
   double  dx = 1.0, dy = 1.0, dz = 1.0; //fluid distance
   double  rx = 0.0, ry = 0.0, rz = 0.0; //local temporary variable
 
@@ -87,7 +87,6 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   int cube_idx, node_idx;
   int P, Q, R, total_threads;
   /* Todo: Move the following variables to GV to save time */
-  double  PI = 3.14159265358979;
   double  c_x = PI / (2.0*dx);
   double  c_y = PI / (2.0*dy);
   double  c_z = PI / (2.0*dz);
@@ -159,7 +158,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           ry = dy*innerj - fiberarray[i].nodes[j].y;
           rz = dz*innerk - fiberarray[i].nodes[j].z;
 
-          tmp_dist = cf * (1.0e0 + cos(c_x*rx)) * (1.0e0 + cos(c_y*ry))*(1.0e0 + cos(c_z*rz));
+          tmp_dist = cf * (1.0e0 + cos(c_x*rx)) * (1.0e0 + cos(c_y*ry)) * (1.0e0 + cos(c_z*rz) );
           elastic_force_x = fiberarray[i].nodes[j].elastic_force_x * tmp_dist;
           elastic_force_y = fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
           elastic_force_z = fiberarray[i].nodes[j].elastic_force_z * tmp_dist;

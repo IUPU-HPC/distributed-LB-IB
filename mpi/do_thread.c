@@ -50,12 +50,34 @@ void* do_thread(void* v){
 
       compute_bendingforce(lv);
       pthread_barrier_wait(&(gv->barr));
+#if 0
+      if (tid == 0){
+        sprintf(filename, "Fiber%d_bending_force%d.dat", my_rank, gv->time);
+        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      }
+      pthread_barrier_wait(&(gv->barr));
+#endif
 
       compute_stretchingforce(lv);
       pthread_barrier_wait(&(gv->barr));
+#if 0
+      if (tid == 0){
+        sprintf(filename, "Fiber%d_stretching_force%d.dat", my_rank, gv->time);
+        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      }
+      pthread_barrier_wait(&(gv->barr));
+#endif
 
       compute_elasticforce(lv);
       pthread_barrier_wait(&(gv->barr));
+#if 0
+      if (tid == 0){
+        my_rank = 1;
+        sprintf(filename, "Fiber%d_elasitc_force%d.dat", my_rank, gv->time);
+        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      }
+      pthread_barrier_wait(&(gv->barr));
+#endif      
 
       t1 = get_cur_time();
       t2_1 += t1 - t0;
