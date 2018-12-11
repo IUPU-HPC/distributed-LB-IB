@@ -115,7 +115,7 @@ void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
         if (gv->taskid == temp_taskid){ //MPI changes
 
           // printf("temp_taskid = %d\n", temp_taskid);
-          printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} ||  {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
+          printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           for (li = 0; li < cube_size; li++)
@@ -240,7 +240,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
                 int Y = BJ * cube_size + lj;
                 int Z = BK * cube_size + lk;
                 for (ksi = 0; ksi < 19; ksi++){
-                  fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.6f} || %.6f || {%.6f,%.24f,%.24f}\n",
+                  fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.24f,%.24f,%.6f} || %.6f || {%.6f,%.6f,%.6f}\n",
                     X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                     node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                     node->rho,

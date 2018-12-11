@@ -27,17 +27,49 @@ extern double t[19];
 
 // initialize a node to its local equilibrium term
 void computeEquilibrium(Fluidnode* node) {
-    int iPop;
-    double rho = node->rho;
-    double ux = node->vel_x;
-    double uy = node->vel_y;
-    double uz = node->vel_z;
+  int iPop;
+  double rho = node->rho;
+  double ux = node->vel_x;
+  double uy = node->vel_y;
+  double uz = node->vel_z;
 
-    double uSqr = ux*ux + uy*uy + uz*uz;
-    for (iPop = 0; iPop < 19; ++iPop) {
-        node->dfeq[iPop] =
-            computeEquilibrium(iPop, rho, ux, uy, uz, uSqr);
-    }
+  double uSqr = ux*ux + uy*uy + uz*uz;
+  for (iPop = 0; iPop < 19; ++iPop) {
+      node->dfeq[iPop] =
+          computeEquilibrium(iPop, rho, ux, uy, uz, uSqr);
+  }
+}
+
+void computeDF1(GV gv, Fluidnode* node){
+  int iPop;
+  double rho = node->rho;
+  double ux = node->vel_x;
+  double uy = node->vel_y;
+  double uz = node->vel_z;
+  double fx = node->elastic_force_x;
+  double fy = node->elastic_force_y;
+  double fz = node->elastic_force_z;
+
+  // double uSqr = ux*ux + uy*uy + uz*uz;
+  double c_u;
+
+  for (iPop = 0; iPop < 19; ++iPop) {
+    c_u = c[iPop][0]*ux + c[iPop][1]*uy + c[iPop][2]*uz;
+
+    node->df1[iPop] =
+          node->df1[iPop] * (1.0 - 1.0/ gv->tau)
+        + 1.0 / gv->tau * node->dfeq[iPop]
+        + gv->dt * (1.0 - 1.0 / (2.0 * gv->tau)) * t[iPop]
+        * (
+            (   (c[iPop][0] - ux) * fx
+              + (c[iPop][1] - uy) * fy
+              + (c[iPop][2] - uz) * (fz + rho * gv->g_l)
+            ) / (gv->cs_l*gv->cs_l)
+            +
+            c_u / pow(gv->cs_l, 4) 
+            * (c[iPop][0]*fx + c[iPop][1]*fy + c[iPop][2]*(fz + rho * gv->g_l))
+          );
+  }
 }
 
 void compute_eqlbrmdistrfuncDF1(LV lv){
@@ -67,14 +99,16 @@ void compute_eqlbrmdistrfuncDF1(LV lv){
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
   total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
 
-  int temp_mac_rank, my_rank;
+  int toProc, my_rank, owner_tid;
   my_rank = gv->taskid;
 
   /*Pthread Changes*/ /*OPTIMISE using Loop unrolling*/
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
-    if (gv->taskid == cube2task(BI, BJ, BK, gv)){
+    owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
+
+    if (tid == owner_tid && my_rank == toProc){
 
     cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
     nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
@@ -93,6 +127,7 @@ void compute_eqlbrmdistrfuncDF1(LV lv){
     for (lk = starting_z; lk <= stopping_z; ++lk){
       node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube.
       computeEquilibrium(nodes+node_idx);
+      computeDF1(gv, nodes+node_idx);
 
       // for (ksi = 0; ksi <= 18; ksi++){
       //   if (ksi == 0){
