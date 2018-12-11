@@ -50,7 +50,7 @@ void bounceback_rigidwalls(LV lv){
   int Q = gv->ty;
   int R = gv->tz;
 
-  int my_rank, temp_mac_rank;
+  int my_rank, toProc;
   my_rank = gv->taskid;
 
   /* 1.1 half-way bounce back on the bottom */
@@ -60,8 +60,8 @@ void bounceback_rigidwalls(LV lv){
 
   for (BI = 0; BI < num_cubes_x; ++BI)
     for (BJ = 0; BJ < num_cubes_y; ++BJ){
-      if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
-        if (my_rank == temp_mac_rank){
+      if (cube2thread_and_task(BI, BJ, BK, gv, &toProc) == tid){
+        if (my_rank == toProc){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
           starting_x = starting_y = 0;
@@ -93,8 +93,8 @@ void bounceback_rigidwalls(LV lv){
 
   for (BI = 0; BI < num_cubes_x; ++BI)
     for (BJ = 0; BJ < num_cubes_y; ++BJ){
-      if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
-        if(my_rank == temp_mac_rank){
+      if (cube2thread_and_task(BI, BJ, BK, gv, &toProc) == tid){
+        if(my_rank == toProc){
 
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
@@ -129,8 +129,8 @@ void bounceback_rigidwalls(LV lv){
 
   for (BI = 0; BI < num_cubes_x; ++BI)
     for (BK = 0; BK < num_cubes_z; ++BK){
-      if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
-        if (my_rank == temp_mac_rank){
+      if (cube2thread_and_task(BI, BJ, BK, gv, &toProc) == tid){
+        if (my_rank == toProc){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
 
@@ -164,8 +164,8 @@ void bounceback_rigidwalls(LV lv){
 
   for (BI = 0; BI < num_cubes_x; ++BI)
     for (BK = 0; BK < num_cubes_z; ++BK){
-      if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) ==tid){
-        if(my_rank == temp_mac_rank){
+      if (cube2thread_and_task(BI, BJ, BK, gv, &toProc) ==tid){
+        if(my_rank == toProc){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
 

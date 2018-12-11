@@ -2987,7 +2987,7 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#ifdef SAVE //Verify results
+#if 0 //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_streaming_step%d.dat", my_rank, gv->time);
@@ -3022,7 +3022,7 @@ void* do_thread(void* v){
      
     compute_rho_and_u(lv);
     #ifdef DEBUG_PRINT
-    printf("After compute rho and u \n");
+    printf("After compute_rho_and_u\n");
     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
@@ -3043,6 +3043,14 @@ void* do_thread(void* v){
     //   fprintf(stderr,"Could not wait on barrier\n");
     //   exit(1);
     // }
+#ifdef SAVE //Verify results
+    if (tid == 0){
+      my_rank = 0;
+      sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
+      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
 
 // // VERIFY    
 //      //compute_womega(gv) here

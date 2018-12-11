@@ -195,7 +195,7 @@ void* do_thread(void* v){
         fflush(stdout);
       // }
 #endif //DEBUG_PRINT
-#ifdef SAVE //Verify results
+#if 0 //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_streaming_step%d.dat", my_rank, gv->time);
         save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
@@ -218,6 +218,13 @@ void* do_thread(void* v){
 #ifdef DEBUG_PRINT
       printf("Fluid%d: After compute_rho_and_u\n", my_rank);
 #endif //DEBUG_PRINT
+#ifdef SAVE //Verify results
+      if (tid == 0){
+        sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
+        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      }
+      pthread_barrier_wait(&(gv->barr));
+#endif
     }
 
 // // VERIFY

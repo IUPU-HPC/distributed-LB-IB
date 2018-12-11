@@ -50,15 +50,15 @@ void compute_rho_and_u(LV lv){
   int num_cubes_x = gv->fluid_grid->num_cubes_x;
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
-  int my_rank, temp_mac_rank;
+  int my_rank, toProc;
   my_rank = gv->taskid;
   s1 = s2 = s3 = s4 = 0;
 
   for (BI = 0; BI < num_cubes_x; ++BI)
     for (BJ = 0; BJ < num_cubes_y; ++BJ)//for computing womega near bdy
       for (BK = 0; BK < num_cubes_z; ++BK){
-        if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
-          if (my_rank == temp_mac_rank){
+        if (cube2thread_and_task(BI, BJ, BK, gv, &toProc) == tid){
+          if (my_rank == toProc){
 
             cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
             nodes = fluidgrid->sub_fluid_grid[cube_idx].nodes;
