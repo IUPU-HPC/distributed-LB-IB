@@ -49,8 +49,13 @@ void* do_thread(void* v){
       t0 = get_cur_time();
 
       compute_bendingforce(lv);
+      pthread_barrier_wait(&(gv->barr));
+
       compute_stretchingforce(lv);
+      pthread_barrier_wait(&(gv->barr));
+
       compute_elasticforce(lv);
+      pthread_barrier_wait(&(gv->barr));
 
       t1 = get_cur_time();
       t2_1 += t1 - t0;

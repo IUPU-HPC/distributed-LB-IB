@@ -123,8 +123,6 @@ void compute_stretchingforce(LV lv) {
    }
   }
 
-  pthread_barrier_wait(&(gv->barr));
-
   #ifdef DEBUG_PRINT
 // printf("**** compute_stretchingforce Exit*******\n");
  #endif //DEBUG_PRINT

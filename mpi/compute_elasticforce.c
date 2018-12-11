@@ -38,8 +38,6 @@ void   compute_elasticforce(LV lv) { //emabarassingly parallel
     }//if fiber2thread ends
   }//end of total_fibers i.e fibers along x axis
 
-  pthread_barrier_wait(&(gv->barr));
-
 #ifdef DEBUG_PRINT
   // printf("**** compute_elasticforce Exit*******\n");
 #endif //DEBUG_PRINT

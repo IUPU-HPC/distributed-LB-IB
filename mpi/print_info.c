@@ -123,7 +123,7 @@ void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
                 //if( li == start_x%cube_size && lj ==start_y%cube_size && lk ==start_z%cube_size ){
                 printf("For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, gv->taskid);
                 for (ksi = 0; ksi < 19; ksi++){
-                  printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
+                  printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f}\n",
                     gv->taskid, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
                     node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                     node->rho,
@@ -170,7 +170,7 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
               node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
               printf("For cube <%d,%d,%d>, Rank %d\n", BI, BJ, BK, gv->taskid);
               for (ksi = 0; ksi < 19; ksi++){
-                printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
+                printf("Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f}\n",
                   gv->taskid, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
                   node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                   node->rho,
@@ -235,7 +235,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
                 //if( li == start_x%cube_size && lj ==start_y%cube_size && lk ==start_z%cube_size ){
                 fprintf(oFile, "For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, gv->taskid);
                 for (ksi = 0; ksi < 19; ksi++){
-                  fprintf(oFile, "Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
+                  fprintf(oFile, "Rank-%d- (%d,%d,%d, %d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.12f || {%.24f,%.24f,%.24f}\n",
                     gv->taskid, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
                     node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                     node->rho,

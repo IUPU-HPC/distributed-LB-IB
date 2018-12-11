@@ -219,8 +219,6 @@ void  compute_bendingforce(LV lv) {
     }
   }
 
-  pthread_barrier_wait(&(gv->barr));
-
 #ifdef DEBUG_PRINT
   // printf("**** compute_bendingforce Exit*******\n");
 #endif //DEBUG_PRINT

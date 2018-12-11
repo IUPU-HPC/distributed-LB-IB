@@ -311,7 +311,7 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
               node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size+ lj*cube_size+lk];
               printf("FOr cube <%d,%d,%d>\n",BI, BJ, BK);
               for (ksi = 0 ; ksi < 19; ksi++){
-                printf("(%d, %d, %d, %d):{%.12f, %.12f, %.12f} || {%.12f, %.12f, %.12f} || %.12f || {%.12f, %.12f, %.12f} \n", 
+                printf("(%d, %d, %d, %d):{%.12f, %.12f, %.12f} || {%.12f, %.12f, %.12f} || %.12f || {%.12f, %.12f, %.12f}\n", 
                        li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
                        node->dfeq[ksi], node->df1[ksi],node->df2[ksi],
                        node->rho,
@@ -371,7 +371,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
 
               fprintf(oFile, "For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, my_rank);
               for (ksi = 0; ksi < 19; ksi++){
-                fprintf(oFile, "Rank-%d- (%d,%d,%d, %d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.12f || {%.12f,%.12f,%.12f} \n",
+                fprintf(oFile, "Rank-%d- (%d,%d,%d, %d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.12f || {%.24f,%.24f,%.24f}\n",
                   my_rank, li, lj, lk, ksi, node->vel_x, node->vel_y, node->vel_z,
                   node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                   node->rho,
@@ -492,7 +492,8 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
 
   gv->Re    = 1.5e2;
   gv->rho_l = 1.0e0;
-  gv->u_l   = 0.001; /* choice of u_l should make Ma <0.1 */
+  // gv->u_l   = 0.001; /* choice of u_l should make Ma <0.1 */
+  gv->u_l = 0.08;
   
   //Todo: move it to fiber sheet!!
   gv->L_l   = 2.0e1;       /*the dimensionless char LENGTH, should shortest fiber or width of the sheet should be fibersheet_w*/
