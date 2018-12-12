@@ -196,6 +196,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   int temp_taskid;
   Fluidnode *node;
   int cube_size = gv->cube_size;
+  int X, Y, Z;
 
   grid = gv->fluid_grid;
   sub_grid = grid->sub_fluid_grid;
@@ -236,11 +237,11 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
                 node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
                 //if( li == start_x%cube_size && lj ==start_y%cube_size && lk ==start_z%cube_size ){
                 fprintf(oFile, "For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, gv->taskid);
-                int X = BI * cube_size + li;
-                int Y = BJ * cube_size + lj;
-                int Z = BK * cube_size + lk;
+                X = BI * cube_size + li;
+                Y = BJ * cube_size + lj;
+                Z = BK * cube_size + lk;
                 for (ksi = 0; ksi < 19; ksi++){
-                  fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.24f,%.24f}\n",
+                  fprintf(oFile, "(%d,%d,%d, %2d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.24f,%.24f}\n",
                     X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                     node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                     node->rho,

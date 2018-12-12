@@ -335,6 +335,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   int temp_taskid;
   Fluidnode *node;
   int cube_size = gv->cube_size;
+  int X, Y, Z;
 
   grid        = gv->fluid_grid;
   sub_grid    = grid->sub_fluid_grid;
@@ -370,11 +371,11 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
               node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
 
               fprintf(oFile, "For cube <%d,%d,%d> Rank %d\n", BI, BJ, BK, my_rank);
-              int X = BI * cube_size + li;
-              int Y = BJ * cube_size + lj;
-              int Z = BK * cube_size + lk;
+              X = BI * cube_size + li;
+              Y = BJ * cube_size + lj;
+              Z = BK * cube_size + lk;
               for (ksi = 0; ksi < 19; ksi++){
-                fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.24f,%.24f}\n",
+                fprintf(oFile, "(%d,%d,%d, %2d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.24f,%.24f}\n",
                   X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                   node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                   node->rho,
@@ -2005,35 +2006,37 @@ void  stream_distrfunc(LV lv){//df2
   int Q = gv->Q;
   int R = gv->R;
 
-//printf("*************ENTRY OF Bounceback\n");
-      //print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
-   /* 1.1 half-way bounce back on the bottom */
-   //k = gv->kb;
-   lk = gv->kb; BK = 0;
+  //printf("*************ENTRY OF Bounceback\n");
+  //print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
+  /* 1.1 half-way bounce back on the bottom */
+  //k = gv->kb;
+  lk = gv->kb;
+  BK = 0;
     
-   for(BI =0; BI < num_cubes_x; ++BI)
-    for(BJ =0; BJ < num_cubes_y; ++BJ){
-      if(cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) ==tid){
-      cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
-      nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
-      starting_x = starting_y = 0;
-      stopping_x = stopping_y = cube_size-1;
-      if(BI == 0) starting_x = gv->ib+1;//3
-      
-      if(BI == num_cubes_x-1) stopping_x = cube_size-4;//gv->ie-1
-      
-      if(BJ == 0) starting_y = gv->jb;//2
+  for (BI = 0; BI < num_cubes_x; ++BI)
+    for (BJ = 0; BJ < num_cubes_y; ++BJ){
+      if (cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) ==tid){
+
+        cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
+
+        starting_x = starting_y = 0;
+        stopping_x = stopping_y = cube_size - 1;
+
+        if(BI == 0) starting_x = gv->ib + 1;//3
+        if(BI == num_cubes_x-1) stopping_x = cube_size - 4;//gv->ie-1
+        
+        if(BJ == 0) starting_y = gv->jb;//2 
+        if(BJ == num_cubes_y-1) stopping_y = cube_size - 3;//je
        
-      if(BJ == num_cubes_y-1) stopping_y = cube_size-3;//je
-       
-     for(li=starting_x; li <= stopping_x; ++li)
-      for(lj=starting_y; lj <= stopping_y; ++lj){
-            node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube. //lk =gv->kb
-         nodes[node_idx].df2[3] =nodes[node_idx].df1[4];
-         nodes[node_idx].df2[7] =nodes[node_idx].df1[8];
-         nodes[node_idx].df2[10]=nodes[node_idx].df1[9];
-         nodes[node_idx].df2[11]=nodes[node_idx].df1[12];
-         nodes[node_idx].df2[13]=nodes[node_idx].df1[14];
+        for (li=starting_x; li <= stopping_x; ++li)
+        for (lj=starting_y; lj <= stopping_y; ++lj){
+          node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube. //lk =gv->kb
+          nodes[node_idx].df2[3] =nodes[node_idx].df1[4];
+          nodes[node_idx].df2[7] =nodes[node_idx].df1[8];
+          nodes[node_idx].df2[10]=nodes[node_idx].df1[9];
+          nodes[node_idx].df2[11]=nodes[node_idx].df1[12];
+          nodes[node_idx].df2[13]=nodes[node_idx].df1[14];
         // printf("1.1 half-way bounce back on the bottom\n");
          if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
       && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
@@ -2160,7 +2163,7 @@ void  stream_distrfunc(LV lv){//df2
 
 
  void compute_rho_and_u(LV lv){
-   //printf("**********Inside compute_rho**********\n");
+  //printf("**********Inside compute_rho**********\n");
   int tid;
   GV gv = lv->gv;   
   tid   = lv->tid;
@@ -2186,69 +2189,71 @@ void  stream_distrfunc(LV lv){//df2
   num_cubes_y = gv->num_cubes_y;
   num_cubes_z = gv->num_cubes_z;
    
-s1 =s2= s3 = s4 =0;
-//printf("*************ENTRY OF RHO AND U\n");
-//print_fluid_sub_grid(gv, 19,10,19, 19,10,21,gv->cube_size);
+  s1 = s2 = s3 = s4 = 0;
+  //printf("*************ENTRY OF RHO AND U\n");
+  //print_fluid_sub_grid(gv, 19,10,19, 19,10,21,gv->cube_size);
   // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
-   for(BI =0; BI < num_cubes_x; ++BI)
-   for(BJ =0; BJ < num_cubes_y; ++BJ)//for computing womega near bdy
-    for(BK =0; BK < num_cubes_z; ++BK){
-      if(cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) ==tid){
-     cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
-     nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes;
-     starting_x = starting_y = starting_z = 0;
-     stopping_x = stopping_y = stopping_z = cube_size-1;
-     if(BI == 0) starting_x = 3;//ib+1
-      
-     if(BI == num_cubes_x-1) stopping_x = cube_size-4;//ie-1
-      
-     if(BJ == 0) starting_y = 2;//jb
-    
-     if(BJ == num_cubes_y-1) stopping_y = cube_size-3;//je
-     
-     if(BK == 0) starting_z = 2;//kb
-     
-     if(BK == num_cubes_z-1) stopping_z = cube_size-3;//ke
-     s1 =s2= s3 = s4 =0; 
-    for(li=starting_x; li <= stopping_x; ++li)
-      for(lj=starting_y; lj <= stopping_y; ++lj)
-       for(lk=starting_z; lk <= stopping_z; ++lk){
+  for (BI = 0; BI < num_cubes_x; ++BI)
+  for (BJ = 0; BJ < num_cubes_y; ++BJ)//for computing womega near bdy
+  for (BK = 0; BK < num_cubes_z; ++BK){
+    if (cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q, R) == tid){
+
+      cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+      nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes;
+
+      starting_x = starting_y = starting_z = 0;
+      stopping_x = stopping_y = stopping_z = cube_size-1;
+
+      if(BI == 0) starting_x = 3;//ib+1
+      if(BI == num_cubes_x-1) stopping_x = cube_size-4;//ie-1
+
+      if(BJ == 0) starting_y = 2;//jb
+      if(BJ == num_cubes_y-1) stopping_y = cube_size-3;//je
+
+      if(BK == 0) starting_z = 2;//kb
+      if(BK == num_cubes_z-1) stopping_z = cube_size-3;//ke
+
+      s1 = s2 = s3 = s4 =0;
+
+      for (li = starting_x; li <= stopping_x; ++li)
+      for (lj = starting_y; lj <= stopping_y; ++lj)
+      for (lk = starting_z; lk <= stopping_z; ++lk){
         node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube.
 
-      s1=nodes[node_idx].df2[0];
-      s2=gv->c[0][0]*nodes[node_idx].df2[0];
-      s3=gv->c[0][1]*nodes[node_idx].df2[0];
-      s4=gv->c[0][2]*nodes[node_idx].df2[0];
-     if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
-      && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
-     // printf("*************Start of KSI\n");
-     // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
-     }
-     for (ksi=1;ksi<=18;ksi++)
-       {
-         s1 += nodes[node_idx].df2[ksi];
-         s2 += gv->c[ksi][0]*nodes[node_idx].df2[ksi];
-         s3 += gv->c[ksi][1]*nodes[node_idx].df2[ksi];
-         s4 += gv->c[ksi][2]*nodes[node_idx].df2[ksi];
-       }
-        if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
-      && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
-     // printf("*************END of KSI\n");
-     // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
-     }
-    // if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
-     // && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size )
-      //printf(" B4....s2 , s3, s4  NODES :%.12f, %.12f, %.12f",s2,s3,s4);
-     nodes[node_idx].rho=s1;/* Eqn 11 from paper...PN*/
-     nodes[node_idx].vel_x=(s2+0.5*gv->dt * nodes[node_idx].elastic_force_x) / s1;/*Eqn 12*/
-     nodes[node_idx].vel_y=(s3+0.5*gv->dt * nodes[node_idx].elastic_force_y) /s1;/*Eqn 12*/
-     nodes[node_idx].vel_z=(s4+0.5*gv->dt * (nodes[node_idx].elastic_force_z +nodes[node_idx].rho*gv->g_l))/s1;
-     /*if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
-      && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
-      printf("*************EXIT OF RHO AND U\n");
-      print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
-      printf("s2 , s3, s4  NODES :%.12f, %.12f, %.12f",s2,s3,s4);
-     }*/
+        s1 = nodes[node_idx].df2[0];
+        s2 = gv->c[0][0] * nodes[node_idx].df2[0];
+        s3 = gv->c[0][1] * nodes[node_idx].df2[0];
+        s4 = gv->c[0][2] * nodes[node_idx].df2[0];
+
+        if (li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
+            && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
+          // printf("*************Start of KSI\n");
+          // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
+        }
+        for (ksi = 1;ksi <= 18;ksi++){
+          s1 += nodes[node_idx].df2[ksi];
+          s2 += gv->c[ksi][0] * nodes[node_idx].df2[ksi];
+          s3 += gv->c[ksi][1] * nodes[node_idx].df2[ksi];
+          s4 += gv->c[ksi][2] * nodes[node_idx].df2[ksi];
+        }
+        if (li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
+            && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
+        // printf("*************END of KSI\n");
+        // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
+        }
+        // if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
+        // && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size )
+        //printf(" B4....s2 , s3, s4  NODES :%.12f, %.12f, %.12f",s2,s3,s4);
+        nodes[node_idx].rho=s1;/* Eqn 11 from paper...PN*/
+        nodes[node_idx].vel_x=(s2+0.5*gv->dt * nodes[node_idx].elastic_force_x) / s1;/*Eqn 12*/
+        nodes[node_idx].vel_y=(s3+0.5*gv->dt * nodes[node_idx].elastic_force_y) / s1;/*Eqn 12*/
+        nodes[node_idx].vel_z=(s4+0.5*gv->dt * (nodes[node_idx].elastic_force_z + nodes[node_idx].rho * gv->g_l)) / s1;
+        /*if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
+        && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
+        printf("*************EXIT OF RHO AND U\n");
+        print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
+        printf("s2 , s3, s4  NODES :%.12f, %.12f, %.12f",s2,s3,s4);
+        }*/
      }
     } //if cube2thread ends
   }//For BK  
@@ -3017,7 +3022,16 @@ void* do_thread(void* v){
         fprintf(stderr,"Could not wait on barrier\n");
         exit(1);
     }*/
-     
+
+#if 1 //Verify results
+    if (tid == 0){
+      my_rank = 0;
+      sprintf(filename, "Fluid%d_bounceback_rigidwalls_step%d.dat", my_rank, gv->time);
+      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
+
     compute_rho_and_u(lv);
     #ifdef DEBUG_PRINT
     printf("After compute_rho_and_u\n");
