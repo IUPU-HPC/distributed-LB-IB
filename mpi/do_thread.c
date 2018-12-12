@@ -143,13 +143,15 @@ void* do_thread(void* v){
       if (tid == 0){
         sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
         save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-      }  
+      }
+      pthread_barrier_wait(&(gv->barr));
     }
     else{
       if (tid == 0){
         sprintf(filename, "Fiber%d_SpreadForce_step%d.dat", my_rank, gv->time);
         save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
       }
+      pthread_barrier_wait(&(gv->barr));
     }
 #endif
 
@@ -218,7 +220,7 @@ void* do_thread(void* v){
 #ifdef DEBUG_PRINT
       printf("Fluid%d: After compute_rho_and_u\n", my_rank);
 #endif //DEBUG_PRINT
-#ifdef SAVE //Verify results
+#if 0 //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
         save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
@@ -227,63 +229,80 @@ void* do_thread(void* v){
 #endif
     }
 
-// // VERIFY
-//     // pthread_barrier_wait(&(gv->barr));
-//     if (tid == 0)
-//       MPI_Barrier(MPI_COMM_WORLD);
-//     pthread_barrier_wait(&(gv->barr));
+// VERIFY
+    // pthread_barrier_wait(&(gv->barr));
+    if (tid == 0)
+      MPI_Barrier(MPI_COMM_WORLD);
+    pthread_barrier_wait(&(gv->barr));
 
-//     // move_fiber
-//     if (my_rank < num_fluid_tasks){
-//       t0 = get_cur_time();
-//       fluid_SpreadVelocity(lv);
-//       t1 = get_cur_time();
-//       t5 += t1 - t0;
-//     }
-//     else{
-//       t0 = get_cur_time();
-//       fiber_get_SpreadVelocity(lv);
-//       t1 = get_cur_time();
-//       t6 += t1 - t0;
-//     }
+    // move_fiber
+    if (my_rank < num_fluid_tasks){
+      t0 = get_cur_time();
+      fluid_SpreadVelocity(lv);
+      t1 = get_cur_time();
+      t5 += t1 - t0;
+    }
+    else{
+      t0 = get_cur_time();
+      fiber_get_SpreadVelocity(lv);
+      t1 = get_cur_time();
+      t6 += t1 - t0;
+    }
 
-//     // pthread_barrier_wait(&(gv->barr));
-//     // if (tid == 0)
-//     //   MPI_Barrier(MPI_COMM_WORLD);
-//     // pthread_barrier_wait(&(gv->barr));
+    // pthread_barrier_wait(&(gv->barr));
+    // if (tid == 0)
+    //   MPI_Barrier(MPI_COMM_WORLD);
+    // pthread_barrier_wait(&(gv->barr));
 
-// #ifdef DEBUG_PRINT
-//     printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
-// #endif //DEBUG_PRINT
+#ifdef DEBUG_PRINT
+    printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
+#endif //DEBUG_PRINT
 
-//     // Fluid tasks
-//     if(my_rank < num_fluid_tasks){
-//       copy_inout_to_df2(lv);
-//       pthread_barrier_wait(&(gv->barr));
-//       // if (tid == 0) 
-//           // MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//       printf("Fluid%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
-// #endif //DEBUG_PRINT
+#ifdef SAVE //Verify results
+    if (my_rank < num_fluid_tasks){
+      if (tid == 0){
+        // sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
+        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      }
+      pthread_barrier_wait(&(gv->barr));
+    }
+    else{
+      if (tid == 0){
+        sprintf(filename, "Fiber%d_moveFiber_step%d.dat", my_rank, gv->time);
+        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      }
+      pthread_barrier_wait(&(gv->barr));
+    }
+#endif
 
-//       replace_old_DF(lv);
-//       pthread_barrier_wait(&(gv->barr));
-//       // if (tid == 0) 
-//       //   MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//       printf("Fluid%dtid%d: After replace_old_DF \n", my_rank, tid);
-// #endif //DEBUG_PRINT
+    // Fluid tasks
+    if(my_rank < num_fluid_tasks){
+      copy_inout_to_df2(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if (tid == 0) 
+          // MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("Fluid%dtid%d: After copy_inout_to_df2 \n", my_rank, tid);
+#endif //DEBUG_PRINT
 
-//       // periodicBC(lv);
-//       pthread_barrier_wait(&(gv->barr));
-//       // if (tid == 0) 
-//       //   MPI_Barrier(MPI_COMM_WORLD);
-// #ifdef DEBUG_PRINT
-//       printf("Fluid%dtid%d: After PeriodicBC\n", my_rank, tid);
-// #endif //DEBUG_PRINT
-//     }
+      replace_old_DF(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if (tid == 0) 
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("Fluid%dtid%d: After replace_old_DF \n", my_rank, tid);
+#endif //DEBUG_PRINT
 
-// // VERIFY
+      // periodicBC(lv);
+      pthread_barrier_wait(&(gv->barr));
+      // if (tid == 0) 
+      //   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef DEBUG_PRINT
+      printf("Fluid%dtid%d: After PeriodicBC\n", my_rank, tid);
+#endif //DEBUG_PRINT
+    }
+
+// VERIFY
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;

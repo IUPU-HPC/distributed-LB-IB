@@ -25,28 +25,29 @@
 
 void search_velocity(char* msg, int recv_cnt, int inneri, int innerj, int innerk, double* vel_x, double* vel_y, double* vel_z){
 	int position = 0;
-    while (position < recv_cnt){
+  while (position < recv_cnt){
 
-      int X = *((int*)(msg + position));
-      int Y = *((int*)(msg + position + sizeof(int)));
-      int Z = *((int*)(msg + position + sizeof(int) * 2));
+    int X = *((int*)(msg + position));
+    int Y = *((int*)(msg + position + sizeof(int)));
+    int Z = *((int*)(msg + position + sizeof(int) * 2));
 
-      if ( inneri==X && innerj==Y && innerk==Z){
-      	*vel_x = *((double*)(msg + position + sizeof(int) * 3));
-      	*vel_y = *((double*)(msg + position + sizeof(int) * 3 + sizeof(double)));
-      	*vel_z = *((double*)(msg + position + sizeof(int) * 3 + sizeof(double) * 2));
-      	return;
-      }
-
-      position += sizeof(int)* 3 + sizeof(double)* 3;
+    if ( inneri==X && innerj==Y && innerk==Z){
+    	*vel_x = *((double*)(msg + position + sizeof(int) * 3));
+    	*vel_y = *((double*)(msg + position + sizeof(int) * 3 + sizeof(double)));
+    	*vel_z = *((double*)(msg + position + sizeof(int) * 3 + sizeof(double) * 2));
+    	return;
     }
 
+    position += sizeof(int)* 3 + sizeof(double)* 3;
+  }
+  printf("Error: Cannot find velocity\n");
+  exit(0);
 }
 
 void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
 #ifdef DEBUG_PRINT
-  // printf("****Inside fiber_SpreadForce******\n");
+  // printf("****Inside fiber_get_SpreadVelocity******\n");
   fflush(stdout);
 #endif //DEBUG_PRINT
 
@@ -58,6 +59,11 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   int    istart, istop, jstart, jstop, kstart, kstop;
   double dx = 1.0, dy = 1.0, dz = 1.0; //fluid distance
   double rx = 0.0, ry = 0.0, rz = 0.0; //local temporary variable
+
+  // double dx1, dy1, dz1;
+  // dx1 = 1.0/dx;
+  // dy1 = 1.0/dy;
+  // dz1 = 1.0/dz;
 
   int    total_fibers_row, total_fibers_clmn;
   Fiber  *fiberarray;
@@ -149,6 +155,10 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
       for (j = 0; j < total_fibers_clmn; ++j){
+        s1=0; 
+        s2=0; 
+        s3=0;
+
         // for fibre machine
         //Find influential domain
         istart = floor(fiberarray[i].nodes[j].x / dx - 2) + 1; //x dimension
@@ -199,6 +209,11 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           s3 += vel_z * tmp;
 
         }//for innerk ends
+
+        fiberarray[i].nodes[j].x += gv->dt * s1;
+        fiberarray[i].nodes[j].y += gv->dt * s2;
+        fiberarray[i].nodes[j].z += gv->dt * s3;
+
       } //for fiberclmn ends
     }//if fiber2thread ends
   }//for fiber row ends
@@ -209,15 +224,15 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   // if(tid == 0){
   	printf("Fiber%dtid%d prepare to final update location, t_search=%f\n", my_rank, tid, t_search);
   // }
-  for (i = 0; i < total_fibers_row; ++i){
-    if (fiber2thread(i, total_fibers_row, total_threads) == tid){
-      for (j = 0; j < total_fibers_clmn; ++j){
-        fiberarray[i].nodes[j].x += gv->dt * s1;
-      	fiberarray[i].nodes[j].y += gv->dt * s2;
-      	fiberarray[i].nodes[j].z += gv->dt * s3;
-      } //for fiberclmn ends
-    }//if fiber2thread ends
-  }//for fiber row ends
+  // for (i = 0; i < total_fibers_row; ++i){
+  //   if (fiber2thread(i, total_fibers_row, total_threads) == tid){
+  //     for (j = 0; j < total_fibers_clmn; ++j){
+  //       fiberarray[i].nodes[j].x += gv->dt * s1;
+  //     	fiberarray[i].nodes[j].y += gv->dt * s2;
+  //     	fiberarray[i].nodes[j].z += gv->dt * s3;
+  //     } //for fiberclmn ends
+  //   }//if fiber2thread ends
+  // }//for fiber row ends
 
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
@@ -234,6 +249,6 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   }
 
 #ifdef DEBUG_PRINT
-  // printf("----- Fiber task:%d fiber_SpreadForce Exit! -----\n", my_rank);
+  // printf("----- Fiber%dtid%d: fiber_get_SpreadVelocity Exit! -----\n", my_rank, tid);
 #endif //DEBUG_PRINT
 }

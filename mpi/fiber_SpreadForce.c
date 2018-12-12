@@ -222,7 +222,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
         gv->num_influenced_macs++;
         // set ifd_last_pos to default value 0
-        gv->ifd_last_pos[toProc] = 0;
+        // gv->ifd_last_pos[toProc] = 0;
       }
       else{
         char stop = 100;

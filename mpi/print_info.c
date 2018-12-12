@@ -61,7 +61,7 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
     for (i = start_y; i <= end_y; ++i) {
       for (j = start_z; j <= end_z; ++j) {
         node = fiber_array[i].nodes + j;
-        fprintf(oFile, "(%2d,%2d):{%f,%f,%f} || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f || %.6f,%.24f,%.24f\n",
+        fprintf(oFile, "(%2d,%2d):{%.12f,%.12f,%.12f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
           i, j, node->x, node->y, node->z,
           node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
           node->bend_force_x, node->bend_force_y, node->bend_force_z,
@@ -240,7 +240,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
                 int Y = BJ * cube_size + lj;
                 int Z = BK * cube_size + lk;
                 for (ksi = 0; ksi < 19; ksi++){
-                  fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.12f,%.24f}\n",
+                  fprintf(oFile, "(%d,%d,%d, %2d):{%.6f,%.6f,%.6f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.24f,%.24f}\n",
                     X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                     node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                     node->rho,

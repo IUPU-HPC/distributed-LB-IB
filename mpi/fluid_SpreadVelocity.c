@@ -23,13 +23,16 @@
 #include "do_thread.h"
 
 void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
-#ifdef DEBUG_PRINT
-  // printf("****Inside fluid_SpreadVelocity******\n");
-  fflush(stdout);
-#endif //DEBUG_PRINT
+
   int tid;
   GV gv = lv->gv;
   tid = lv->tid;
+  int my_rank = gv->taskid;
+
+#ifdef DEBUG_PRINT
+  // printf("Fluid%dtid%d: ****Inside fluid_SpreadVelocity******\n", my_rank, tid);
+  fflush(stdout);
+#endif //DEBUG_PRINT  
 
   int total_fibers_row, total_fibers_clmn;
   Fiber* fiberarray;
@@ -43,7 +46,7 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
   /*MPI changes*/
   int temp_mac_rank, fluid_owner_mac;
   int fiber_mac_rank = gv->num_fluid_tasks;
-  int my_rank = gv->taskid;
+
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
 
@@ -153,6 +156,6 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
 
 
 #ifdef DEBUG_PRINT
-  printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank, tid);
+  printf("**** Fluid%dtid%d: fluid_SpreadVelocity recv MSG and Exit******\n", my_rank, tid);
 #endif //DEBUG_PRINT
 }
