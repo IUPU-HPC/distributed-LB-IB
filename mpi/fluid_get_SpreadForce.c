@@ -134,8 +134,6 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       elastic_force_y = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double)));
       elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double)* 2));
 
-      position += sizeof(int) * 3 + sizeof(double) * 3;
-
       BI = X / cube_size;
       BJ = Y / cube_size;
       BK = Z / cube_size;
@@ -170,6 +168,8 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
         // printf("Tid%d update (%d,%d,%d) || elastic_force (%.6f,%.24f,%.24f)\n", 
         //   tid, X, Y, Z, elastic_force_x, elastic_force_y, elastic_force_z);
       }
+
+      position += sizeof(int) * 3 + sizeof(double) * 3;
 
     }
 

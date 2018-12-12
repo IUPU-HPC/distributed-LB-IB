@@ -116,6 +116,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
   int recv_cnt; // SpreadVelocity_recv_count
   double s1 = 0, s2 = 0, s3 = 0;
+  double vel_x = 0, vel_y = 0, vel_z = 0;
 
   t2 = Timer::get_cur_time();
 
@@ -151,6 +152,12 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
   // other fiber threads wait until tid=0 complete receive
   pthread_barrier_wait(&(gv->barr));
+
+#ifdef SAVE
+  char fName[80];
+  sprintf(fName, "Fiber%d_vel.dat", tid);
+  FILE* oFile = fopen(fName, "w");
+#endif
 
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
@@ -197,12 +204,19 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
 
-          double vel_x = 0, vel_y = 0, vel_z = 0;
+          vel_x = 0;
+          vel_y = 0;
+          vel_z = 0;
 
           t0 = Timer::get_cur_time();
           search_velocity(gv->ifd_bufpool[ifd2FluidProc], gv->ifd_last_pos[ifd2FluidProc], inneri, innerj, innerk, &vel_x, &vel_y, &vel_z); //need to optimize
           t1 = Timer::get_cur_time();
           t_search += t1 - t0;
+
+#ifdef SAVE
+          fprintf(oFile, "velocity at (%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+                      inneri, innerj, innerk, vel_x, vel_y, vel_z);
+#endif
 
           s1 += vel_x * tmp; 
       	  s2 += vel_y * tmp;
@@ -218,8 +232,9 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
     }//if fiber2thread ends
   }//for fiber row ends
 
-  // wait until all fiber threads complete computation
-  pthread_barrier_wait(&(gv->barr));
+#ifdef SAVE
+  fclose(oFile);
+#endif  
 
   // if(tid == 0){
   	printf("Fiber%dtid%d prepare to final update location, t_search=%f\n", my_rank, tid, t_search);
@@ -242,10 +257,12 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   fflush(stdout);
 
   //reset
-  gv->num_influenced_macs = 0;
-  for (int toProc = 0; toProc < num_fluid_tasks; toProc++){  
-    // set ifd_last_pos to default value 0
-    gv->ifd_last_pos[toProc] = 0;
+  if (tid == 0){
+    gv->num_influenced_macs = 0;
+    for (int toProc = 0; toProc < num_fluid_tasks; toProc++){  
+      // set ifd_last_pos to default value 0
+      gv->ifd_last_pos[toProc] = 0;
+    }
   }
 
 #ifdef DEBUG_PRINT

@@ -138,11 +138,12 @@ void* do_thread(void* v){
     }
 #endif //DEBUG_PRINT
 
-#if 0 //Verify results
+#if 1 //Verify results
     if (my_rank < num_fluid_tasks){
       if (tid == 0){
         sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
-        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
     }
@@ -173,10 +174,11 @@ void* do_thread(void* v){
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
-#if 0 //Verify results
+#if 1 //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_compute_DF1_step%d.dat", my_rank, gv->time);
-        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
@@ -215,7 +217,8 @@ void* do_thread(void* v){
 #if 1 //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_bounceback_rigidwalls_step%d.dat", my_rank, gv->time);
-        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
@@ -227,10 +230,11 @@ void* do_thread(void* v){
 #ifdef DEBUG_PRINT
       printf("Fluid%d: After compute_rho_and_u\n", my_rank);
 #endif //DEBUG_PRINT
-#if 0 //Verify results
+#if 1 //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
-        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
@@ -256,7 +260,7 @@ void* do_thread(void* v){
       t6 += t1 - t0;
     }
 
-    // pthread_barrier_wait(&(gv->barr));
+    pthread_barrier_wait(&(gv->barr));
     // if (tid == 0)
     //   MPI_Barrier(MPI_COMM_WORLD);
     // pthread_barrier_wait(&(gv->barr));
@@ -268,8 +272,9 @@ void* do_thread(void* v){
 #ifdef SAVE //Verify results
     if (my_rank < num_fluid_tasks){
       if (tid == 0){
-        // sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
+        sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
         // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
     }
