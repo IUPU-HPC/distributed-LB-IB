@@ -100,8 +100,6 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
       elastic_force_z = *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double) * 2));
 #endif
 
-      position += sizeof(int)* 3 + sizeof(double)* 3;
-
       BI = X / cube_size;
       BJ = Y / cube_size;
       BK = Z / cube_size;
@@ -135,6 +133,8 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
         *((double*)(gv->ifd_recv_buf + position + sizeof(int) * 3 + sizeof(double) * 2)) = nodes[node_idx].vel_z;
         // pthread_mutex_unlock(&(gv->lock_Fluid[owner_tid]));
       }
+
+      position += sizeof(int) * 3 + sizeof(double) * 3;
 
     }
 

@@ -243,7 +243,10 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   // 2018-10-06
 
   //reset
-  gv->num_influenced_macs = 0;
+  if (tid == 0){
+    gv->num_influenced_macs = 0;
+  }
+  
 
 #ifdef DEBUG_PRINT
   // printf("----- Fiber task:%d fiber_SpreadForce Exit! -----\n", my_rank);

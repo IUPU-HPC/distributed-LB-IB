@@ -375,7 +375,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
               Y = BJ * cube_size + lj;
               Z = BK * cube_size + lk;
               for (ksi = 0; ksi < 19; ksi++){
-                fprintf(oFile, "(%d,%d,%d, %2d):{%.12f,%.12f,%.12f} || {%.12f,%.12f,%.12f} || %.6f || {%.12f,%.24f,%.24f}\n",
+                fprintf(oFile, "(%d,%d,%d, %2d):{%.24f,%.24f,%.24f} || {%.24f,%.24f,%.24f} || %.24f || {%.24f,%.24f,%.24f}\n",
                   X, Y, Z, ksi, node->vel_x, node->vel_y, node->vel_z,
                   node->dfeq[ksi], node->df1[ksi], node->df2[ksi],
                   node->rho,
@@ -2315,6 +2315,12 @@ void moveFiberSheet(LV lv){
   num_cubes_y       = gv->num_cubes_y;
   num_cubes_z       = gv->num_cubes_z;
 
+#ifdef SAVE
+  char fName[80];
+  sprintf(fName, "Fiber%d_vel.dat", tid);
+  FILE* oFile = fopen(fName, "w");
+#endif  
+
   for (jf = 0; jf < total_fibers_row; jf++) { //along z -axis
     /*find the begining index of the computational 4x4 square for each fiber pt.
      * using transpose in order to be consistent to the rest of vectors */
@@ -2373,7 +2379,8 @@ void moveFiberSheet(LV lv){
                     /*Eqn 20 for all x, y and z direction...PN*/
                     //printf("#####SVALUES### :%.12f, %.12f, %.12f \n", s1,s2,s3);
                     //printf("For Cube <%d,%d,%d> and node <%d,%d,%d> \n", BI, BJ, BK, li, lj, lk);
-                    //printf("velocities at nodeidx and cube_idx %.12f,%.12f,%.12f \n",nodes[node_idx].vel_x,nodes[node_idx].vel_y,nodes[node_idx].vel_z);
+                    fprintf(oFile, "velocity at (%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+                      gi, gj, gk, nodes[node_idx].vel_x,nodes[node_idx].vel_y,nodes[node_idx].vel_z);
                     //printf("rx:%.12f, ry:%.12f,rz:%.12f\n", rx, ry, rz);
                     
                     s1 += nodes[node_idx].vel_x * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;/*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
@@ -2421,6 +2428,11 @@ void moveFiberSheet(LV lv){
       }/*end of all points for a fiber kf ends*/
     }// if fiber2thread ends
   } //jf ends i.e fiber along row
+
+#ifdef SAVE
+  fclose(oFile);
+#endif
+
   #ifdef DEBUG_PRINT
   printf("**************  moveFibersheet   Exit**********\n");
   #endif //DEBUG_PRINT
@@ -2922,16 +2934,18 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#if 0
+#if 1
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
-      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
 
       my_rank = 1;
       sprintf(filename, "Fiber%d_SpreadForce_step%d.dat", my_rank, gv->time);
       save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
     }
+    pthread_barrier_wait(&(gv->barr));
 #endif
 
     compute_eqlbrmdistrfuncDF1(lv);
@@ -2957,11 +2971,12 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#if 0 //Verify results
+#if 1 //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_compute_DF1_step%d.dat", my_rank, gv->time);
-      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
@@ -3027,7 +3042,8 @@ void* do_thread(void* v){
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_bounceback_rigidwalls_step%d.dat", my_rank, gv->time);
-      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
@@ -3055,11 +3071,12 @@ void* do_thread(void* v){
     //   fprintf(stderr,"Could not wait on barrier\n");
     //   exit(1);
     // }
-#if 0 //Verify results
+#if 1 //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
-      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
@@ -3095,8 +3112,9 @@ void* do_thread(void* v){
 #ifdef SAVE
     if (tid == 0){
       my_rank = 0;
-      // sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
+      sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
       // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
 
       my_rank = 1;
       sprintf(filename, "Fiber%d_moveFiber_step%d.dat", my_rank, gv->time);
