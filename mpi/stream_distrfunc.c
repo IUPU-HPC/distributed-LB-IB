@@ -28,6 +28,7 @@ extern double t[19];
 void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, double df1_tosend){
   GV gv = lv->gv;
   int tid = lv->tid;
+  int my_rank = gv->taskid;
 
   int dim_x = gv->fluid_grid->x_dim;
   int dim_y = gv->fluid_grid->y_dim;
@@ -41,8 +42,6 @@ void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, doubl
   *((int*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int) * 3))   = iPop;
   *((double*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int) * 4)) = df1_tosend;
 
-  gv->stream_last_pos[dir] += sizeof(int) * 4 + sizeof(double);
-
 #if 0
   assertf(nextX < dim_x, "insert_msg_ERROR: nextX=%d, position=%d", nextX, gv->stream_last_pos[dir]);
   assertf(nextY < dim_y, "insert_msg_ERROR: nextY=%d, position=%d", nextY, gv->stream_last_pos[dir]);
@@ -50,13 +49,12 @@ void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, doubl
   assertf(iPop < 19, "insert_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_last_pos[dir]);
   assert(gv->stream_last_pos[dir] < gv->stream_recv_max_bufsize);
 
+  printf("Fluid%dtid%d: insert_msg on Sdir %2d, next(%d,%d,%d)[%2d]=%f, gv->stream_last_pos[%d]=%d\n", 
+              my_rank, tid, dir, nextX, nextY, nextZ, iPop, df1_tosend, dir, gv->stream_last_pos[dir]);
+#endif
 
-  if(gv->stream_last_pos[dir] >= 413664 && gv->stream_last_pos[dir] <= 413760){
-    printf("Fluid%dtid%d_insert_msg: stream_dir %d, iPop=%2d, next(x,y,z)=(%ld,%ld,%ld), df1=%f, gv->stream_last_pos[%ld]=%d\n", 
-      gv->taskid, tid, dir, iPop, nextX, nextY, nextZ, df1_tosend, dir, gv->stream_last_pos[dir]);
-    fflush(stdout);
-  }
-#endif  
+  gv->stream_last_pos[dir] += sizeof(int) * 4 + sizeof(double);
+
   pthread_mutex_unlock(&gv->lock_stream_msg[dir]);
 }
 
@@ -89,8 +87,6 @@ void check_msg(LV lv, char* stream_msg, int sendcnt, int dest, int dir){
       my_rank, Z, gv->stream_last_pos[dir], dest, dir, dim_z, sendcnt);
     assertf(iPop < 19, "check_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_last_pos[dir]);
 
-    position += sizeof(int) * 4 + sizeof(double);
-
     BI = X / cube_size;
     BJ = Y / cube_size;
     BK = Z / cube_size;
@@ -106,6 +102,11 @@ void check_msg(LV lv, char* stream_msg, int sendcnt, int dest, int dir){
     assertf(dest == toProc, "Send_ERROR: Fluid%dtid%d_check_msg: dir %2d, iPop=%2d, (dest,me,toProc)=(%d,%d,%d), \
 next(X,Y,Z)=(%d,%d,%d), (BI,BJ,BK)=(%d,%d,%d), (li,lj,lk)=(%d,%d,%d), df1_tosend=%f, pos=%d\n", 
       my_rank, tid, dir, iPop, dest, my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk, df1_tosend, position);
+
+    printf("Fluid%dtid%d: check_msg on Sdir %2d, next(%d,%d,%d)[%2d]=%f, position=%d \n", 
+              my_rank, tid, dir, X, Y, Z, iPop, df1_tosend, position);
+
+    position += sizeof(int) * 4 + sizeof(double);
   }  
 }
 
@@ -127,15 +128,15 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count, int dir, int src){
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
+  int X, Y, Z;
+
   while (position < stream_msg_count){
 
-    int X = *((int*)(gv->stream_recv_buf + position));
-    int Y = *((int*)(gv->stream_recv_buf + position + sizeof(int)));
-    int Z = *((int*)(gv->stream_recv_buf + position + sizeof(int)* 2));  
+    X = *((int*)(gv->stream_recv_buf + position));
+    Y = *((int*)(gv->stream_recv_buf + position + sizeof(int)));
+    Z = *((int*)(gv->stream_recv_buf + position + sizeof(int)* 2));  
     iPop  = *((int*)(gv->stream_recv_buf + position + sizeof(int)* 3));
     df1_tosend = *((double*)(gv->stream_recv_buf + position + sizeof(int)* 4));
-
-    position += sizeof(int) * 4 + sizeof(double);
 
     BI = X / cube_size;
     BJ = Y / cube_size;
@@ -158,11 +159,17 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count, int dir, int src){
       my_rank, tid, dir, iPop, src, my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk, df1_tosend, position);
 	
     if (tid == toTid){ // since stop message alonhg with data is sent to all fluid machines, so N-1 machine will recv wrong cube
+#if 0
+      printf("Fluid%dtid%d: update_DF2 on Sdir %2d, next(%d,%d,%d)[%2d]=%f\n", 
+              my_rank, tid, dir, X, Y, Z, iPop, df1_tosend);
+#endif
       cube_df2_idx  = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes_df2     = gv->fluid_grid->sub_fluid_grid[cube_df2_idx].nodes;
       node_df2_idx  = li * cube_size * cube_size + lj * cube_size + lk;//only local k will be endg point of prev cube
       nodes_df2[node_df2_idx].df2[iPop]  = df1_tosend;
     }
+
+    position += sizeof(int) * 4 + sizeof(double);
   }
 
 }
@@ -257,7 +264,6 @@ void  stream_distrfunc(LV lv){//df2
   stopping_x = stopping_y = stopping_z = cube_size - 1;
 
   int  fromProc, toProc, my_rank, send_tid;
-  double df1_tosend;
   my_rank = gv->taskid;
 
   //prepare message
@@ -327,12 +333,11 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
             int dir = findDir(gv, toProc); //find the direction of streaming message 
             assert(dir > 0);
 #if 0
-            assertf(nextX != 128, "Error! Fluid%dtid%d: iPop %2d, Sdir %2d, (X,Y,Z)=(%ld,%ld,%ld), (BI,BJ,BK)=(%ld,%ld,%ld), (li,lj,lk)=(%ld,%ld,%ld), df1_tosend=%f, \
-next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld,%ld), node_df2_idx=%ld\n", 
-              my_rank, tid, iPop, dir, X, Y, Z, BI, BJ, BK, li, lj, lk, nodes_df1[node_df1_idx].df1[iPop],
-              nextX, nextY, nextZ, nextBI, nextBJ, nextBK, nextli, nextlj, nextlk, node_df2_idx);
+            printf("Fluid%dtid%d: iPop%2d, Sdir %2d, (X,Y,Z)=(%ld,%ld,%ld), df1_tosend=%f, next(X,Y,Z)=(%ld,%ld,%ld)\n", 
+              my_rank, tid, iPop, dir, X, Y, Z, nodes_df1[node_df1_idx].df1[iPop],
+              nextX, nextY, nextZ);
 #endif
-            insert_msg(lv, nextX, nextY, nextZ, dir, iPop, df1_tosend);
+            insert_msg(lv, nextX, nextY, nextZ, dir, iPop, nodes_df1[node_df1_idx].df1[iPop]);
           }
 
         }

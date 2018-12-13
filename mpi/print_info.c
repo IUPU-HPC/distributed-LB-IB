@@ -81,7 +81,7 @@ void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
   int ksi, cube_idx, num_cubes_y, num_cubes_z;
-  int temp_taskid;
+  int toProc;
   Fluidnode *node;
   int cube_size = gv->cube_size;
 
@@ -110,11 +110,10 @@ void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   for (BI = BI_start; BI <= BI_end; ++BI)
     for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
       for (BK = BK_start; BK <= BK_end; ++BK) {
-        temp_taskid = cube2task(BI, BJ, BK, gv);
-        cube2task(BI, BJ, BK, gv);
-        if (gv->taskid == temp_taskid){ //MPI changes
+        toProc = cube2task(BI, BJ, BK, gv);
+        if (gv->taskid == toProc){ //MPI changes
 
-          // printf("temp_taskid = %d\n", temp_taskid);
+          // printf("toProc = %d\n", toProc);
           printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -147,7 +146,7 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK;
   int ksi, cube_idx, num_cubes_y, num_cubes_z;
-  int temp_taskid;
+  int toProc;
   Fluidnode *node;
   int cube_size = gv->cube_size;
 
@@ -161,8 +160,8 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
   for (BI = BI_start; BI <= BI_end; ++BI)
     for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
       for (BK = BK_start; BK <= BK_end; ++BK) {
-      temp_taskid = cube2task(BI, BJ, BK, gv);
-      if (gv->taskid == temp_taskid){ //MPI changes
+      toProc = cube2task(BI, BJ, BK, gv);
+      if (gv->taskid == toProc){ //MPI changes
         printf("(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -193,7 +192,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
   int ksi, cube_idx, num_cubes_y, num_cubes_z;
-  int temp_taskid;
+  int toProc;
   Fluidnode *node;
   int cube_size = gv->cube_size;
   int X, Y, Z;
@@ -223,11 +222,10 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   for (BI = BI_start; BI <= BI_end; ++BI)
     for (BJ = BJ_start; BJ <= BJ_end; ++BJ)
       for (BK = BK_start; BK <= BK_end; ++BK) {
-        temp_taskid = cube2task(BI, BJ, BK, gv);
-        cube2task(BI, BJ, BK, gv);
-        if (gv->taskid == temp_taskid){ //MPI changes
+        toProc = cube2task(BI, BJ, BK, gv);
+        if (gv->taskid == toProc){ //MPI changes
 
-          // printf("temp_taskid = %d\n", temp_taskid);
+          // printf("toProc = %d\n", toProc);
           fprintf(oFile, "(BI,BJ,BK): {vel_x, vel_y, vel_z} || {G0, DF1, DF2}|| rho || {ElasticF_x, y, z}\n");
 
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;

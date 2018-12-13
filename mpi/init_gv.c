@@ -180,44 +180,44 @@ void init_gv(GV gv) {
     }
     
     int destCoord[3], srcCoord[3];
-    for (int iPop = 0; iPop < 19; ++iPop) {
-      destCoord[0] = gv->rankCoord[0] + c[iPop][0];
-      destCoord[1] = gv->rankCoord[1] + c[iPop][1];
-      destCoord[2] = gv->rankCoord[2] + c[iPop][2];
+    for (int streamdir = 0; streamdir < 19; ++streamdir) {
+      destCoord[0] = gv->rankCoord[0] + c[streamdir][0];
+      destCoord[1] = gv->rankCoord[1] + c[streamdir][1];
+      destCoord[2] = gv->rankCoord[2] + c[streamdir][2];
 
-      srcCoord[0] = gv->rankCoord[0] - c[iPop][0];
-      srcCoord[1] = gv->rankCoord[1] - c[iPop][1];
-      srcCoord[2] = gv->rankCoord[2] - c[iPop][2];
+      srcCoord[0] = gv->rankCoord[0] - c[streamdir][0];
+      srcCoord[1] = gv->rankCoord[1] - c[streamdir][1];
+      srcCoord[2] = gv->rankCoord[2] - c[streamdir][2];
 
       int dest, src;
       MPI_Cart_rank(gv->cartcomm, destCoord, &dest);
       MPI_Cart_rank(gv->cartcomm, srcCoord, &src);
 
-      gv->streamDest[iPop] = dest;
-      gv->streamSrc[iPop] = src;
+      gv->streamDest[streamdir] = dest;
+      gv->streamSrc[streamdir] = src;
 
-#if 0
-      printf("Fluid%2d: iPop=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n", 
-        gv->rank[0], iPop, destCoord[0], destCoord[1], destCoord[2], dest,
+#if 1
+      printf("Fluid%2d: streamdir=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n", 
+        gv->rank[0], streamdir, destCoord[0], destCoord[1], destCoord[2], dest,
         srcCoord[0], srcCoord[1], srcCoord[2], src);
       fflush(stdout);
 #endif
       // if(gv->rank[0] != dest){
         
-      //   gv->streamdir[iPop] = dest;
+      //   gv->streamdir[streamdir] = dest;
 
-      //   // if(iPop < 7){
-      //   //   init_stream_msg(gv, iPop, * 5);
+      //   // if(streamdir < 7){
+      //   //   init_stream_msg(gv, streamdir, * 5);
       //   // }
       //   // else{
-      //   //   init_stream_msg(gv, iPop, Q);
+      //   //   init_stream_msg(gv, streamdir, Q);
       //   // }
       // }
       // else{
-      //   gv->streamdir[iPop] = -1;
+      //   gv->streamdir[streamdir] = -1;
       // }
 
-      init_stream_msg(gv, iPop, max_stream_msg_points); //need to optimize
+      init_stream_msg(gv, streamdir, max_stream_msg_points); //need to optimize
     }
   }
 

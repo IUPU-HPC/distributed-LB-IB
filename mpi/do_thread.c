@@ -199,10 +199,11 @@ void* do_thread(void* v){
         fflush(stdout);
       // }
 #endif //DEBUG_PRINT
-#if 0 //Verify results
+#if 1 //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_streaming_step%d.dat", my_rank, gv->time);
-        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
