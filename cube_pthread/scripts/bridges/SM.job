@@ -1,0 +1,69 @@
+#!/bin/bash
+# shared memory job
+#SBATCH --job-name="SM"
+#SBATCH --output="results/SM.%j.out" 
+#SBATCH --partition=RM
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=28
+#SBATCH -t 01:0:00
+#SBATCH --export=ALL
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+# send mail to this address
+#SBATCH --mail-user=qoofyk@gmail.com
+
+#This job runs with 1 nodes, each node runs 1 process.
+#ibrun in verbose mode will give binding detail 
+##################parameter setting#################
+directory="4x4x4"
+export nproc_per_mac=1
+
+PBS_O_HOME=$HOME
+PBS_O_WORKDIR=$(pwd)
+export SCRATCH_DIR=${SCRATCH}/sharedmem-LBIB/${SLURM_JOBID}
+
+# bridges
+groupname=$(id -Gn)
+export SCRATCH_DIR=/pylon5/ac561jp/qoofyk/sharedmem-LBIB/${SLURM_JOBID}
+EMPTY_DIR=/pylon5/ac561jp/qoofyk/empty/
+
+BIN=${PBS_O_HOME}/distributed-LB-IB/cube_pthread/scalable_IB_v4.1
+
+######################################################################
+
+# timestep=3000 # how many steps
+# dump=500
+
+timestep=30 # how many steps
+dump=1
+
+#fluid
+fluid_grid_z=256
+fluid_grid_y=256
+fluid_grid_x=256
+cube_size=4
+thread_per_task_x=2
+thread_per_task_y=4
+thread_per_task_z=4
+
+#fiber
+num_fibersht=1
+fiber_width=20
+fiber_height=20
+fiber_row=52
+fiber_clmn=52
+fiber_x0=20
+fiber_y0=21.5
+fiber_z0=11.5
+
+export OMP_NUM_THREADS=28
+
+$BIN -steps $timestep -dump $dump \
+-fluid_grid_xyz ${fluid_grid_x} ${fluid_grid_y} ${fluid_grid_z} \
+-cube_size $cube_size \
+-thread_per_task_xyz ${thread_per_task_x} ${thread_per_task_y} ${thread_per_task_z} \
+-num_fibersht ${num_fibersht} \
+-fibersht_width_height ${fiber_width} ${fiber_height} \
+-fibersht_row_clmn ${fiber_row} ${fiber_clmn} \
+-fibersht_xyz_0 ${fiber_x0} ${fiber_y0} ${fiber_z0}
