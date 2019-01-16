@@ -57,7 +57,11 @@
 */
 
 #define SAVE
-#define DEBUG_PRINT
+// #define DEBUG_PRINT
+// #define VERIFY
+// #define CHECK_STREAM
+// #define IFD_FIBER2FLUID
+// #define IFD_FLUID2FIBER
 
 #define PI 3.14159265358979
 
@@ -178,7 +182,7 @@ typedef struct gv_t {
   /* Constant parameters used in LBM-IB */
   double tau, nu_l, u_l, rho_l, L_l, M_l, g_l, Ks_l, Kb_l, Kst_l;
   double Re, cs_l, Ma, Kn, Kshat, Ksthat, Kbhat, Mhat, Fr;
-  int dt, time, time1, timesteps, TIME_WR, TIME_WR1, N_WR;
+  int dt, time, timesteps, dump;
   int ib, ie, jb, je, kb, ke; // For Fluid Grid's actual computation part
 
 /*PTHREAD_Change*/

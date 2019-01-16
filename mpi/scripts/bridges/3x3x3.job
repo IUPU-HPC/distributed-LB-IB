@@ -32,6 +32,7 @@ BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/distributed-lb-ib
 ######################################################################
 
 timestep=10 # how many steps
+dump=1
 
 #fluid
 fluid_grid_z=192

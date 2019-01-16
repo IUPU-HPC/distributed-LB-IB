@@ -71,7 +71,7 @@ env|grep '^MV2'
 # -fibersht_row_clmn ${fiber_row} ${fiber_clmn} \
 # -fibersht_xyz_0 ${fiber_x0} ${fiber_y0} ${fiber_z0}
 
-$my_run -steps $timestep \
+$my_run -steps $timestep -dump $dump \
 -fluid_grid_xyz ${fluid_grid_x} ${fluid_grid_y} ${fluid_grid_z} \
 -cube_size $cube_size \
 -fluid_task_xyz ${fluid_task_x} ${fluid_task_y} ${fluid_task_z} \

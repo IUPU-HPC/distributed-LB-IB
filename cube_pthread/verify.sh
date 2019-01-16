@@ -1,4 +1,5 @@
-timestep=1
+timestep=30
+dump=1
 
 # #fluid
 # fluid_grid_z=32
@@ -38,8 +39,9 @@ fiber_x0=20
 fiber_y0=21.5
 fiber_z0=11.5
 
+export OMP_NUM_THREADS=28
 
-./scalable_IB_v4.1 -steps $timestep \
+./scalable_IB_v4.1 -steps $timestep -dump $dump \
 -fluid_grid_xyz ${fluid_grid_x} ${fluid_grid_y} ${fluid_grid_z} \
 -cube_size $cube_size \
 -thread_per_task_xyz ${thread_per_task_x} ${thread_per_task_y} ${thread_per_task_z} \

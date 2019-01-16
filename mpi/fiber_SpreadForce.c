@@ -100,6 +100,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   int my_rank = gv->taskid;
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
+  double t0, t1;
 
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
@@ -135,7 +136,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
 
-  Timer::time_start();
+  t0 = Timer::get_cur_time();
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
       for (j = 0; j < total_fibers_clmn; ++j){
@@ -197,25 +198,26 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
-  double time_elapsed = Timer::time_end();
-  printf("Fiber task%d tid%d: T_prepare_ifd_send_msg=%f\n", gv->taskid, tid, time_elapsed);
+  t1 = Timer::get_cur_time();
+  printf("Fiber task%d tid%d: T_prepare_ifd_send_msg=%f\n", gv->taskid, tid, t1-t0);
   fflush(stdout);
 
   //fiber task thread 0 send the message out
-  // 2018-11-06
   if (tid == 0){
-    Timer::time_start();
+    t0 = Timer::get_cur_time();
     for (int toProc = 0; toProc < num_fluid_tasks; toProc++){
       if (gv->ifd_last_pos[toProc] > 0){
 
         // gv->bufferpool_msg_size[toProc] = gv->ifd_last_pos[toProc];
 
         gv->influenced_macs[gv->num_influenced_macs] = toProc;
+
+#ifdef IFD_FIBER2FLUID        
         printf("Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d\n",
           my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize,
           gv->num_influenced_macs, toProc);
         fflush(stdout);
-
+#endif
         assert(gv->ifd_last_pos[toProc] <= gv->ifd_max_bufsize);
 
         MPI_Send(gv->ifd_bufpool[toProc], gv->ifd_last_pos[toProc], MPI_CHAR, toProc, 0, MPI_COMM_WORLD);
@@ -236,11 +238,10 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         MPI_Send(&stop, 1, MPI_CHAR, toProc, 0, MPI_COMM_WORLD);
       }
     }
-    double time_elapsed = Timer::time_end();
-    printf("Fiber task%d: SpreadForce_send_msg_time=%f\n", my_rank, time_elapsed);
+    t1 = Timer::get_cur_time();
+    printf("Fiber task%dtid%d: SpreadForce_send_msg_time=%f\n", my_rank, tid, t1-t0);
     fflush(stdout);
   }
-  // 2018-10-06
 
   //reset
   if (tid == 0){

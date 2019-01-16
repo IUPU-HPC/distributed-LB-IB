@@ -105,8 +105,12 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 #endif //DEBUG_PRINT
     MPI_Recv(gv->ifd_recv_buf, gv->ifd_max_bufsize, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
+
+#ifdef IFD_FIBER2FLUID
     printf("Fluid task%d tid%d receive a message with ifd_recv_count=%d\n", my_rank, tid, gv->ifd_recv_count);
     fflush(stdout);
+#endif    
+
   }
 
   // All other thread wait until thread 0 finish receiving msg

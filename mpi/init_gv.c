@@ -73,8 +73,8 @@ void init_gv_constant(GV gv){
 
   gv->Re = 1.5e2;
   gv->rho_l = 1.0e0;
-  // gv->u_l = 0.001;       /* choice of u_l should make Ma <0.1 */
-  gv->u_l = 0.08;
+  gv->u_l = 0.001;       /* choice of u_l should make Ma <0.1 */
+  // gv->u_l = 0.08;
 
   //Todo: move it to fiber sheet!!
   gv->L_l = 2.0e1;       /*the dimensionless char LENGTH, should shortest fiber or width of the sheet should be fibersheet_w*/

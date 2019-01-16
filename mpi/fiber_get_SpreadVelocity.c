@@ -130,10 +130,12 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
       if (recv_cnt > 1){
 
       	assert(recv_cnt == gv->ifd_last_pos[fromProc]);
+
+#ifdef IFD_FLUID2FIBER        
         printf("Fiber%d: recv velocity from Fluid%d, recv_cnt=%d, ifd_max_bufsize=%d\n",
           my_rank, fromProc, recv_cnt, gv->ifd_max_bufsize);
         fflush(stdout);
-
+#endif
       }
       else{
 
@@ -153,7 +155,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   // other fiber threads wait until tid=0 complete receive
   pthread_barrier_wait(&(gv->barr));
 
-#ifdef SAVE
+#ifdef VERIFY
   char fName[80];
   sprintf(fName, "Fiber%d_vel.dat", tid);
   FILE* oFile = fopen(fName, "w");
@@ -185,9 +187,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           ry = dy*innerj - fiberarray[i].nodes[j].y;
           rz = dz*innerk - fiberarray[i].nodes[j].z;
 
-          /*notice the difference for spreading and for interpolation here, cf is used for spreading*/
-          /*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
-          tmp = c_64 * (1.0e0 + cos(c_x*rx)) * (1.0e0 + cos(c_y*ry))*(1.0e0 + cos(c_z*rz));
+          /* You should not use tmp variable, since multiplication sequence influence result*/
+          // tmp = c_64 * (1.0 + cos(c_x*rx)) * (1.0 + cos(c_y*ry)) * (1.0 + cos(c_z*rz));
 
 #if 0
           BI = inneri / cube_size; //BI should be inneri/cube_size but BI_end seems correct
@@ -213,14 +214,16 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           t1 = Timer::get_cur_time();
           t_search += t1 - t0;
 
-#ifdef SAVE
-          fprintf(oFile, "velocity at (%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
-                      inneri, innerj, innerk, vel_x, vel_y, vel_z);
+#ifdef VERIFY
+          fprintf(oFile, "velocity at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+                      i, j, inneri, innerj, innerk, vel_x, vel_y, vel_z);
 #endif
 
-          s1 += vel_x * tmp; 
-      	  s2 += vel_y * tmp;
-          s3 += vel_z * tmp;
+          /*notice the difference for spreading and for interpolation here, cf is used for spreading*/
+          /*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
+          s1 += vel_x * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64; 
+          s2 += vel_y * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
+          s3 += vel_z * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
 
         }//for innerk ends
 
@@ -232,7 +235,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
     }//if fiber2thread ends
   }//for fiber row ends
 
-#ifdef SAVE
+#ifdef VERIFY
   fclose(oFile);
 #endif  
 
@@ -253,6 +256,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   pthread_barrier_wait(&(gv->barr));
 
   t3 = Timer::get_cur_time();
+
   printf("Fiber%dtid%d: T_get_SpreadVelocity=%f\n", gv->taskid, tid, t3 - t2);
   fflush(stdout);
 

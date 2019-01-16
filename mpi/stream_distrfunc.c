@@ -182,9 +182,11 @@ void streaming_on_direction(LV lv, int dir, int dest, int src){
   MPI_Status status;
 
   if (tid == 0){
+#ifdef CHECK_STREAM    
     printf("Fluid%d: Prepare to MPI_Sendrecv on Dir=%d, Recv_from_src=%d, Send_to_dest=%d, sendcnt=gv->stream_last_pos[%d]=%d\n", 
       my_rank, dir, src, dest, dir, gv->stream_last_pos[dir]);
     fflush(stdout);
+#endif //CHECK_STREAM
 
 #if 0
     check_msg(lv, gv->stream_msg[dir], gv->stream_last_pos[dir], dest, dir);
@@ -203,15 +205,19 @@ void streaming_on_direction(LV lv, int dir, int dest, int src){
   //all threads in each fluid machine start working on stream_recv_buf
   pthread_barrier_wait(&(gv->barr));
 
+#ifdef CHECK_STREAM
   printf("Fluid%dtid%d: Pass MPI_Sendrecv dir=%d, Recv_from_src=%d with gv->stream_msg_recv_cnt=%d\n", 
     my_rank, tid, dir, src, gv->stream_msg_recv_cnt);
   fflush(stdout);
+#endif //CHECK_STREAM
 
   get_df2_from_stream_msg(lv, gv->stream_msg_recv_cnt, dir, src);
 
+#ifdef CHECK_STREAM
   printf("Fluid%dtid%d: Pass get_df2_from_stream_msg from dir=%d stream_msg\n", 
     my_rank, tid, dir);
   fflush(stdout);
+#endif //CHECK_STREAM
 
   pthread_barrier_wait(&(gv->barr));
 }
@@ -229,6 +235,7 @@ void  stream_distrfunc(LV lv){//df2
   int tid;
   GV gv = lv->gv;
   tid = lv->tid;
+
 #ifdef DEBUG_PRINT
   // printf("****************Inside stream_distfunc()*******at time %d\n", gv->time);
 #endif //DEBUG_PRINT
@@ -382,8 +389,10 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
     }// if cube2thread ends
   }//BK
 
+#ifdef CHECK_STREAM
   printf("Fluid task%d: Pass Prepare streaming msg\n", my_rank);
   fflush(stdout);
+#endif //CHECK_STREAM
 
   pthread_barrier_wait(&(gv->barr));
 
@@ -392,11 +401,13 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 
   //send message
   for(int iPop = 1; iPop < 19; iPop++){
-    if (tid == 0){
+#ifdef CHECK_STREAM      
+    if (tid == 0){    
       printf("Fluid task%d: start streaming msg iPop=%d, dest=%d, src=%d, sendcnt=%d\n", 
         my_rank, iPop, gv->streamDest[iPop], gv->streamSrc[iPop], gv->stream_last_pos[iPop]);
       fflush(stdout);
     }
+#endif //CHECK_STREAM
 
     streaming_on_direction(lv, iPop, gv->streamDest[iPop], gv->streamSrc[iPop]);
 

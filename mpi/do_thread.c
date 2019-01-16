@@ -1,12 +1,24 @@
-/*  -- Scalable LB-IB --
-    Indiana University Purdue University Indianapolis, USA
-
-    @file
-
-    @date
-
-    @author Yuankun Fu
-*/
+/*  -- Distributed-LB-IB --
+ * Copyright 2018 Indiana University Purdue University Indianapolis 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *   
+ * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
+ *
+ * @file:
+ *
+ * @date:
+ */
 
 #include "do_thread.h"
 #include "timer.h"
@@ -33,7 +45,7 @@ void* do_thread(void* v){
   double startTime=0, endTime=0;
   char filename[80];
 
-  Timer::time_start();
+  startTime = get_cur_time();
 
   while (gv->time <= gv->timesteps) {
 
@@ -42,11 +54,10 @@ void* do_thread(void* v){
     // Fiber tasks
     if (my_rank >= num_fluid_tasks){
 #ifdef DEBUG_PRINT
-      if(tid==0){
+      if (tid==0){
         printf("\n\nTask%d Tid%d: Start time step %ld ...\n", my_rank, tid, gv->time);
       }
 #endif //DEBUG_PRINT
-      t0 = get_cur_time();
 
       compute_bendingforce(lv);
       pthread_barrier_wait(&(gv->barr));
@@ -138,7 +149,7 @@ void* do_thread(void* v){
     }
 #endif //DEBUG_PRINT
 
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
     if (my_rank < num_fluid_tasks){
       if (tid == 0){
         sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
@@ -174,7 +185,7 @@ void* do_thread(void* v){
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_compute_DF1_step%d.dat", my_rank, gv->time);
         // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
@@ -199,7 +210,7 @@ void* do_thread(void* v){
         fflush(stdout);
       // }
 #endif //DEBUG_PRINT
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_streaming_step%d.dat", my_rank, gv->time);
         // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
@@ -215,7 +226,7 @@ void* do_thread(void* v){
 #ifdef DEBUG_PRINT
       printf("Fluid%d: After bounceback_rigidwalls\n", my_rank);
 #endif //DEBUG_PRINT
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_bounceback_rigidwalls_step%d.dat", my_rank, gv->time);
         // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
@@ -231,7 +242,7 @@ void* do_thread(void* v){
 #ifdef DEBUG_PRINT
       printf("Fluid%d: After compute_rho_and_u\n", my_rank);
 #endif //DEBUG_PRINT
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
       if (tid == 0){
         sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
         // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
@@ -270,12 +281,12 @@ void* do_thread(void* v){
     printf("Task%dtid%d: After moving fibersheet \n", my_rank, tid);
 #endif //DEBUG_PRINT
 
-#ifdef SAVE //Verify results
+#ifdef VERIFY //Verify results
     if (my_rank < num_fluid_tasks){
       if (tid == 0){
         sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
         // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+        // save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
     }
@@ -317,6 +328,29 @@ void* do_thread(void* v){
 
 // VERIFY
 
+#ifdef SAVE
+    if (tid == 0 && (gv->time % gv->dump == 0)){
+      if (my_rank < num_fluid_tasks){
+#if 0      
+      sprintf(filename, "Fluid%d_dump_step%d.dat", my_rank, gv->time);
+      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+#endif
+      }  
+      else{
+        sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
+        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      }
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
+
+#if 1
+    if (my_rank == 0 && tid == 0){
+      printf("End of time step %d\n", gv->time);
+    }
+#endif
+
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;
 
@@ -344,18 +378,19 @@ void* do_thread(void* v){
     
   }
 
-  double time_elapsed = Timer::time_end();
+  endTime = get_cur_time();
 
-  if(my_rank >= num_fluid_tasks){
-    printf("Fiber%dtid%d: compute_force=%.3f || %.3f, fiber_SpreadForce=%.3f || %.3f, fiber_get_SpreadVelocity=%.3f, tail=%.3f, total=%.3f\n",
-      my_rank, tid, t2, t2_1, t3, t3_1, t6, tail, endTime-startTime);
-    fflush(stdout);
-  }
-  else{
-    printf("Fluid%dtid%d: t2=%.3f, fluid_get_SpreadForce=%.3f, fluid_SpreadVelocity=%.3f, tail=%.3f, total=%.3f\n",
-      my_rank, tid, t2, t4, t5, tail, endTime-startTime);
-    fflush(stdout);
-  }
-  
+  // if(tid == 0){
+    if(my_rank >= num_fluid_tasks){
+      printf("Fiber%dtid%d: compute_force=%.3f || %.3f, fiber_SpreadForce=%.3f || %.3f, fiber_get_SpreadVelocity=%.3f, tail=%.3f, total=%.3f\n",
+        my_rank, tid, t2, t2_1, t3, t3_1, t6, tail, endTime-startTime);
+      fflush(stdout);
+    }
+    else{
+      printf("Fluid%dtid%d: t2=%.3f, fluid_get_SpreadForce=%.3f, fluid_SpreadVelocity=%.3f, tail=%.3f, total=%.3f\n",
+        my_rank, tid, t2, t4, t5, tail, endTime-startTime);
+      fflush(stdout);
+    }
+  // }
   return NULL;
 }

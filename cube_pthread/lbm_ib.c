@@ -22,9 +22,11 @@
 #include <math.h>
 #include <sys/time.h>
 #include <stdbool.h>
+#include <string.h>
 
-#define DEBUG_PRINT
+// #define DEBUG_PRINT
 #define SAVE
+// #define VERIFY
 #define PI 3.14159265358979
 /*
  * ASSUMPTIONS: Cube Size >=4
@@ -135,7 +137,7 @@ typedef struct gv_t {
   /* Constant parameters used in LBM-IB */
   double tau, nu_l, u_l, rho_l, L_l, M_l, g_l, Ks_l, Kb_l, Kst_l;
   double Re, cs_l, Ma, Kn, Kshat, Ksthat, Kbhat, Mhat, Fr;
-  int dt, time, time1, TIME_STOP, TIME_WR, TIME_WR1, N_WR; 
+  int dt, time, TIME_STOP, dump; 
   double c[19][3]; // stores 19 different velocities for ksi
   int ib, ie, je, jb, ke, kb; // For Fluid Grid's actual computation part
 
@@ -332,7 +334,6 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
   int ksi, cube_idx, num_cubes_y, num_cubes_z;
-  int temp_taskid;
   Fluidnode *node;
   int cube_size = gv->cube_size;
   int X, Y, Z;
@@ -428,7 +429,7 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
   for (i = start_y; i <= end_y; ++i) {
     for (j = start_z; j <= end_z; ++j) {
       node = fiber_array[i].nodes + j;
-      fprintf(oFile, "(%2d,%2d):{%.12f,%.12f,%.12f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
+      fprintf(oFile, "(%2d,%2d):{%.24f,%.24f,%.24f} || %.24f,%.24f,%.24f || %.24f,%.24f,%.24f || %.24f,%.24f,%.24f\n",
         i, j, node->x, node->y, node->z,
         node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
         node->bend_force_x, node->bend_force_y, node->bend_force_z,
@@ -497,8 +498,8 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
 
   gv->Re    = 1.5e2;
   gv->rho_l = 1.0e0;
-  // gv->u_l   = 0.001; /* choice of u_l should make Ma <0.1 */
-  gv->u_l = 0.08;
+  gv->u_l   = 0.001; /* choice of u_l should make Ma <0.1 */
+  // gv->u_l = 0.08;
   
   //Todo: move it to fiber sheet!!
   gv->L_l   = 2.0e1;       /*the dimensionless char LENGTH, should shortest fiber or width of the sheet should be fibersheet_w*/
@@ -595,11 +596,9 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
       }
     }
   }
- /*PTHREAD_Change*/
-  
-  //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
+  /*PTHREAD_Change*/
 
-  gv->dt   = 1;      // Time step size, always equal 1!    
+  gv->dt   = 1;      // Time step size, always equal 1!
   gv->time = gv->dt; // Time step#, starting from 1.
 
   /******* Shift fiber sheet for one time step ************/
@@ -1432,7 +1431,7 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
       for (BK = 0; BK < num_cubes_z; ++BK){
         if (cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) ==tid){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
-          nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
+          nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes;
           starting_x = starting_y = starting_z = 0;
           stopping_x = stopping_y = stopping_z = cube_size-1;
           
@@ -2299,6 +2298,8 @@ void moveFiberSheet(LV lv){
   int        num_cubes_x, num_cubes_y, num_cubes_z;
   int        li, lj, lk;
 
+  double tmp; //spreading_velocity coefficient
+
   istart = 0;  
   jstart = 0; 
   kstart = 0; 
@@ -2315,7 +2316,7 @@ void moveFiberSheet(LV lv){
   num_cubes_y       = gv->num_cubes_y;
   num_cubes_z       = gv->num_cubes_z;
 
-#ifdef SAVE
+#ifdef VERIFY
   char fName[80];
   sprintf(fName, "Fiber%d_vel.dat", tid);
   FILE* oFile = fopen(fName, "w");
@@ -2379,12 +2380,19 @@ void moveFiberSheet(LV lv){
                     /*Eqn 20 for all x, y and z direction...PN*/
                     //printf("#####SVALUES### :%.12f, %.12f, %.12f \n", s1,s2,s3);
                     //printf("For Cube <%d,%d,%d> and node <%d,%d,%d> \n", BI, BJ, BK, li, lj, lk);
-                    fprintf(oFile, "velocity at (%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
-                      gi, gj, gk, nodes[node_idx].vel_x,nodes[node_idx].vel_y,nodes[node_idx].vel_z);
+#ifdef VERIFY                    
+                    fprintf(oFile, "velocity at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+                      jf, kf, gi, gj, gk, nodes[node_idx].vel_x,nodes[node_idx].vel_y,nodes[node_idx].vel_z);
                     //printf("rx:%.12f, ry:%.12f,rz:%.12f\n", rx, ry, rz);
-                    
+#endif
+                    // tmp = c_64 * (1.0e0 + cos(c_x*rx)) * (1.0e0 + cos(c_y*ry)) * (1.0e0 + cos(c_z*rz));
+                    // s1 += nodes[node_idx].vel_x * tmp;/*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
+                    // /*notice the difference for spreading and for interpolation here, cf is used for spreading*/
+                    // s2 += nodes[node_idx].vel_y * tmp;
+                    // s3 += nodes[node_idx].vel_z * tmp;
+
                     s1 += nodes[node_idx].vel_x * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;/*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
-                    /*notice the difference for spreading and for interpolation here, cf is used for spreading*/
+                    //notice the difference for spreading and for interpolation here, cf is used for spreading
                     s2 += nodes[node_idx].vel_y * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
                     s3 += nodes[node_idx].vel_z * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
                     
@@ -2429,13 +2437,13 @@ void moveFiberSheet(LV lv){
     }// if fiber2thread ends
   } //jf ends i.e fiber along row
 
-#ifdef SAVE
+#ifdef VERIFY
   fclose(oFile);
 #endif
 
-  #ifdef DEBUG_PRINT
+#ifdef DEBUG_PRINT
   printf("**************  moveFibersheet   Exit**********\n");
-  #endif //DEBUG_PRINT
+#endif //DEBUG_PRINT
 }
 
 void init_df1(GV gv) {
@@ -2649,10 +2657,10 @@ void replace_old_DF(LV lv){
   num_cubes_z = gv->num_cubes_z;
   
  /* replacing the old d.f. values by the newly computed ones */
- for(BI =0; BI < num_cubes_x; ++BI)
-   for(BJ =0; BJ < num_cubes_y; ++BJ)
-    for(BK =0; BK < num_cubes_z; ++BK){
-      if(cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) ==tid){
+ for (BI =0; BI < num_cubes_x; ++BI)
+   for (BJ =0; BJ < num_cubes_y; ++BJ)
+    for (BK =0; BK < num_cubes_z; ++BK){
+      if (cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) ==tid){
      cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
      nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes;
      starting_x = starting_y = starting_z = 0;
@@ -2714,9 +2722,9 @@ void periodicBC(LV lv){
   num_cubes_z = gv->num_cubes_z;
 
   BJ_first = 0; BJ_last = num_cubes_y-1;
- for(BI =0; BI < num_cubes_x; ++BI)
-    for(BK =0; BK < num_cubes_z; ++BK){
-      if(cube2thread(BI, BJ_first, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R)==tid){
+  for (BI =0; BI < num_cubes_x; ++BI)
+    for (BK =0; BK < num_cubes_z; ++BK){
+      if (cube2thread(BI, BJ_first, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R)==tid){
      cube_idx_first = BI * num_cubes_y * num_cubes_z + BJ_first * num_cubes_z + BK;
      nodes_first = fluid_grid->sub_fluid_grid[cube_idx_first].nodes;
     
@@ -2760,9 +2768,9 @@ void periodicBC(LV lv){
   /* along z-direction, z=1 & n3-1 */
 
         BK_first = 0; BK_last = num_cubes_z-1;
- for(BI =0; BI < num_cubes_x; ++BI)
-    for(BJ =0; BJ < num_cubes_y; ++BJ){
-      if(cube2thread(BI, BJ, BK_first, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) == tid){
+  for (BI =0; BI < num_cubes_x; ++BI)
+    for (BJ =0; BJ < num_cubes_y; ++BJ){
+      if (cube2thread(BI, BJ, BK_first, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R) == tid){
      cube_idx_first = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK_first;
      cube_idx_last  = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK_last;
      nodes_first = fluid_grid->sub_fluid_grid[cube_idx_first].nodes;
@@ -2808,11 +2816,12 @@ void* do_thread(void* v){
   char filename[80];
   int my_rank;
      
-  #ifdef DEBUG_PRINT    
+#ifdef DEBUG_PRINT    
   printf("Inside do_thread :Started by Threadid: %d\n",lv->tid);
-  #endif //DEBUG_PRINT
+#endif //DEBUG_PRINT
+
    while (gv->time <= gv->TIME_STOP) {
-    #ifdef DEBUG_PRINT
+     #ifdef DEBUG_PRINT
      printf("\n\nStart time step %d ...\n", gv->time);
      #endif //DEBUG_PRINT
 //     print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z);
@@ -2821,7 +2830,9 @@ void* do_thread(void* v){
      /* Pthread code starts...allocating as many threads as no of fibers*/
   /* Pthread code ends*/
      compute_bendingforce(lv);
+     #ifdef DEBUG_PRINT
      printf("Tid%d: After compute_bending_force\n", tid);
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2851,7 +2862,9 @@ void* do_thread(void* v){
 #endif
 
      compute_stretchingforce(lv);
+     #ifdef DEBUG_PRINT
      printf("Tid%d: After compute_streching_force.\n", tid);
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2881,7 +2894,9 @@ void* do_thread(void* v){
 #endif
 
      compute_elasticforce(lv);
+     #ifdef DEBUG_PRINT
      printf("Tid%d: B4 get_influence_domain\n", tid);
+     #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
      printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -2934,7 +2949,7 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#if 1
+#ifdef VERIFY //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
@@ -2971,7 +2986,7 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_compute_DF1_step%d.dat", my_rank, gv->time);
@@ -3005,7 +3020,7 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_streaming_step%d.dat", my_rank, gv->time);
@@ -3039,7 +3054,7 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_bounceback_rigidwalls_step%d.dat", my_rank, gv->time);
@@ -3072,7 +3087,7 @@ void* do_thread(void* v){
     //   fprintf(stderr,"Could not wait on barrier\n");
     //   exit(1);
     // }
-#if 1 //Verify results
+#ifdef VERIFY //Verify results
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_rho_and_u_step%d.dat", my_rank, gv->time);
@@ -3086,7 +3101,7 @@ void* do_thread(void* v){
      //compute_womega(gv) here
      moveFiberSheet(lv);
      #ifdef DEBUG_PRINT
-     printf("After moving fibersheet \n");
+     printf("After moving fibersheet\n");
      #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
@@ -3110,12 +3125,14 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
-#ifdef SAVE
+#ifdef VERIFY
     if (tid == 0){
+#if 1      
       my_rank = 0;
       sprintf(filename, "Fluid%d_moveFiber_step%d.dat", my_rank, gv->time);
       // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+      // save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+#endif
 
       my_rank = 1;
       sprintf(filename, "Fiber%d_moveFiber_step%d.dat", my_rank, gv->time);
@@ -3126,7 +3143,7 @@ void* do_thread(void* v){
 
      copy_inout_to_df2(lv);
      #ifdef DEBUG_PRINT
-     printf("After  copy_inout_to_df2 \n");
+     printf("After copy_inout_to_df2 \n");
      #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
@@ -3150,7 +3167,7 @@ void* do_thread(void* v){
     
      replace_old_DF(lv);
      #ifdef DEBUG_PRINT
-     printf("After  replace_old_DF \n");
+     printf("After replace_old_DF \n");
      #endif //DEBUG_PRINT
      /*printf("Printing for Corner Points(z,y) : 0,0 \n");
      print_fiber_sub_grid(gv,0, 0, 0, 0);
@@ -3191,19 +3208,38 @@ void* do_thread(void* v){
 
     pthread_barrier_wait(&(gv->barr));
 
-    #if 1
-    if(tid == 0)
-     printf("End of time step %d\n", gv->time);
-    #endif //DEBUG_PRINT
+#ifdef SAVE
+    if (tid == 0 && (gv->time % gv->dump == 0)){
+#if 0      
+      my_rank = 0;
+      sprintf(filename, "Fluid%d_dump_step%d.dat", my_rank, gv->time);
+      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+#endif
+
+      my_rank = 1;
+      sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
+      save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+    }
+    pthread_barrier_wait(&(gv->barr));
+#endif
+
+#if 1
+    if (tid == 0){
+      printf("End of time step %d\n", gv->time);
+    }
+#endif
      
-     //if(tid==0)
+    //if(tid==0)
     // pthread_mutex_lock(&(gv->lock_Fluid));
-     if(tid==0)
-     gv->time  += gv->dt;
-     //if(gv->time == gv->TIME_STOP)
-     // return NULL;
-     pthread_barrier_wait(&(gv->barr));
-     //pthread_mutex_lock(&(gv->lock_Fluid));
+    if (tid ==0){
+      gv->time  += gv->dt;
+    }
+      
+    //if(gv->time == gv->TIME_STOP)
+    // return NULL;
+    pthread_barrier_wait(&(gv->barr));
+    //pthread_mutex_lock(&(gv->lock_Fluid));
      
     //print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z);
      //print_fiber_sub_grid(gv,lookup_fiber_start_y, lookup_fiber_start_z, lookup_fiber_end_y, lookup_fiber_end_z);
@@ -3265,6 +3301,16 @@ int main(int argc, char* argv[]) {
         abort();
       }
       gv->TIME_STOP = value;
+    }
+
+    if (!strcmp(argv[i], "-dump")) {
+      needs_argument(i, argc, "-dump");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-dump %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->dump = value;
     }
 
     if (!strcmp(argv[i], "-fluid_grid_xyz")) {
@@ -3471,17 +3517,13 @@ int main(int argc, char* argv[]) {
   Fluidgrid*  fluid_grid = gen_fluid_grid(gv, fluidgrid_x, fluidgrid_y, fluidgrid_z, k_cubedim);
    
   init_gv(gv, fiber_shape, fluid_grid, k_cubedim);
-
-  gv->P   = P;
-  gv->Q   = Q;
-  gv->R   = R;
   
   //allocating memory for mutex
    gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid)*total_threads);
   
   //Error Chek#3
-   //initiallise mutex
-  for(i=0; i <total_threads; i++){
+  //initialize mutex
+  for (i = 0; i < total_threads; i++){
     if (pthread_mutex_init(&gv->lock_Fluid[i], NULL)){
       fprintf(stderr,"Unable to initialize a mutex\n");
       exit(1);

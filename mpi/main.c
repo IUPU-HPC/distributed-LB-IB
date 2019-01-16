@@ -50,6 +50,16 @@ int main(int argc, char* argv[]) {
       gv->timesteps = value;
     }
 
+    if (!strcmp(argv[i], "-dump")) {
+      needs_argument(i, argc, "-dump");
+      int value = atoi(argv[++i]);
+      if (value <= 0) {
+        fprintf(stderr, "error: Invalid flag \"-dump %d\" must be > 0\n", value);
+        abort();
+      }
+      gv->dump = value;
+    }
+
     if (!strcmp(argv[i], "-fluid_grid_xyz")) {
       gv->fluid_grid = (Fluidgrid*) calloc(1, sizeof(Fluidgrid));
       // gv->fluid_grid->sub_fluid_grid = (Sub_Fluidgrid*) calloc (1, sizeof(Sub_Fluidgrid));
@@ -352,8 +362,10 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
   init_gv(gv);
   MPI_Barrier(MPI_COMM_WORLD);
+#ifdef INIT  
   printf("Task%d Pass init gv!\n", gv->taskid);
   fflush(stdout);
+#endif  
 
   //allocating memory for mutex
   // gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid)*num_threads_per_task);
@@ -401,7 +413,10 @@ int main(int argc, char* argv[]) {
     init_eqlbrmdistrfuncDF0(gv);
     init_df1(gv);
     init_df_inout(gv);
+#ifdef INIT
     printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
+#endif
+    
 // #ifdef SAVE //PASS
 //     char filename[80];
 //     sprintf(filename, "Fluid%d_init.dat", gv->taskid);

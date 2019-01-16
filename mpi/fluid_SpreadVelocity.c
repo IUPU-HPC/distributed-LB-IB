@@ -140,14 +140,16 @@ void fluid_SpreadVelocity(LV lv){ //Fluid spread velocity to fiber
 
     pthread_barrier_wait(&(gv->barr));
 
-    if(tid == 0){
+    if (tid == 0){
+#ifdef IFD_FLUID2FIBER      
     	printf("Fluid%d: send velocity to Fiber task%d, sendcnt=%d, ifd_max_bufsize=%d\n",
           my_rank, fiber_mac_rank, gv->ifd_recv_count, gv->ifd_max_bufsize);
-        fflush(stdout);
+      fflush(stdout);
+#endif
+      
+      assert(gv->ifd_recv_count <= gv->ifd_max_bufsize);
 
-        assert(gv->ifd_recv_count <= gv->ifd_max_bufsize);
-
-        MPI_Send(gv->ifd_recv_buf, gv->ifd_recv_count, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD);
+      MPI_Send(gv->ifd_recv_buf, gv->ifd_recv_count, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD);
     }
 
     pthread_barrier_wait(&(gv->barr));

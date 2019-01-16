@@ -61,7 +61,7 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
     for (i = start_y; i <= end_y; ++i) {
       for (j = start_z; j <= end_z; ++j) {
         node = fiber_array[i].nodes + j;
-        fprintf(oFile, "(%2d,%2d):{%.12f,%.12f,%.12f} || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f || %.12f,%.12f,%.12f\n",
+        fprintf(oFile, "(%2d,%2d):{%.24f,%.24f,%.24f} || %.24f,%.24f,%.24f || %.24f,%.24f,%.24f || %.24f,%.24f,%.24f\n",
           i, j, node->x, node->y, node->z,
           node->stretch_force_x, node->stretch_force_y, node->stretch_force_z,
           node->bend_force_x, node->bend_force_y, node->bend_force_z,
