@@ -237,7 +237,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
 #ifdef VERIFY
   fclose(oFile);
-#endif  
+#endif
 
   // if(tid == 0){
   	printf("Fiber%dtid%d prepare to final update location, t_search=%f\n", my_rank, tid, t_search);

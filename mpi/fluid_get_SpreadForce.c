@@ -176,9 +176,12 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       position += sizeof(int) * 3 + sizeof(double) * 3;
 
     }
+    
+// #ifdef VERIFY
+//   fclose(oFile);
+// #endif    
 
   }
-
 
 #ifdef DEBUG_PRINT
   printf("**** Fluid task%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);

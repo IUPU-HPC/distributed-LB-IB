@@ -367,19 +367,20 @@ int main(int argc, char* argv[]) {
   fflush(stdout);
 #endif  
 
+#if 0
   //allocating memory for mutex
-  // gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid)*num_threads_per_task);
-
+  gv->lock_Fluid = (pthread_mutex_t*)malloc(sizeof(*gv->lock_Fluid) * gv->threads_per_task);
 
   //Error Chek#3
   //initiallise mutex
-  // for (i = 0; i < num_threads_per_task; i++){
-  //   if (pthread_mutex_init(&gv->lock_Fluid[i], NULL)){
-  //     fprintf(stderr, "Unable to initialize a mutex\n");
-  //     exit(1);
-  //   }
-  // }
-
+  for (int i = 0; i < gv->threads_per_task; i++){
+    if (pthread_mutex_init(&gv->lock_Fluid[i], NULL)){
+      fprintf(stderr, "Unable to initialize a mutex\n");
+      exit(1);
+    }
+  }
+#endif
+  
   // Init barrier
   pthread_barrier_t barr;
   if (pthread_barrier_init(&barr, NULL, gv->threads_per_task)){
@@ -416,12 +417,12 @@ int main(int argc, char* argv[]) {
 #ifdef INIT
     printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
 #endif
-    
-// #ifdef SAVE //PASS
-//     char filename[80];
-//     sprintf(filename, "Fluid%d_init.dat", gv->taskid);
-//     save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-// #endif    
+
+#if 0 //PASS init
+    char filename[80];
+    sprintf(filename, "Fluid%d_init.dat", gv->taskid);
+    save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+#endif
   }
 
   // check_point : fluid grid info
@@ -487,7 +488,9 @@ int main(int argc, char* argv[]) {
 
   MPI_Finalize();
 
-  // pthread_mutex_destroy(&gv->lock_Fluid[num_threads_per_task]);
+#if 0
+  pthread_mutex_destroy(&gv->lock_Fluid[gv->threads_per_task]);
+#endif  
   // Need to do
   // pthread_mutex_destroy(&gv->lock_ifd_fluid_task_msg[gv->threads_per_task]);
   free(gv->fluid_grid->sub_fluid_grid);

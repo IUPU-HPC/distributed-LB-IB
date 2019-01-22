@@ -136,6 +136,12 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
 
+#ifdef VERIFY
+  char fName[80];
+  sprintf(fName, "Fiber%d_spread_elastic_force.dat", tid);
+  FILE* oFile = fopen(fName, "w");
+#endif
+
   t0 = Timer::get_cur_time();
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
@@ -160,9 +166,26 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           rz = dz*innerk - fiberarray[i].nodes[j].z;
 
           tmp_dist = cf * (1.0e0 + cos(c_x*rx)) * (1.0e0 + cos(c_y*ry)) * (1.0e0 + cos(c_z*rz) );
+
+          // NEED this check in case of fiber moving out of bound
+          if (inneri < 0 || inneri >= gv->fluid_grid->x_dim) {
+            fprintf(stderr, "inneri out of bound: %d, x bound=%d!\n", inneri, gv->fluid_grid->x_dim); exit(1);
+          }
+          if (innerj < 0 || innerj >= gv->fluid_grid->y_dim) {
+            fprintf(stderr, "innerj out of bound: %d, y bound=%d!\n", innerj, gv->fluid_grid->y_dim); exit(1);
+          }
+          if (innerk < 0 || innerk >= gv->fluid_grid->z_dim) {
+            fprintf(stderr, "innerk out of bound: %d, z bound=%d!\n", innerk, gv->fluid_grid->z_dim); exit(1);
+          }
+
           elastic_force_x = fiberarray[i].nodes[j].elastic_force_x * tmp_dist;
           elastic_force_y = fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
           elastic_force_z = fiberarray[i].nodes[j].elastic_force_z * tmp_dist;
+
+#ifdef VERIFY
+          fprintf(oFile, "elastic_force at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+                      i, j, inneri, innerj, innerk, elastic_force_x, elastic_force_y, elastic_force_z);
+#endif
 
           //find ifd Fluid toProc
           int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
@@ -195,6 +218,10 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
       } //for fiberclmn ends
     }//if fiber2thread ends
   }//for fiber row ends
+
+#ifdef VERIFY
+  fclose(oFile);
+#endif
 
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));

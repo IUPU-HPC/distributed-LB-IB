@@ -194,7 +194,7 @@ typedef struct gv_t {
   pthread_t *threads;
   //pthread_mutex_t lock_Fluid;
   /*Lock for every thread for optimisation*/
-  // pthread_mutex_t *lock_Fluid;
+  pthread_mutex_t *lock_Fluid;
   pthread_barrier_t barr; // to put a bariier after every routine and also in some parts of Fiber's force compuatation
 /*PTHREAD_Change*/
 
@@ -251,6 +251,9 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
   int BI_end, int BJ_end, int BK_end);
 
 void save_fiber_sub_grid(GV gv, int start_y, int start_z,
+                         int end_y, int end_z, char fName[]);
+
+void save_fiber_sub_grid_binary(GV gv, int start_y, int start_z,
                          int end_y, int end_z, char fName[]);
 
 void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,

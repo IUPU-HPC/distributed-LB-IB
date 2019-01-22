@@ -102,8 +102,9 @@ void* do_thread(void* v){
     }
 
     //check whether barrier long is becuase of this
-    if(tid==0)
+    if(tid==0){
       MPI_Barrier(MPI_COMM_WORLD);
+    }
 
     t1 = get_cur_time();
     t2 += t1 - t0;
@@ -120,7 +121,7 @@ void* do_thread(void* v){
       t0 = get_cur_time();
       fiber_SpreadForce(lv);
       t1 = get_cur_time();
-      t3_1 += t1- t0;
+      t3_1 += t1 - t0;
     }
     else{
 #ifdef DEBUG_PRINT
@@ -136,12 +137,15 @@ void* do_thread(void* v){
       t4 += t1- t0;
     }
 
-    pthread_barrier_wait(&(gv->barr));
-    if(tid==0)
-      MPI_Barrier(MPI_COMM_WORLD);
     t1 = get_cur_time();
-    t3 += t1- t0;
-    t4 += t1- t0;
+    t3 += t1 - t0;
+    t4 += t1 - t0;
+
+    pthread_barrier_wait(&(gv->barr));
+    if(tid==0){
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+    
 #ifdef DEBUG_PRINT
     if(tid==0){
       printf("Task%d: After fluid_get_SpreadForce\n", my_rank);
@@ -153,8 +157,8 @@ void* do_thread(void* v){
     if (my_rank < num_fluid_tasks){
       if (tid == 0){
         sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
-        // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-        save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+        save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+        // save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
       }
       pthread_barrier_wait(&(gv->barr));
     }
@@ -338,8 +342,10 @@ void* do_thread(void* v){
 #endif
       }  
       else{
-        sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
-        save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+        // sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
+        // save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+        sprintf(filename, "Fiber%d_dump_step%d.bin", my_rank, gv->time);
+        save_fiber_sub_grid_binary(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
       }
     }
     pthread_barrier_wait(&(gv->barr));

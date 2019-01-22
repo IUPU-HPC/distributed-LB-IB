@@ -72,6 +72,43 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
   fclose(oFile);
 }
 
+// save one lattice population to binary file
+void save_fiber_sub_grid_binary(GV gv, int start_y, int start_z,
+                         int end_y, int end_z, char fName[]) {
+  FILE* oFile = fopen(fName, "wb+");
+
+  /*Assuming one fiber sheet!!*/
+  Fiber     *fiber_array;
+  int        i, j, k;
+  Fibernode *node, *tmp;
+  char* buffer = NULL;
+
+  buffer = (char*) malloc(sizeof(int)*2 + sizeof(Fibernode));
+
+  for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
+    fiber_array = gv->fiber_shape->sheets[k].fibers;
+    for (i = start_y; i <= end_y; ++i) {
+      for (j = start_z; j <= end_z; ++j) {
+        node = fiber_array[i].nodes + j;
+
+        ((int*)buffer)[0] = i;
+        ((int*)buffer)[1] = j;
+        *((Fibernode *)(buffer + sizeof(int)*2)) = *node;
+
+        // tmp = (Fibernode *)(buffer + sizeof(int)*2);
+
+        // printf("(%d,%d):(%f,%f,%f)\n", 
+        //   ((int*)buffer)[0], ((int*)buffer)[1],
+        //   tmp->x, tmp->y, tmp->z);
+
+        fwrite(buffer, sizeof(int)*2 + sizeof(Fibernode), 1, oFile);
+      }
+    }
+  }
+  free(buffer);
+  fclose(oFile);
+}
+
 // Description: print all the fluid nodes info within all the cubes pointed by fluid coordinate
 // Input: fluid coordinate
 void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,

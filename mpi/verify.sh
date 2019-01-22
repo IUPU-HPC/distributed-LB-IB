@@ -1,5 +1,5 @@
-timestep=30
-dump=1
+timestep=100
+dump=10
 
 # #fluid
 # fluid_grid_z=32
@@ -68,6 +68,8 @@ fiber_y0=21.5
 fiber_z0=11.5
 
 num_proc=$(( fluid_task_x * fluid_task_y * fluid_task_z + num_fibersht))
+
+export OMP_NUM_THREADS=28
 
 mpirun -np $num_proc ./distributed-lb-ib -steps $timestep -dump $dump \
 -fluid_grid_xyz ${fluid_grid_x} ${fluid_grid_y} ${fluid_grid_z} \

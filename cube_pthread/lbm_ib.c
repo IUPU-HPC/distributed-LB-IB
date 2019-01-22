@@ -440,6 +440,43 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
   fclose(oFile);
 }
 
+// save one lattice population to binary file
+void save_fiber_sub_grid_binary(GV gv, int start_y, int start_z,
+                         int end_y, int end_z, char fName[]) {
+  FILE* oFile = fopen(fName, "wb+");
+
+  /*Assuming one fiber sheet!!*/
+  Fiber     *fiber_array;
+  int        i, j, k;
+  Fibernode *node, *tmp;
+  char* buffer = NULL;
+
+  buffer = (char*) malloc(sizeof(int)*2 + sizeof(Fibernode));
+
+  for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
+    fiber_array = gv->fiber_shape->sheets[k].fibers;
+    for (i = start_y; i <= end_y; ++i) {
+      for (j = start_z; j <= end_z; ++j) {
+        node = fiber_array[i].nodes + j;
+
+        ((int*)buffer)[0] = i;
+        ((int*)buffer)[1] = j;
+        *((Fibernode *)(buffer + sizeof(int)*2)) = *node;
+
+        // tmp = (Fibernode *)(buffer + sizeof(int)*2);
+
+        // printf("(%d,%d):(%f,%f,%f)\n", 
+        //   ((int*)buffer)[0], ((int*)buffer)[1],
+        //   tmp->x, tmp->y, tmp->z);
+
+        fwrite(buffer, sizeof(int)*2 + sizeof(Fibernode), 1, oFile);
+      }
+    }
+  }
+  free(buffer);
+  fclose(oFile);
+}
+
 double get_cur_time() {
   struct timeval   tv;
   struct timezone  tz;
@@ -1106,6 +1143,7 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
   double  cf = 1.0 / (64.0 * dx * dy * dz); //cf[jf]=1.0/(64.0*dx*dy*dz);
 
   int owner_id;//only owner will lock 
+  double elastic_force_x, elastic_force_y, elastic_force_z;
 
   // TODO: Modify to multi sheets
   total_fibers_row  = gv->fiber_shape->sheets[0].num_rows;
@@ -1159,6 +1197,12 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
     //printf("*************Afer Anuuling\n");
       // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
 
+#ifdef VERIFY
+  char fName[80];
+  sprintf(fName, "Fiber%d_spread_elastic_force.dat", tid);
+  FILE* oFile = fopen(fName, "w");
+#endif
+
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads)==tid){
       for (j = 0; j < total_fibers_clmn; ++j){
@@ -1182,8 +1226,9 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
               rz = dz * innerk - fiberarray[i].nodes[j].z;
               /*annul ffx,ffy,ffz before spread for each time step Done Above */
               BI = inneri / cube_size; //BI should be inneri/cube_size but BI_end seems correct
-              BJ = innerj / cube_size; 
-              BK = innerk / cube_size; 
+              BJ = innerj / cube_size;
+              BK = innerk / cube_size;
+
               li = inneri % cube_size;
               lj = innerj % cube_size;
               lk = innerk % cube_size;
@@ -1195,7 +1240,7 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
               /* Eqn 19 for Step2 ....PN*/
                
               tmp_dist = cf * (1.0e0 + cos(c_x * rx)) * (1.0e0 + cos(c_y * ry)) * (1.0e0 + cos(c_z * rz));
-              // TODO: remove check
+              // NEED this check in case of fiber moving out of bound
               if (inneri < 0 || inneri >= gv->fluid_grid->x_dim) {
                 fprintf(stderr, "inneri out of bound: %d, x bound=%d!\n", inneri, gv->fluid_grid->x_dim); exit(1);
               }
@@ -1205,6 +1250,16 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
               if (innerk < 0 || innerk >= gv->fluid_grid->z_dim) {
                 fprintf(stderr, "innerk out of bound: %d, z bound=%d!\n", innerk, gv->fluid_grid->z_dim); exit(1);
               }
+
+              elastic_force_x = fiberarray[i].nodes[j].elastic_force_x * tmp_dist;
+              elastic_force_y = fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
+              elastic_force_z = fiberarray[i].nodes[j].elastic_force_z * tmp_dist;
+
+#ifdef VERIFY
+          fprintf(oFile, "elastic_force at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+                      i, j, inneri, innerj, innerk, elastic_force_x, elastic_force_y, elastic_force_z);
+#endif
+
               /* if(li==lookup_fluid_start_x%cube_size && lj== lookup_fluid_start_y%cube_size && lk ==lookup_fluid_start_z%cube_size 
                 && BI ==lookup_fluid_start_x/cube_size && BJ == lookup_fluid_start_y/cube_size && BK ==lookup_fluid_start_z/cube_size ){
                     // printf("*************Before calculating\n");
@@ -1214,12 +1269,15 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
       
               // Need more locks--12/22
               // if node_idx belongs to thread k then lock thread k's lock gv->locksFLuid[tid_k];
-              owner_id = cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q,  R);
+              owner_id = cube2thread(BI, BJ, BK, num_cubes_x, num_cubes_y, num_cubes_z, P, Q, R);
           
               pthread_mutex_lock(&(gv->lock_Fluid[owner_id]));
-              nodes[node_idx].elastic_force_x += fiberarray[i].nodes[j].elastic_force_x * tmp_dist;
-              nodes[node_idx].elastic_force_y += fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
-              nodes[node_idx].elastic_force_z += fiberarray[i].nodes[j].elastic_force_z * tmp_dist;
+              // nodes[node_idx].elastic_force_x += fiberarray[i].nodes[j].elastic_force_x * tmp_dist;
+              // nodes[node_idx].elastic_force_y += fiberarray[i].nodes[j].elastic_force_y * tmp_dist;
+              // nodes[node_idx].elastic_force_z += fiberarray[i].nodes[j].elastic_force_z * tmp_dist;
+              nodes[node_idx].elastic_force_x += elastic_force_x;
+              nodes[node_idx].elastic_force_y += elastic_force_y;
+              nodes[node_idx].elastic_force_z += elastic_force_z;
               pthread_mutex_unlock(&(gv->lock_Fluid[owner_id]));
               //unlock
 
@@ -1240,7 +1298,11 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
       } // end of total_fluidgridpoints i.e fibers along y axis
     } // if fiber2thread ends
   } // end of total_fibers i.e fibers along x axis
-  
+
+#ifdef VERIFY
+  fclose(oFile);
+#endif
+
   //printf("*************Exiting gtinf and spred\n");
   /* print_fluid_sub_grid(gv, lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, 
                           lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z, gv->cube_size);
@@ -2953,8 +3015,8 @@ void* do_thread(void* v){
     if (tid == 0){
       my_rank = 0;
       sprintf(filename, "Fluid%d_get_SpreadForce_step%d.dat", my_rank, gv->time);
-      // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+      save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+      // save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
 
       my_rank = 1;
       sprintf(filename, "Fiber%d_SpreadForce_step%d.dat", my_rank, gv->time);
@@ -3218,8 +3280,10 @@ void* do_thread(void* v){
 #endif
 
       my_rank = 1;
-      sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
-      save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      // sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
+      // save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+      sprintf(filename, "Fiber%d_dump_step%d.bin", my_rank, gv->time);
+      save_fiber_sub_grid_binary(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
