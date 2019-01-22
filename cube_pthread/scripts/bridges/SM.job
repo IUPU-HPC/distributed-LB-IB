@@ -5,7 +5,7 @@
 #SBATCH --partition=RM
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=28
-#SBATCH -t 01:0:00
+#SBATCH -t 02:30:00
 #SBATCH --export=ALL
 
 # mail alert at start, end and abortion of execution
@@ -35,8 +35,8 @@ BIN=${PBS_O_HOME}/distributed-LB-IB/cube_pthread/scalable_IB_v4.1
 # timestep=3000 # how many steps
 # dump=500
 
-timestep=30 # how many steps
-dump=1
+timestep=3000 # how many steps
+dump=500
 
 #fluid
 fluid_grid_z=256

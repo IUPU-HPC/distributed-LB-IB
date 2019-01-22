@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_ERROR 1e-4
+#define MAX_ERROR 1.1e-3
 
 /* A node on a fiber */
 typedef struct fiber_node_t {
@@ -15,8 +15,10 @@ typedef struct fiber_node_t {
 
 int main(int argc, char *argv[]){
 
-  int time, TIME_STOP=100;
-  int dump = 10;
+  int time, TIME_STOP=3000;
+  int dump = 500;
+  int rank1 = 1;
+  int rank2 = 64;
 
   char filename[80];
   Fibernode  *buffer1, *buffer2;
@@ -35,8 +37,7 @@ int main(int argc, char *argv[]){
   buffer1 = (Fibernode *) malloc(sizeof(Fibernode)*total_points);
   buffer2 = (Fibernode *) malloc(sizeof(Fibernode)*total_points);
 
-
-  int my_rank, i, j;
+  int i, j;
   FILE* iFile = NULL;
   Fibernode *node1, *node2;
 
@@ -46,8 +47,7 @@ int main(int argc, char *argv[]){
 
   	printf("Timestep = %d\n", time);
 
-  	my_rank = 1;
-	sprintf(filename, "../cube_pthread/Fiber%d_dump_step%d.bin", my_rank, time);
+	sprintf(filename, "../cube_pthread/Fiber%d_dump_step%d.bin", rank1, time);
 	iFile = fopen(filename, "rb");
 	if (iFile == NULL){
 	  perror("Failed_open: ");
@@ -56,8 +56,7 @@ int main(int argc, char *argv[]){
 	fread(buffer1, sizeof(Fibernode)*total_points, 1, iFile);
 	fclose(iFile);
 
-	my_rank = 1;
-	sprintf(filename, "../mpi/Fiber%d_dump_step%d.bin", my_rank, time);
+	sprintf(filename, "../mpi/Fiber%d_dump_step%d.bin", rank2, time);
 	iFile = fopen(filename, "rb");
 	if (iFile == NULL){
 	  perror("Failed_open: ");
@@ -71,14 +70,14 @@ int main(int argc, char *argv[]){
     for (j = start_z; j <= end_z; ++j) {
 
       node1 = buffer1 + i * num_col + j;
-      node2 = buffer1 + i * num_col + j;
+      node2 = buffer2 + i * num_col + j;
 
 #if 0
-	  printf("SM(%d,%d):(%f,%f,%f)\n", 
+	  printf("SM (%d,%d):(%.24f,%.24f,%.24f)\n", 
 	  	node1->i, node1->j, 
 	  	node1->x, node1->y, node1->z);
 
-	  printf("MPI(%d,%d):(%f,%f,%f)\n", 
+	  printf("MPI(%d,%d):(%.24f,%.24f,%.24f)\n", 
 	  	node2->i, node2->j, 
 	  	node2->x, node2->y, node2->z);
 #endif
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]){
 
 	  if (relative_forward_error_x > MAX_ERROR || relative_forward_error_y > MAX_ERROR
 	  	|| relative_forward_error_z > MAX_ERROR){
-	    printf("FWA (%d,%d): (%f, %f, %f)\n", 
+	    printf("FWE(%d,%d): (%.24f, %.24f, %.24f)\n", 
 	  	i, j,
 	  	relative_forward_error_x, relative_forward_error_y, relative_forward_error_z);
 	  }
