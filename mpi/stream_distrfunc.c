@@ -403,7 +403,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
   for(int iPop = 1; iPop < 19; iPop++){
 #ifdef CHECK_STREAM      
     if (tid == 0){    
-      printf("Fluid task%d: start streaming msg iPop=%d, dest=%d, src=%d, sendcnt=%d\n", 
+      printf("-COUNT- Fluid task%d: start streaming msg iPop=%d, dest=%d, src=%d, sendcnt=%d\n", 
         my_rank, iPop, gv->streamDest[iPop], gv->streamSrc[iPop], gv->stream_last_pos[iPop]);
       fflush(stdout);
     }

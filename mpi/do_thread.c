@@ -354,6 +354,7 @@ void* do_thread(void* v){
 #if 1
     if (my_rank == 0 && tid == 0){
       printf("End of time step %d\n", gv->time);
+      fflush(stdout);
     }
 #endif
 

@@ -1,5 +1,5 @@
-timestep=100
-dump=10
+timestep=1
+dump=1
 
 # #fluid
 # fluid_grid_z=32
@@ -46,9 +46,9 @@ dump=10
 # fiber_z0=11.5
 
 #fluid
-fluid_grid_z=64
-fluid_grid_y=64
-fluid_grid_x=64
+fluid_grid_z=128
+fluid_grid_y=128
+fluid_grid_x=128
 fluid_task_y=1
 fluid_task_z=1
 fluid_task_x=1

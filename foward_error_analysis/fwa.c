@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_ERROR 1.1e-3
+// #define MAX_ERROR 1.1e-3
+#define MAX_ERROR 1e-6
 
 /* A node on a fiber */
 typedef struct fiber_node_t {
@@ -15,12 +16,13 @@ typedef struct fiber_node_t {
 
 int main(int argc, char *argv[]){
 
-  int time, TIME_STOP=3000;
-  int dump = 500;
+  int time, TIME_STOP = 10;
+  int dump = 10;
   int rank1 = 1;
-  int rank2 = 64;
+  int rank2 = 8;
 
   char filename[80];
+  char* buffer0 = NULL;
   Fibernode  *buffer1, *buffer2;
   int start_y, start_z, end_y, end_z;
   int num_row, num_col;
@@ -34,6 +36,7 @@ int main(int argc, char *argv[]){
 
   int total_points = num_row * num_col;
 
+  buffer0 = (char*) malloc((sizeof(int)*2 + sizeof(double)*3)*total_points);
   buffer1 = (Fibernode *) malloc(sizeof(Fibernode)*total_points);
   buffer2 = (Fibernode *) malloc(sizeof(Fibernode)*total_points);
 
@@ -47,40 +50,63 @@ int main(int argc, char *argv[]){
 
   	printf("Timestep = %d\n", time);
 
-	sprintf(filename, "../cube_pthread/Fiber%d_dump_step%d.bin", rank1, time);
+
+    sprintf(filename, "/home/qoofyk/ScalableIB/ParallelCode/fpL_kbp005_re150_dump_step%d.bin", time);
+    iFile = fopen(filename, "rb");
+    if (iFile == NULL){
+      perror("OG: Failed_open: ");
+      return 1;
+    }
+    fread(buffer0, (sizeof(int)*2 + sizeof(double)*3)*total_points, 1, iFile);
+    fclose(iFile);
+
+  // sprintf(filename, "../cube_pthread/Fiber%d_dump_step%d.bin", rank1, time);
+	// sprintf(filename, "/pylon5/ac561jp/qoofyk/sharedmem-LBIB/4829945/Fiber%d_dump_step%d.bin", rank1, time);
+  sprintf(filename, "/pylon5/ac561jp/qoofyk/distributed-LB-IB/4830042/Fiber%d_dump_step%d.bin", rank1, time);
 	iFile = fopen(filename, "rb");
 	if (iFile == NULL){
-	  perror("Failed_open: ");
+	  perror("SM: Failed_open: ");
       return 1;
 	}
 	fread(buffer1, sizeof(Fibernode)*total_points, 1, iFile);
 	fclose(iFile);
 
-	sprintf(filename, "../mpi/Fiber%d_dump_step%d.bin", rank2, time);
+	sprintf(filename, "/pylon5/ac561jp/qoofyk/distributed-LB-IB/4840369/Fiber%d_dump_step%d.bin", rank2, time);
 	iFile = fopen(filename, "rb");
 	if (iFile == NULL){
-	  perror("Failed_open: ");
+	  perror("DS: Failed_open: ");
       return 1;
 	}
 	fread(buffer2, sizeof(Fibernode)*total_points, 1, iFile);
 	fclose(iFile);
 
+
 	double relative_forward_error_x, relative_forward_error_y, relative_forward_error_z;
+  int count = 0;
 	for (i = start_y; i <= end_y; ++i) {
     for (j = start_z; j <= end_z; ++j) {
 
       node1 = buffer1 + i * num_col + j;
       node2 = buffer2 + i * num_col + j;
 
-#if 0
+#if 1
+    // single core
+    printf("SC (%d,%d):(%.24f,%.24f,%.24f)\n", 
+      ((int*)(buffer0 + count))[0], ((int*)(buffer0 + count))[1], 
+      ((double *)(buffer0 + count + sizeof(int)*2))[0], 
+      ((double *)(buffer0 + count + sizeof(int)*2))[1], 
+      ((double *)(buffer0 + count + sizeof(int)*2))[2]);
+
 	  printf("SM (%d,%d):(%.24f,%.24f,%.24f)\n", 
 	  	node1->i, node1->j, 
 	  	node1->x, node1->y, node1->z);
 
-	  printf("MPI(%d,%d):(%.24f,%.24f,%.24f)\n", 
-	  	node2->i, node2->j, 
-	  	node2->x, node2->y, node2->z);
+	  // printf("MPI(%d,%d):(%.24f,%.24f,%.24f)\n", 
+	  // 	node2->i, node2->j, 
+	  // 	node2->x, node2->y, node2->z);
 #endif
+
+    count += sizeof(int)*2 + sizeof(double)*3;
 
 	  //perform forward error analysis
 #if 1	  
@@ -90,8 +116,8 @@ int main(int argc, char *argv[]){
 
 	  if (relative_forward_error_x > MAX_ERROR || relative_forward_error_y > MAX_ERROR
 	  	|| relative_forward_error_z > MAX_ERROR){
-	    printf("FWE(%d,%d): (%.24f, %.24f, %.24f)\n", 
-	  	i, j,
+	    printf("step=%d, FWE(%d,%d): (%.8f, %.8f, %.8f)\n", 
+	  	time, i, j,
 	  	relative_forward_error_x, relative_forward_error_y, relative_forward_error_z);
 	  }
 	  

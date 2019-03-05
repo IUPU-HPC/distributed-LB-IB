@@ -1,0 +1,14 @@
+*.swp
+*.o
+*.a
+*.txt
+*.gz
+*.out
+*.log
+*.so
+*.bbl
+*.blg
+*.aux
+*.bin
+*.dat
+*.tar

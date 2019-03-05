@@ -240,7 +240,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         gv->influenced_macs[gv->num_influenced_macs] = toProc;
 
 #ifdef IFD_FIBER2FLUID        
-        printf("Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d\n",
+        printf("-COUNT- Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d\n",
           my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize,
           gv->num_influenced_macs, toProc);
         fflush(stdout);
@@ -257,7 +257,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         char stop = 100;
 
 #ifdef DEBUG_PRINT
-        printf("Fiber task%d: send STOP msg to %d ifd_max_bufsize=%d\n",
+        printf("-COUNT- Fiber task%d: send STOP msg to %d ifd_max_bufsize=%d\n",
           my_rank, toProc, gv->ifd_max_bufsize);
         fflush(stdout);
 #endif //DEBUG_PRINT

@@ -132,7 +132,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
       	assert(recv_cnt == gv->ifd_last_pos[fromProc]);
 
 #ifdef IFD_FLUID2FIBER        
-        printf("Fiber%d: recv velocity from Fluid%d, recv_cnt=%d, ifd_max_bufsize=%d\n",
+        printf("-COUNT- Fiber%d: recv velocity from Fluid%d, recv_cnt=%d, ifd_max_bufsize=%d\n",
           my_rank, fromProc, recv_cnt, gv->ifd_max_bufsize);
         fflush(stdout);
 #endif
@@ -140,7 +140,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
       else{
 
 #ifdef DEBUG_PRINT
-        printf("Fiber%d: get EMPTY msg from Fluid%d ifd_max_bufsize=%d\n",
+        printf("-COUNT- Fiber%d: get EMPTY msg from Fluid%d ifd_max_bufsize=%d\n",
           my_rank, fromProc, gv->ifd_max_bufsize);
         fflush(stdout);
 #endif //DEBUG_PRINT

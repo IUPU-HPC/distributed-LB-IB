@@ -26,6 +26,9 @@
 
 // #define DEBUG_PRINT
 #define SAVE
+// #define USE_CATALYST
+#define USE_FV
+// #define DUMP_VERIFY
 // #define VERIFY
 #define PI 3.14159265358979
 /*
@@ -388,6 +391,163 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   fclose(oFile);
 }
 
+// save one subgrid of fluid to disk
+void save_fluid_sub_grid_Vel(GV gv, int start_x, int start_y, int start_z,
+                         int end_x, int end_y, int end_z, char fName[]) {
+  FILE* oFile = fopen(fName, "w");
+
+  Fluidgrid *grid;
+  Sub_Fluidgrid *sub_grid;
+  int li, lj, lk, BI, BJ, BK;
+  int cube_idx, num_cubes_y, num_cubes_z;
+  Fluidnode *node;
+  int cube_size = gv->cube_size;
+  int X, Y, Z;
+
+  grid     = gv->fluid_grid;
+  sub_grid = grid->sub_fluid_grid;
+
+  int my_rank = 0;
+
+  for (X = start_x; X < end_x; X++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (Z = start_z; Z < end_z; Z++){
+        BI = X / cube_size;
+        BJ = Y / cube_size;
+        BK = Z / cube_size;
+
+        li = X % cube_size;
+        lj = Y % cube_size;
+        lk = Z % cube_size;
+
+        cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
+        
+        // fwrite(node, sizeof(double)*3, 1, oFile);
+        fprintf(oFile, "%f,%f,%f\n",
+                  node->vel_x, node->vel_y, node->vel_z);
+      }
+
+  fclose(oFile);
+}
+
+
+// save one subgrid of fluid to disk use fieldview
+void save_fluid_sub_grid_vel_use_fv(GV gv, int start_x, int start_y, int start_z,
+                         int end_x, int end_y, int end_z, char fName[]) {
+  FILE* oFile = fopen(fName, "w");
+
+  fprintf(oFile,"%d,%d,%d,3\n",end_x - start_x, end_y - start_y, end_z - start_z);
+
+  Fluidgrid *grid;
+  Sub_Fluidgrid *sub_grid;
+  int li, lj, lk, BI, BJ, BK;
+  int cube_idx, num_cubes_y, num_cubes_z;
+  Fluidnode *node;
+  int cube_size = gv->cube_size;
+  int X, Y, Z;
+
+  grid     = gv->fluid_grid;
+  sub_grid = grid->sub_fluid_grid;
+
+  int my_rank = 0;
+
+  for (Z = start_z; Z < end_z; Z++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (X = start_x; X < end_x; X++){
+        BI = X / cube_size;
+        BJ = Y / cube_size;
+        BK = Z / cube_size;
+
+        li = X % cube_size;
+        lj = Y % cube_size;
+        lk = Z % cube_size;
+
+        cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
+        
+        fprintf(oFile, "%f,", node->vel_x);
+      }
+
+  for (Z = start_z; Z < end_z; Z++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (X = start_x; X < end_x; X++){
+        BI = X / cube_size;
+        BJ = Y / cube_size;
+        BK = Z / cube_size;
+
+        li = X % cube_size;
+        lj = Y % cube_size;
+        lk = Z % cube_size;
+
+        cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
+        
+        fprintf(oFile, "%f,", node->vel_y);
+      }    
+
+  for (Z = start_z; Z < end_z; Z++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (X = start_x; X < end_x; X++){
+        BI = X / cube_size;
+        BJ = Y / cube_size;
+        BK = Z / cube_size;
+
+        li = X % cube_size;
+        lj = Y % cube_size;
+        lk = Z % cube_size;
+
+        cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        node = &sub_grid[cube_idx].nodes[li*cube_size*cube_size + lj*cube_size + lk];
+        
+        fprintf(oFile, "%f,", node->vel_z);
+      }
+
+  fclose(oFile);
+}
+
+// save one subgrid of fluid to disk use fieldview
+void save_fluid_sub_grid_cord_use_fv(GV gv, int start_x, int start_y, int start_z,
+                         int end_x, int end_y, int end_z, char fName[]) {
+  FILE* oFile = fopen(fName, "wb");
+
+  fprintf(oFile,"%d,%d,%d\n",end_x - start_x, end_y - start_y, end_z - start_z);
+
+  Fluidgrid *grid;
+  Sub_Fluidgrid *sub_grid;
+  int li, lj, lk, BI, BJ, BK;
+  int cube_idx, num_cubes_y, num_cubes_z;
+  Fluidnode *node;
+  int cube_size = gv->cube_size;
+  int X, Y, Z;
+
+  grid     = gv->fluid_grid;
+  sub_grid = grid->sub_fluid_grid;
+
+  int my_rank = 0;
+
+  for (Z = start_z; Z < end_z; Z++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (X = start_x; X < end_x; X++){
+        fprintf(oFile, "%d,", X);
+      }
+
+  for (Z = start_z; Z < end_z; Z++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (X = start_x; X < end_x; X++){
+        fprintf(oFile, "%d,", Y);
+      }    
+
+  for (Z = start_z; Z < end_z; Z++)
+    for (Y = start_y; Y < end_y; Y++)
+      for (X = start_x; X < end_x; X++){
+        fprintf(oFile, "%d,", Z);
+      }
+
+
+  fclose(oFile);
+}
+
 void print_fiber_sub_grid(GV gv, int start_y, int start_z,
 			                    int end_y, int end_z) {
   /*Assuming one fiber sheet!!*/
@@ -443,15 +603,16 @@ void save_fiber_sub_grid(GV gv, int start_y, int start_z,
 // save one lattice population to binary file
 void save_fiber_sub_grid_binary(GV gv, int start_y, int start_z,
                          int end_y, int end_z, char fName[]) {
-  FILE* oFile = fopen(fName, "wb+");
+  FILE* oFile = fopen(fName, "wb");
 
   /*Assuming one fiber sheet!!*/
   Fiber     *fiber_array;
   int        i, j, k;
   Fibernode *node, *tmp;
   char* buffer = NULL;
+  int   count = 0;
 
-  buffer = (char*) malloc(sizeof(int)*2 + sizeof(Fibernode));
+  buffer = (char*) malloc( (sizeof(int)*2 + sizeof(Fibernode)) * (end_y - start_y + 1) * (end_z - start_z + 1) );
 
   for (k = 0; k < gv->fiber_shape->num_sheets; ++k){
     fiber_array = gv->fiber_shape->sheets[k].fibers;
@@ -459,22 +620,75 @@ void save_fiber_sub_grid_binary(GV gv, int start_y, int start_z,
       for (j = start_z; j <= end_z; ++j) {
         node = fiber_array[i].nodes + j;
 
-        ((int*)buffer)[0] = i;
-        ((int*)buffer)[1] = j;
-        *((Fibernode *)(buffer + sizeof(int)*2)) = *node;
+        ((int*)(buffer + count))[0] = i;
+        ((int*)(buffer + count))[1] = j;
+        *((Fibernode *)(buffer + count + sizeof(int)*2)) = *node;
+
+        count += sizeof(int)*2 + sizeof(Fibernode);
 
         // tmp = (Fibernode *)(buffer + sizeof(int)*2);
 
         // printf("(%d,%d):(%f,%f,%f)\n", 
         //   ((int*)buffer)[0], ((int*)buffer)[1],
         //   tmp->x, tmp->y, tmp->z);
-
-        fwrite(buffer, sizeof(int)*2 + sizeof(Fibernode), 1, oFile);
       }
     }
   }
+
+  // printf("count=%d, size=%d, per=%d\n", 
+  //   count, (end_y - start_y + 1) * (end_z - start_z + 1), (sizeof(int)*2 + sizeof(Fibernode)));
+  // fflush(stdout);
+
+  fwrite(buffer, sizeof(int)*2 + sizeof(Fibernode), (end_y - start_y + 1) * (end_z - start_z + 1), oFile);
+
   free(buffer);
   fclose(oFile);
+}
+
+
+// save one lattice population to disk
+void save_fiber_sub_grid_cord_ef_use_fv(GV gv, int start_y, int start_z,
+                         int end_y, int end_z, char grid_fname[], char elastic_force_fname[]) {
+  FILE* grid_file = fopen(grid_fname, "w");
+  FILE* ef_file = fopen(elastic_force_fname, "w");
+
+  fprintf(grid_file, "%d,%d,1\n", end_y - start_y + 1, end_z - start_z + 1);
+  fprintf(ef_file, "%d,%d,1,3\n", end_y - start_y + 1, end_z - start_z + 1);
+
+  /*Assuming one fiber sheet!!*/
+  Fiber     *fiber_array;
+  int        i, j, k;
+  Fibernode *node;
+  
+  k = 0;
+  fiber_array = gv->fiber_shape->sheets[k].fibers;
+
+  for (j = start_z; j <= end_z; ++j){
+    for (i = start_y; i <= end_y; ++i) {
+      node = fiber_array[i].nodes + j;
+      fprintf(grid_file, "%f,", node->x);
+      fprintf(ef_file, "%f,", node->elastic_force_x);
+    }
+  }
+
+  for (j = start_z; j <= end_z; ++j){
+    for (i = start_y; i <= end_y; ++i) {
+      node = fiber_array[i].nodes + j;
+      fprintf(grid_file, "%f,", node->y);
+      fprintf(ef_file, "%f,", node->elastic_force_y);
+    }
+  }
+
+  for (j = start_z; j <= end_z; ++j){
+    for (i = start_y; i <= end_y; ++i) {
+      node = fiber_array[i].nodes + j;
+      fprintf(grid_file, "%f,", node->z);
+      fprintf(ef_file, "%f,", node->elastic_force_z);
+    }
+  }
+
+  fclose(grid_file);
+  fclose(ef_file);
 }
 
 double get_cur_time() {
@@ -535,7 +749,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
 
   gv->Re    = 1.5e2;
   gv->rho_l = 1.0e0;
-  gv->u_l   = 0.001; /* choice of u_l should make Ma <0.1 */
+  gv->u_l   = 0.001;  //choice of u_l should make Ma <0.1 
   // gv->u_l = 0.08;
   
   //Todo: move it to fiber sheet!!
@@ -2875,12 +3089,28 @@ void* do_thread(void* v){
   GV gv = lv->gv;
   int barrcheck;
   int tid   = lv->tid;
-  char filename[80];
+  char filename[80], filename1[80];
   int my_rank;
+  int count = 0;
      
 #ifdef DEBUG_PRINT    
   printf("Inside do_thread :Started by Threadid: %d\n",lv->tid);
 #endif //DEBUG_PRINT
+
+#ifdef USE_FV
+  if(tid == 0){
+  FILE* nameF = fopen("FV_nameFluid.nam","w");
+  fprintf(nameF, "u\nv\nw");
+  fclose(nameF);
+
+  nameF = fopen("FV_nameFiber.nam","w");
+  fprintf(nameF, "Afx\nAfy\nAfz");
+  fclose(nameF);
+
+  sprintf(filename, "FV_gridFluid.xyz");
+  save_fluid_sub_grid_cord_use_fv(gv, 0, 0, 0, gv->fluid_grid->x_dim, gv->fluid_grid->y_dim, gv->fluid_grid->z_dim, filename);
+  }
+#endif  
 
    while (gv->time <= gv->TIME_STOP) {
      #ifdef DEBUG_PRINT
@@ -3271,28 +3501,56 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
 
 #ifdef SAVE
-    if (tid == 0 && (gv->time % gv->dump == 0)){
-#if 0      
+    if (tid == 0 && ((gv->time % gv->dump == 0) || (gv->time==1))){
+#if 1      
       my_rank = 0;
+
+#ifdef DUMP_VERIFY      
       sprintf(filename, "Fluid%d_dump_step%d.dat", my_rank, gv->time);
       // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
       save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
 #endif
 
+#ifdef USE_CATALYST
+      sprintf(filename, "SM_%d.dat", count);
+      save_fluid_sub_grid_Vel(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
+#endif
+
+#ifdef USE_FV
+      sprintf(filename, "FV_fluid_vel_%d.f", gv->time);
+      save_fluid_sub_grid_vel_use_fv(gv, 0, 0, 0, gv->fluid_grid->x_dim, gv->fluid_grid->y_dim, gv->fluid_grid->z_dim, filename);
+#endif
+
+      count++;
+#endif
+
       my_rank = 1;
-      // sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
-      // save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+
+#ifdef USE_CATALYST
+      sprintf(filename, "Fiber%d_dump_step%d.dat", my_rank, gv->time);
+      save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+#endif
+
+#ifdef USE_FV
+      sprintf(filename, "FV_gridFiber%d.xyz", gv->time);
+      sprintf(filename1, "FV_fiber_elastic_force_%d.f", gv->time);
+      save_fiber_sub_grid_cord_ef_use_fv(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename, filename1);
+#endif      
+
+#ifdef DUMP_VERIFY
       sprintf(filename, "Fiber%d_dump_step%d.bin", my_rank, gv->time);
       save_fiber_sub_grid_binary(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
+#endif
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
 
-#if 1
+
     if (tid == 0){
       printf("End of time step %d\n", gv->time);
+      fflush(stdout);
     }
-#endif
+
      
     //if(tid==0)
     // pthread_mutex_lock(&(gv->lock_Fluid));
@@ -3574,7 +3832,7 @@ int main(int argc, char* argv[]) {
     exit(1);
   }
 
-   Fibershape* fiber_shape = gen_fiber_shape(gv, fibersheet_w, fibersheet_h, 
+  Fibershape* fiber_shape = gen_fiber_shape(gv, fibersheet_w, fibersheet_h, 
 					     total_fibers_clmn, total_fibers_row,
 					     fibersheet_xo, fibersheet_yo, fibersheet_zo);
 
