@@ -32,11 +32,16 @@ void needs_argument(int i, int argc, const char *flag) {
   }
 }
 
+IFDMap ifdmap;
+
 int main(int argc, char* argv[]) {
 
   LV lvs;
   GV gv;
   gv = (GV) calloc (1, sizeof(*gv));
+
+  // ifdmap.insert(std::make_pair(0, 0));
+  // std::cout << ifdmap.size() << "\n";
 
   // Parse command line
   for (int i = 1; i < argc; i++) {
@@ -306,6 +311,8 @@ int main(int argc, char* argv[]) {
 
   // Fiber tasks: generate fibersheet
   if (gv->taskid >= gv->num_fluid_tasks){
+    // ifdmap.insert(std::make_pair(0, 0));
+    // ifdmap.clear();
     printf("Friber task%d start gen_fiber_sheet!\n", gv->taskid);
     for(int i = 0; i < gv->fiber_shape->num_sheets; ++i)
       if (gv->taskid == (gv->num_fluid_tasks + i)){

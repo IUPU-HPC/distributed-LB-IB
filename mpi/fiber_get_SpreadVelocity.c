@@ -23,6 +23,9 @@
 #include "do_thread.h"
 #include "timer.h"
 
+extern IFDMap ifdmap;
+
+#if 0
 void search_velocity(char* msg, int recv_cnt, int inneri, int innerj, int innerk, double* vel_x, double* vel_y, double* vel_z){
 	int position = 0;
   while (position < recv_cnt){
@@ -43,6 +46,7 @@ void search_velocity(char* msg, int recv_cnt, int inneri, int innerj, int innerk
   printf("Error: Cannot find velocity\n");
   exit(0);
 }
+#endif
 
 void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
@@ -55,8 +59,9 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   GV gv = lv->gv;
   tid = lv->tid;
 
-  int    i = 0, j = 0, inneri = 0, innerj = 0, innerk = 0; //inner i corresponding to fluid index
-  int    istart, istop, jstart, jstop, kstart, kstop;
+  int    i = 0, j = 0; //inner i corresponding to fluid index
+  int    ii, jj, kk;
+  int    istart, jstart, kstart;
   double dx = 1.0, dy = 1.0, dz = 1.0; //fluid distance
   double rx = 0.0, ry = 0.0, rz = 0.0; //local temporary variable
 
@@ -67,6 +72,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
   int    total_fibers_row, total_fibers_clmn;
   Fiber  *fiberarray;
+  Fibernode *fibernode;
 
   double tmp; //spreading_velocity coefficient
 
@@ -75,7 +81,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   int li, lj, lk;
   int total_sub_grids, dim_x, dim_y, dim_z;
   int cube_idx, node_idx;
-  int P, Q, R, total_threads;
+  int total_threads;
   /* Todo: Move the following variables to GV to save time */
   double c_x = PI / (2.0 * dx);
   double c_y = PI / (2.0 * dy);
@@ -83,11 +89,17 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   double c_64 = 1.0 / 64.0;
 
   /*MPI changes*/
-  int ifd2FluidProc;
   int num_fluid_tasks = gv->num_fluid_tasks;
   int my_rank = gv->taskid;
   double elastic_force_x, elastic_force_y, elastic_force_z;
   MPI_Status status;
+  //ifd
+  int ifd_fld_proc;
+  int X, Y, Z; //influenced fluid point coordintate
+  // int ifd_fld_thd;
+  // long global_index;
+  int ifd_msg_pos;
+  // std::pair<IFDMap::iterator, bool> ret;
 
   double t0 = 0, t1 = 0, t_search = 0, t2 = 0, t3 = 0;
 
@@ -107,12 +119,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
   // printf("fiber_SpreadForce: num_cubes_x %ld\n", num_cubes_x);
 
-  total_sub_grids = (dim_x * dim_y * dim_z) / pow(cube_size, 3);
-
-  P = gv->tx;
-  Q = gv->ty;
-  R = gv->tz;
-  total_threads = P*Q*R; //gv->total_threads
+  total_sub_grids = num_cubes_x * num_cubes_y * num_cubes_z;
+  total_threads = gv->tx * gv->ty * gv->tz; //gv->total_threads
 
   int recv_cnt; // SpreadVelocity_recv_count
   double s1 = 0, s2 = 0, s3 = 0;
@@ -168,24 +176,26 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
         s2=0; 
         s3=0;
 
-        // for fibre machine
-        //Find influential domain
-        istart = floor(fiberarray[i].nodes[j].x / dx - 2) + 1; //x dimension
-        istop = istart + 3;
-        jstart = floor(fiberarray[i].nodes[j].y / dy - 2) + 1; //y dimension
-        jstop = jstart + 3;
-        kstart = floor(fiberarray[i].nodes[j].z / dz - 2) + 1; //z dimension
-        kstop = kstart + 3;
+        fibernode = &(fiberarray[i].nodes[j]);
 
-        for (inneri = istart; inneri <= istop; inneri++) //x direction
-        for (innerj = jstart; innerj <= jstop; innerj++) //y direction
-        for (innerk = kstart; innerk <= kstop; innerk++){//z direction
+        //Find influential domain
+        istart = floor(fibernode->x / dx - 2) + 1; //x dimension
+        jstart = floor(fibernode->y / dy - 2) + 1; //y dimension
+        kstart = floor(fibernode->z / dz - 2) + 1; //z dimension
+
+        for (ii = 0; ii < IFD_SIZE; ii++) //x direction
+        for (jj = 0; jj < IFD_SIZE; jj++) //y direction
+        for (kk = 0; kk < IFD_SIZE; kk++){//z direction
+
+          X = istart + ii; 
+          Y = jstart + jj;
+          Z = kstart + kk;
 
           /*Used for calculating eqn 21 ....PN*/
           /*distance between the fiber node and all the fluid nodes within the infulential doman.*/
-          rx = dx*inneri - fiberarray[i].nodes[j].x;
-          ry = dy*innerj - fiberarray[i].nodes[j].y;
-          rz = dz*innerk - fiberarray[i].nodes[j].z;
+          rx = dx*X - fibernode->x;
+          ry = dy*Y - fibernode->y;
+          rz = dz*Z - fibernode->z;
 
           /* You should not use tmp variable, since multiplication sequence influence result*/
           // tmp = c_64 * (1.0 + cos(c_x*rx)) * (1.0 + cos(c_y*ry)) * (1.0 + cos(c_z*rz));
@@ -203,20 +213,27 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           node_idx = (li) * cube_size * cube_size +(lj) * cube_size + lk;
 #endif
           //find ifd Fluid toProc
-          int ifd2FluidProc = global2task(inneri, innerj, innerk, gv);
+          ifd_fld_proc = global2task(X, Y, Z, gv);
+          ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk];
 
           vel_x = 0;
           vel_y = 0;
           vel_z = 0;
 
           t0 = Timer::get_cur_time();
-          search_velocity(gv->ifd_bufpool[ifd2FluidProc], gv->ifd_last_pos[ifd2FluidProc], inneri, innerj, innerk, &vel_x, &vel_y, &vel_z); //need to optimize
+
+          // search_velocity(, gv->ifd_last_pos[ifd_fld_proc], inneri, innerj, innerk, &vel_x, &vel_y, &vel_z); //need to optimize
+
+          vel_x = *((double*)(gv->ifd_bufpool[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3));
+          vel_y = *((double*)(gv->ifd_bufpool[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3 + sizeof(double)));
+          vel_z = *((double*)(gv->ifd_bufpool[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3 + sizeof(double) * 2));
+
           t1 = Timer::get_cur_time();
           t_search += t1 - t0;
 
 #ifdef VERIFY
           fprintf(oFile, "velocity at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
-                      i, j, inneri, innerj, innerk, vel_x, vel_y, vel_z);
+                      i, j, X, Y, Z, vel_x, vel_y, vel_z);
 #endif
 
           /*notice the difference for spreading and for interpolation here, cf is used for spreading*/
@@ -225,11 +242,11 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           s2 += vel_y * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
           s3 += vel_z * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
 
-        }//for innerk ends
+        }//for kk ends
 
-        fiberarray[i].nodes[j].x += gv->dt * s1;
-        fiberarray[i].nodes[j].y += gv->dt * s2;
-        fiberarray[i].nodes[j].z += gv->dt * s3;
+        fibernode->x += gv->dt * s1;
+        fibernode->y += gv->dt * s2;
+        fibernode->z += gv->dt * s3;
 
       } //for fiberclmn ends
     }//if fiber2thread ends
@@ -267,6 +284,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
       // set ifd_last_pos to default value 0
       gv->ifd_last_pos[toProc] = 0;
     }
+
+    ifdmap.clear(); //remove all elements from the map container
   }
 
 #ifdef DEBUG_PRINT

@@ -109,6 +109,7 @@ void* do_thread(void* v){
     t1 = get_cur_time();
     t2 += t1 - t0;
 
+
     if (my_rank >= num_fluid_tasks){
 
 #ifdef DEBUG_PRINT
@@ -170,6 +171,8 @@ void* do_thread(void* v){
       pthread_barrier_wait(&(gv->barr));
     }
 #endif
+
+#if 1
 
     // Fluid tasks
     if(my_rank < num_fluid_tasks){
@@ -351,12 +354,15 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
 #endif
 
+#endif
+
 #if 1
     if (my_rank == 0 && tid == 0){
       printf("End of time step %d\n", gv->time);
       fflush(stdout);
     }
 #endif
+
 
     if (tid == 0)//does it requires gv->my_rank==0 i.e only one machine updating the counter value
       gv->time += gv->dt;
@@ -382,7 +388,7 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
     t1 = get_cur_time();
     tail += t1 - t0;
-    
+
   }
 
   endTime = get_cur_time();

@@ -28,11 +28,12 @@ void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv){
   int dim_y = fluid_grid->y_dim;
   int dim_z = fluid_grid->z_dim;
 
-  /*Calculate total no of cubes*/
-  total_sub_grids = (dim_x * dim_y * dim_z) / pow(cube_size, 3);
+  /*Calculate total no of cubes on each dimension*/
   int num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
   int num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
   int num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
+  /*Calculate total no of cubes*/
+  total_sub_grids = num_cubes_x * num_cubes_y * num_cubes_z;
 
   /*Allocate Memory for sub_fluid grid*/
   fluid_grid->sub_fluid_grid = (Sub_Fluidgrid*) malloc(sizeof(Sub_Fluidgrid) * total_sub_grids);
@@ -49,8 +50,7 @@ void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv){
   for (int BI = 0; BI < num_cubes_x; ++BI)
     for (int BJ = 0; BJ < num_cubes_y; ++BJ)
       for (int BK = 0; BK < num_cubes_z; ++BK){
-        int tmp_taskid = cube2task(BI, BJ, BK, gv); //MPI changes
-        if (taskid == tmp_taskid){
+        if (taskid == cube2task(BI, BJ, BK, gv)){
           int cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           Fluidnode *nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes =
             (Fluidnode*)calloc(cube_size * cube_size * cube_size, sizeof(Fluidnode));
