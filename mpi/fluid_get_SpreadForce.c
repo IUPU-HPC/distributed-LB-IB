@@ -66,9 +66,10 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   int num_cubes_x = gv->fluid_grid->num_cubes_x;
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
-  total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size, 3);
+  total_sub_grids = num_cubes_x * num_cubes_y * num_cubes_z;
 
   //Annuling Forces on Fluid grid :: Necessary to annul in every time step, because it is between fluid and fiber
+#if 0
   int fluid_mac_rank;
 
   for (BI = 0; BI < num_cubes_x; BI++)
@@ -95,7 +96,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       }
     }//if cube2thread ends
   }
-
+#endif
 
   // fluid task starts
   // fluid task thread 0 do receive
@@ -165,9 +166,9 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 task will recv wrong cube
         // Don't need lock here
         // pthread_mutex_lock(&(gv->lock_Fluid[owner_tid]));
-        nodes[node_idx].elastic_force_x += elastic_force_x;
-        nodes[node_idx].elastic_force_y += elastic_force_y;
-        nodes[node_idx].elastic_force_z += elastic_force_z;
+        nodes[node_idx].elastic_force_x = elastic_force_x;
+        nodes[node_idx].elastic_force_y = elastic_force_y;
+        nodes[node_idx].elastic_force_z = elastic_force_z;
         // pthread_mutex_unlock(&(gv->lock_Fluid[owner_tid]));
         // printf("Tid%d update (%d,%d,%d) || elastic_force (%.6f,%.24f,%.24f)\n", 
         //   tid, X, Y, Z, elastic_force_x, elastic_force_y, elastic_force_z);

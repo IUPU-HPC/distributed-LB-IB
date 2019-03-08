@@ -32,6 +32,9 @@
 #include <errno.h>
 #include <string.h>
 
+#include <map>
+#include <iostream>
+
 #define clean_errno() (errno == 0 ? "None" : strerror(errno))
 #define log_error(M, ...) fprintf(stderr, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)
 #define assertf(A, M, ...) if(!(A)) {log_error(M, ##__VA_ARGS__); assert(A); }
@@ -62,8 +65,10 @@
 // #define CHECK_STREAM
 // #define IFD_FIBER2FLUID
 // #define IFD_FLUID2FIBER
+#define INIT
 
 #define PI 3.14159265358979
+#define IFD_SIZE 4
 
 #define lookup_fluid_start_x 20
 #define lookup_fluid_start_y 11
@@ -98,6 +103,10 @@ typedef struct fiber_node_t {
   double bend_force_x, bend_force_y, bend_force_z;
   double stretch_force_x, stretch_force_y, stretch_force_z;
   double elastic_force_x, elastic_force_y, elastic_force_z; // Bendingforce + Stretchingforce
+  // int ifd_fld_point[4][4][4][3];
+  // int ifd_fld_proc[4][4][4];
+  // int ifd_fld_thd[4][4][4];
+  int ifd_msg_pos[4][4][4];
 } Fibernode;
 
 /* a single fiber consisting of a number of fiber nodes */
@@ -173,6 +182,8 @@ typedef struct fluid_grid_t {
   Sub_Fluidgrid* sub_fluid_grid;
 } Fluidgrid;
 
+typedef std::map<long, int> IFDMap;
+
 /* Global info */
 typedef struct gv_t {
   /* The immersed structure */
@@ -219,6 +230,7 @@ typedef struct gv_t {
   int* influenced_macs;        //Fluid taskid of influential domain
   int num_influenced_macs;
   int ifd_max_bufsize;
+  // IFDMap ifdmap;
 
   //streaming
   char* stream_msg[19];
@@ -275,6 +287,7 @@ int cube2thread(int BI, int BJ, int BK, int num_cubes_x, int num_cubes_y, int nu
 int cube2task(int BI, int BJ, int BK, GV gv);
 int cube2thread_and_task(int BI, int BJ, int BK, GV gv, int *dst_task);
 int global2task(int x, int y, int z, GV gv);
+int global2task_and_thread(int X, int Y, int Z, GV gv, int *dst_task);
 
 /*Fiber Distribution Function: Map a fiber row to each thread
   fiber_row -ith row*/

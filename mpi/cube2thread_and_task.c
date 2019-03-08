@@ -106,8 +106,8 @@ int global2task(int X, int Y, int Z, GV gv){
   int cube_size = gv->cube_size;
 
   BI = X / cube_size;
-    BJ = Y / cube_size;
-    BK = Z / cube_size;
+  BJ = Y / cube_size;
+  BK = Z / cube_size;
 
   num_cubes_x = gv->fluid_grid->num_cubes_x;
   num_cubes_y = gv->fluid_grid->num_cubes_y;
