@@ -32,7 +32,8 @@ void needs_argument(int i, int argc, const char *flag) {
   }
 }
 
-IFDMap ifdmap;
+// IFDMap ifdmap;
+std::vector<IFDMap> vecOfIfdmap;
 
 int main(int argc, char* argv[]) {
 
@@ -40,8 +41,13 @@ int main(int argc, char* argv[]) {
   GV gv;
   gv = (GV) calloc (1, sizeof(*gv));
 
-  // gv->ifdmap.insert(std::make_pair(0, 0));
-  // std::cout << gv->ifdmap.size() << "\n";
+  int X=0, Y=0, Z=0;
+  std::array<int, 3> a;
+  a[0]=X; a[1]=Y; a[2]=Z;
+  vecOfIfdmap.resize(1);
+  vecOfIfdmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
+  std::cout << vecOfIfdmap[0].size() << "\n";
+  std::cout << "Max size is " << vecOfIfdmap[0].max_size() << "\n";
 
   // Parse command line
   for (int i = 1; i < argc; i++) {

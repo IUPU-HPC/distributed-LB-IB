@@ -22,6 +22,8 @@
 
 #include <do_thread.h>
 
+extern std::vector<IFDMap> vecOfIfdmap;
+
 int c[19][3] = { //{x, y, z}
             { 0, 0, 0},
 
@@ -126,7 +128,7 @@ void init_gv(GV gv) {
   int cube_size = gv->cube_size;
   int num_fluid_tasks = gv->num_fluid_tasks;
   int num_fiber_tasks = gv->fiber_shape->num_sheets;
-
+  size_t tmp;
   Fluidgrid* fluid_grid = gv->fluid_grid;
 
   P = gv->tx;
@@ -152,9 +154,14 @@ void init_gv(GV gv) {
   // int ifd_size = 64; //4*4*4, x,y,z: (-2,2)
   gv->ifd_max_bufsize = 0;
   for(i = 0; i < num_fiber_tasks; i++){
-    gv->ifd_max_bufsize += (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
-                        (gv->fiber_shape->sheets[i].num_rows) * (gv->fiber_shape->sheets[i].num_cols);
+    tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE *
+                        (gv->fiber_shape->sheets[i].width + IFD_SIZE) * (gv->fiber_shape->sheets[i].height + IFD_SIZE);
+    // printf("tmp=%d, row=%d, col=%d\n", 
+      // tmp, gv->fiber_shape->sheets[i].width,gv->fiber_shape->sheets[i].height);
+    if(tmp > gv->ifd_max_bufsize)
+      gv->ifd_max_bufsize = tmp;
   }
+  // printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
 
   // Fluid task
   if (gv->taskid < gv->num_fluid_tasks){
@@ -235,6 +242,7 @@ void init_gv(GV gv) {
     }
 
     /*MPI changes*/
+    vecOfIfdmap.resize(num_fluid_tasks);
     gv->ifd_bufpool = (char **) malloc(sizeof(char*) * num_fluid_tasks);
     // gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
     gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
@@ -242,12 +250,14 @@ void init_gv(GV gv) {
     gv->num_influenced_macs = 0;
     gv->influenced_macs = (int*) malloc(sizeof(int) * num_fluid_tasks);
 
-    int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
-                        (gv->fiber_shape->sheets[gv->rank[1]].num_rows) * (gv->fiber_shape->sheets[gv->rank[1]].num_cols);
+    int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * IFD_SIZE *
+                        (gv->fiber_shape->sheets[gv->rank[1]].width + IFD_SIZE) * 
+                        (gv->fiber_shape->sheets[gv->rank[1]].height + IFD_SIZE);
 
-    printf("Fiber%d of %d: Init num_rows=%d, num_cols=%d, max_msg_size=%d\n", 
+    printf("Fiber%d of %d: Init width+4=%d, height+4=%d, max_msg_size=%d\n", 
       gv->rank[1], gv->size[1], 
-      gv->fiber_shape->sheets[gv->rank[1]].num_rows, gv->fiber_shape->sheets[gv->rank[1]].num_cols, 
+      gv->fiber_shape->sheets[gv->rank[1]].width, 
+      gv->fiber_shape->sheets[gv->rank[1]].height, 
       max_msg_size);                    
 
     for (i = 0; i < num_fluid_tasks; i++){

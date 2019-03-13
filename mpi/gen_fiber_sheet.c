@@ -53,7 +53,10 @@ void gen_fiber_sheet(Fibersheet* sheet){
       // fiber->nodes[col].x = x_orig + (row - 10)*0.4; // not perpendicular to x-axis, with some angle
       fiber->nodes[col].y = ydist * row + y_orig;
       fiber->nodes[col].z = zdist * col + z_orig;
-      
+#if 0      
+      printf("(%d, %d)  (%f, %f, %f)\n", 
+        row, col, fiber->nodes[col].x, fiber->nodes[col].y, fiber->nodes[col].z);
+#endif        
     }
   }
   /*For Tethered Points*/

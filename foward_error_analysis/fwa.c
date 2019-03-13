@@ -25,7 +25,7 @@ typedef struct fiber_node_t_2 {
 
 int main(int argc, char *argv[]){
 
-  int time, TIME_STOP = 100;
+  int time, TIME_STOP = 200;
   int dump = 10;
   int rank1 = 1; //cube_thread code output
   int rank2 = 1; //mpi code output

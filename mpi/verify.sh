@@ -1,4 +1,4 @@
-timestep=2
+timestep=200
 dump=10
 
 # #fluid
