@@ -133,6 +133,8 @@ void init_gv(GV gv) {
   Q = gv->ty;
   R = gv->tz;
 
+  int total_threads = P*Q*R;
+
   Px = gv->num_fluid_task_x;
   Py = gv->num_fluid_task_y;
   Pz = gv->num_fluid_task_z;
@@ -152,8 +154,10 @@ void init_gv(GV gv) {
   // int ifd_size = 64; //4*4*4, x,y,z: (-2,2)
   gv->ifd_max_bufsize = 0;
   for(i = 0; i < num_fiber_tasks; i++){
-    gv->ifd_max_bufsize += (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
+    tmp = (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].num_rows) * (gv->fiber_shape->sheets[i].num_cols);
+    if (tmp > gv->ifd_max_bufsize)
+      gv->ifd_max_bufsize = tmp;
   }
 
   // Fluid task
@@ -235,15 +239,18 @@ void init_gv(GV gv) {
     }
 
     /*MPI changes*/
-    gv->ifd_bufpool = (char **) malloc(sizeof(char*) * num_fluid_tasks);
-    // gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
-    gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
-    gv->lock_ifd_fluid_task_msg = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * num_fluid_tasks);
+    gv->ifd_send_msg = (char **) malloc(sizeof(char*) * num_fluid_tasks);
     gv->num_influenced_macs = 0;
     gv->influenced_macs = (int*) malloc(sizeof(int) * num_fluid_tasks);
 
+    // change to fluid thread
+    gv->ifd_last_pos = (int**) malloc(sizeof(int*) * num_fluid_tasks);
+    gv->lock_ifd = (pthread_mutex_t**) malloc(sizeof(pthread_mutex_t*) * num_fluid_tasks);
+
     int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
                         (gv->fiber_shape->sheets[gv->rank[1]].num_rows) * (gv->fiber_shape->sheets[gv->rank[1]].num_cols);
+
+    gv->ifd_fluid_thread_msg = (char*) malloc(max_msg_size * num_fluid_tasks); //max_msg_size/total_threads * num_fluid_tasks * total_threads
 
     printf("Fiber%d of %d: Init num_rows=%d, num_cols=%d, max_msg_size=%d\n", 
       gv->rank[1], gv->size[1], 
@@ -254,19 +261,20 @@ void init_gv(GV gv) {
 
       // Initialize ifd_bufpool
       gv->ifd_bufpool[i] = (char*) malloc(sizeof(char) * max_msg_size);
-      // gv->ifd_bufpool_msg_size[i] = 0;
 
-      gv->ifd_last_pos[i] = 0;     // Initialize gv->ifd_last_pos
+      gv->influenced_macs[i] = 0;     // Initialize gv->influenced_macs
+
+    }
+
+    for (i = 0; i < num_fluid_tasks*total_threads; i++){
+      gv->ifd_fluid_thread_last_pos[i] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
 
       // Initialize mutex lock_ifd_fluid_task_msg
       if (pthread_mutex_init(&gv->lock_ifd_fluid_task_msg[i], NULL)){
         fprintf(stderr, "Unable to initialize lock_ifd_fluid_task_msg mutex\n");
         exit(1);
       }
-
-      gv->influenced_macs[i] = 0;     // Initialize gv->influenced_macs
-
-    }
+    }  
   } //endif fiber machine init
 
   // printf("***********Gv Init exit*****\n");

@@ -78,6 +78,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   IFDMap ifdmap;
   std::pair<IFDMap::iterator, bool> ret;
   char* msg;
+  int fl_tid;
 
   total_fibers_row = gv->fiber_shape->sheets[0].num_rows;
   total_fibers_clmn = gv->fiber_shape->sheets[0].num_cols;
@@ -156,17 +157,17 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 #endif
 
           //find ifd Fluid toProc
-          ifd_fld_proc = global2task(X, Y, Z, gv);
-          msg = gv->ifd_bufpool[ifd_fld_proc];
+          fl_tid = global2task(X, Y, Z, gv, &ifd_fld_proc);
+          msg = gv->ifd_msg_tid[ifd_fld_proc*total_threads + fl_tid];
 
 #ifdef PERF
           t2 = Timer::get_cur_time();
 #endif
-          
-          pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd_fld_proc]);
+
+          pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd_fld_proc*total_threads + fl_tid]);
 
           // t4 = Timer::get_cur_time();
-          ret = ifdmap.insert(std::make_pair(global_index, gv->ifd_last_pos[ifd_fld_proc]));
+          ret = ifdmap.insert(std::make_pair(global_index, gv->ifd_last_pos[ifd_fld_proc*total_threads + fl_tid]));
           // t5 = Timer::get_cur_time();
           // t_insert += t5 - t4;
 
@@ -176,7 +177,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           if (ret.second == true){
             
-            ifd_msg_pos = gv->ifd_last_pos[ifd_fld_proc];
+            ifd_msg_pos = gv->ifd_last_pos[ifd_fld_proc*total_threads + fl_tid];
 
             *((int*)(msg + ifd_msg_pos))                  = X;
             *((int*)(msg + ifd_msg_pos + sizeof(int)))    = Y;
@@ -185,7 +186,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
             *((double*)(msg + ifd_msg_pos + sizeof(int) * 3 + sizeof(double)))     = elastic_force_y;
             *((double*)(msg + ifd_msg_pos + sizeof(int) * 3 + sizeof(double) * 2)) = elastic_force_z;
 
-            gv->ifd_last_pos[ifd_fld_proc] += sizeof(int) * 3 + sizeof(double) * 3;
+            gv->gv->ifd_last_pos[ifd_fld_proc*total_threads+fl_tid] += sizeof(int) * 3 + sizeof(double) * 3;
           }
           else{ //already exist
             // t4 = Timer::get_cur_time();
@@ -245,9 +246,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         gv->influenced_macs[gv->num_influenced_macs] = toProc;
 
 #ifdef IFD_FIBER2FLUID        
-        printf("-COUNT- Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d, gv->influenced_macs[%d]=%d\n",
-          my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize,
-          gv->num_influenced_macs, toProc);
+        printf("-COUNT- Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d\n",
+          my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize);
         fflush(stdout);
 #endif
         assert(gv->ifd_last_pos[toProc] <= gv->ifd_max_bufsize);
