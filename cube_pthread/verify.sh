@@ -1,5 +1,5 @@
-timestep=2000
-dump=100
+timestep=2
+dump=10
 
 # #fluid
 # fluid_grid_z=32

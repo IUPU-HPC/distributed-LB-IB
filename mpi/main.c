@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
   GV gv;
   gv = (GV) calloc (1, sizeof(*gv));
 
-  // ifdmap.insert(std::make_pair(0, 0));
-  // std::cout << ifdmap.size() << "\n";
+  // gv->ifdmap.insert(std::make_pair(0, 0));
+  // std::cout << gv->ifdmap.size() << "\n";
 
   // Parse command line
   for (int i = 1; i < argc; i++) {

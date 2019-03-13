@@ -96,14 +96,13 @@ void save_fiber_sub_grid_binary(GV gv, int start_y, int start_z,
         ((int*)(buffer + count))[0] = i;
         ((int*)(buffer + count))[1] = j;
         *((Fibernode *)(buffer + count + sizeof(int)*2)) = *node;
-
-        count += sizeof(int)*2 + sizeof(Fibernode);
-
-        // tmp = (Fibernode *)(buffer + sizeof(int)*2);
-
-        // printf("(%d,%d):(%f,%f,%f)\n", 
-        //   ((int*)buffer)[0], ((int*)buffer)[1],
-        //   tmp->x, tmp->y, tmp->z);
+#if 0
+        tmp = (Fibernode *)(buffer + count + sizeof(int)*2);
+        printf("(%d,%d):(%f,%f,%f)\n", 
+          ((int*)(buffer + count))[0], ((int*)(buffer + count))[1],
+          tmp->x, tmp->y, tmp->z);
+#endif
+        count += sizeof(int)*2 + sizeof(Fibernode);       
       }
     }
   }

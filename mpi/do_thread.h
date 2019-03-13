@@ -1,5 +1,5 @@
 /*  -- Distributed-LB-IB --
- * Copyright 2018 Indiana University Purdue University Indianapolis 
+ * Copyright 2018 Indiana University Purdue University Indianapolis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *   
+ *
  * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
  *
  * @file:
@@ -59,13 +59,14 @@
 * Using Block Distribution on Threads for both 1D (FIber to thread:fiber2thread ) and 3D (Fluid_Sub_cube to thread :cube2thread)
 */
 
+#define PERF
 // #define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY
 // #define CHECK_STREAM
 // #define IFD_FIBER2FLUID
 // #define IFD_FLUID2FIBER
-#define INIT
+// #define INIT
 
 #define PI 3.14159265358979
 #define IFD_SIZE 4
@@ -221,8 +222,8 @@ typedef struct gv_t {
   MPI_Comm cartcomm;
 
   // Fiber <--> Fluid influential domain
-  char** ifd_bufpool;          //fiber task pack message in bufferpool, and then send message to fluid tasks 
-  int* ifd_bufpool_msg_size;  //each message size
+  char** ifd_bufpool;          //fiber task pack message in bufferpool, and then send message to fluid tasks
+  // int* ifd_bufpool_msg_size;  //each message size
   int* ifd_last_pos;          //Track last position of each fluid process's buffer
   char* ifd_recv_buf;
   int ifd_recv_count;          //Track number of char in received message

@@ -149,10 +149,10 @@ void init_gv(GV gv) {
   // printf("Task%d: Enter init_gv\n", my_rank);
 
   // determine the ifd_max_bufsize received by a fluid task
-  int ifd_size = 64; //4*4*4, x,y,z: (-2,2)
+  // int ifd_size = 64; //4*4*4, x,y,z: (-2,2)
   gv->ifd_max_bufsize = 0;
   for(i = 0; i < num_fiber_tasks; i++){
-    gv->ifd_max_bufsize += (sizeof(int) * 3 + sizeof(double) * 3) * ifd_size *
+    gv->ifd_max_bufsize += (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].num_rows) * (gv->fiber_shape->sheets[i].num_cols);
   }
 
@@ -236,16 +236,16 @@ void init_gv(GV gv) {
 
     /*MPI changes*/
     gv->ifd_bufpool = (char **) malloc(sizeof(char*) * num_fluid_tasks);
-    gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
+    // gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
     gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
     gv->lock_ifd_fluid_task_msg = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * num_fluid_tasks);
     gv->num_influenced_macs = 0;
     gv->influenced_macs = (int*) malloc(sizeof(int) * num_fluid_tasks);
 
-    int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * ifd_size *
+    int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * (IFD_SIZE * IFD_SIZE * IFD_SIZE) *
                         (gv->fiber_shape->sheets[gv->rank[1]].num_rows) * (gv->fiber_shape->sheets[gv->rank[1]].num_cols);
 
-    printf("Fiber%d of %d: Init num_rows=%d, num_cols=%d, max_msg_size=%ld\n", 
+    printf("Fiber%d of %d: Init num_rows=%d, num_cols=%d, max_msg_size=%d\n", 
       gv->rank[1], gv->size[1], 
       gv->fiber_shape->sheets[gv->rank[1]].num_rows, gv->fiber_shape->sheets[gv->rank[1]].num_cols, 
       max_msg_size);                    
@@ -254,7 +254,7 @@ void init_gv(GV gv) {
 
       // Initialize ifd_bufpool
       gv->ifd_bufpool[i] = (char*) malloc(sizeof(char) * max_msg_size);
-      gv->ifd_bufpool_msg_size[i] = 0;
+      // gv->ifd_bufpool_msg_size[i] = 0;
 
       gv->ifd_last_pos[i] = 0;     // Initialize gv->ifd_last_pos
 

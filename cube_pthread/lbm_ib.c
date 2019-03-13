@@ -25,10 +25,10 @@
 #include <string.h>
 
 // #define DEBUG_PRINT
-#define SAVE
-// #define USE_CATALYST
-#define USE_FV
+// #define SAVE
 // #define DUMP_VERIFY
+// #define USE_CATALYST
+// #define USE_FV
 // #define VERIFY
 #define PI 3.14159265358979
 /*
@@ -3125,6 +3125,10 @@ void* do_thread(void* v){
   int my_rank;
   int count = 0;
 
+  double t0, t1;
+  double t2=0, t3=0, t4=0, t5=0, t6=0, tail=0;
+  double t00, t11, t4_1=0, t4_2=0, t4_3=0, t4_4=0;
+
 #ifdef DEBUG_PRINT
   printf("Inside do_thread :Started by Threadid: %d\n",lv->tid);
 #endif //DEBUG_PRINT
@@ -3143,8 +3147,13 @@ void* do_thread(void* v){
   save_fluid_sub_grid_cord_use_fv(gv, 0, 0, 0, gv->fluid_grid->x_dim, gv->fluid_grid->y_dim, gv->fluid_grid->z_dim, filename);
   }
 #endif
+   double startTime = get_cur_time();
 
    while (gv->time <= gv->TIME_STOP) {
+
+     t0 = get_cur_time();
+
+    /******************* Part-1: Fiber compute force locally *******************/    
      #ifdef DEBUG_PRINT
      printf("\n\nStart time step %d ...\n", gv->time);
      #endif //DEBUG_PRINT
@@ -3249,6 +3258,13 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
 #endif
 
+     t1 = get_cur_time();
+     t2 += t1 - t0;
+     /**************************************Part-1: end **************************************/
+
+     /******************* Part-2: Fiber spread force to influential fluid *******************/
+     t0 = get_cur_time();
+
      get_influentialdomain_fluid_grid_and_SpreadForce(lv);
      #ifdef DEBUG_PRINT
      printf("After get_influence_domain\n");
@@ -3263,6 +3279,10 @@ void* do_thread(void* v){
      print_fiber_sub_grid(gv,51, 51, 51, 51);*/
     // print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z,gv->cube_size);
      //print_fiber_sub_grid(gv,lookup_fiber_start_y, lookup_fiber_start_z, lookup_fiber_end_y, lookup_fiber_end_z);
+
+
+     t1 = get_cur_time();
+     t3 += t1 - t0;
 
       //Error Chek#5
      pthread_barrier_wait(&(gv->barr));
@@ -3287,6 +3307,12 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
 #endif
 
+    /**************************************Part-2: end **************************************/   
+
+    /******************************** Part-3: Fluid streaming *******************************/
+    t0 = get_cur_time();
+
+    t00 = get_cur_time();
     compute_eqlbrmdistrfuncDF1(lv);
     #ifdef DEBUG_PRINT
     printf("After compute DF1 \n");
@@ -3310,6 +3336,9 @@ void* do_thread(void* v){
         exit(1);
     }*/
 
+    t11 = get_cur_time();
+    t4_1 += t11 - t00;
+
 #ifdef VERIFY //Verify results
     if (tid == 0){
       my_rank = 0;
@@ -3319,6 +3348,8 @@ void* do_thread(void* v){
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
+
+    t00 = get_cur_time();
 
     stream_distrfunc(lv);
     #ifdef DEBUG_PRINT
@@ -3354,6 +3385,10 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
 #endif
 
+    t11 = get_cur_time();
+    t4_2 += t11 - t00;
+
+    t00 = get_cur_time();
     bounceback_rigidwalls(lv);
     #ifdef DEBUG_PRINT
     printf("After bounceback\n");
@@ -3387,7 +3422,10 @@ void* do_thread(void* v){
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
+    t11 = get_cur_time();
+    t4_3 += t11 - t00;
 
+    t00 = get_cur_time();
     compute_rho_and_u(lv);
     #ifdef DEBUG_PRINT
     printf("After compute_rho_and_u\n");
@@ -3420,8 +3458,17 @@ void* do_thread(void* v){
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
+    t11 = get_cur_time();
+    t4_4 += t11 - t00;
 
-// VERIFY
+    t1 = get_cur_time();
+    t4 += t1 - t0;
+
+
+    /**************************************Part-3: end **************************************/ 
+
+    /******************************** Part-4: Fluid to Fiber velocity *******************************/
+     t0 = get_cur_time();
      //compute_womega(gv) here
      moveFiberSheet(lv);
      #ifdef DEBUG_PRINT
@@ -3439,7 +3486,8 @@ void* do_thread(void* v){
      printf("LOOKUp INDICES START\n");*/
      //print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z,gv->cube_size);
      //print_fiber_sub_grid(gv,lookup_fiber_start_y, lookup_fiber_start_z, lookup_fiber_end_y, lookup_fiber_end_z);
-
+     t1 = get_cur_time();
+     t5 += t1 - t0;
       //Error Chek#5
      pthread_barrier_wait(&(gv->barr));
     /* barrcheck = pthread_barrier_wait(&barr);
@@ -3464,6 +3512,11 @@ void* do_thread(void* v){
     }
     pthread_barrier_wait(&(gv->barr));
 #endif
+
+    /**************************************Part-4: end **************************************/
+
+    /******************************** Part-5: Fluid wrap up *******************************/
+    t0 = get_cur_time();
 
      copy_inout_to_df2(lv);
      #ifdef DEBUG_PRINT
@@ -3532,6 +3585,10 @@ void* do_thread(void* v){
 
     pthread_barrier_wait(&(gv->barr));
 
+    t1 = get_cur_time();
+    t6 += t1 - t0;
+    /**************************************Part-5: end **************************************/
+
 #ifdef SAVE
     if (tid == 0 && ((gv->time % gv->dump == 0) || (gv->time==1))){
 #if 1
@@ -3540,7 +3597,7 @@ void* do_thread(void* v){
 #ifdef DUMP_VERIFY
       sprintf(filename, "Fluid%d_dump_step%d.dat", my_rank, gv->time);
       // save_fluid_sub_grid(gv, 0, 0, 0, gv->fluid_grid->x_dim - 1, gv->fluid_grid->y_dim - 1, gv->fluid_grid->z_dim - 1, filename);
-      save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
+      // save_fluid_sub_grid(gv, 19, 20, 10, 22, 25, 33, filename);
 #endif
 
 #ifdef USE_CATALYST
@@ -3598,6 +3655,16 @@ void* do_thread(void* v){
     //print_fluid_sub_grid(gv,lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z, lookup_fluid_end_x, lookup_fluid_end_y, lookup_fluid_end_z);
      //print_fiber_sub_grid(gv,lookup_fiber_start_y, lookup_fiber_start_z, lookup_fiber_end_y, lookup_fiber_end_z);
    }//while ends
+
+   double endTime = get_cur_time();
+
+   printf("tid%d: T_comp_F=%.3f, T_Sprd_F=%.3f, \
+T_stream=%.3f, T_4_1=%.3f, T_4_2=%.3f, T4_3=%.3f, T4_4=%.3f, \
+T_Sprd_Vel=%.3f, T_tail=%.3f, total=%.3f\n",
+        tid, t2, t3, 
+        t4, t4_1, t4_2, t4_3, t4_4,
+        t5, t6, endTime-startTime);
+
    return NULL;
 }
 

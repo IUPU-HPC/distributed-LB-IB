@@ -25,7 +25,7 @@ struct Timer {
 public:
   static double time_elapsed;
   
-  static inline double get_cur_time()
+  static double get_cur_time()
   {
     struct timeval tv;
     double t;
@@ -35,13 +35,13 @@ public:
     return t;
   }
   
-  static inline double time_start()
+  static double time_start()
   {
     time_elapsed = get_cur_time();
     return time_elapsed;
   }
   
-  static inline double time_end()
+  static double time_end()
   {
     time_elapsed = get_cur_time() - time_elapsed;
     return time_elapsed;
