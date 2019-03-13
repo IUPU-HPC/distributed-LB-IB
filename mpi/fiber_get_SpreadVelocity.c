@@ -155,9 +155,13 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
       }
     }
+
     double time_elapsed = Timer::time_end();
-    printf("Fiber task%d: recv_velocity_msg_time=%f\n", my_rank, time_elapsed);
+
+#ifdef PERF    
+    printf("Fiber task%d: T_recv_vel_msg=%f\n", my_rank, time_elapsed);
     fflush(stdout);
+#endif
   }
 
   // other fiber threads wait until tid=0 complete receive
@@ -256,26 +260,31 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   fclose(oFile);
 #endif
 
-  // if(tid == 0){
+#if 0
+  if(tid == 0){
   	printf("Fiber%dtid%d prepare to final update location, t_search=%f\n", my_rank, tid, t_search);
-  // }
-  // for (i = 0; i < total_fibers_row; ++i){
-  //   if (fiber2thread(i, total_fibers_row, total_threads) == tid){
-  //     for (j = 0; j < total_fibers_clmn; ++j){
-  //       fiberarray[i].nodes[j].x += gv->dt * s1;
-  //     	fiberarray[i].nodes[j].y += gv->dt * s2;
-  //     	fiberarray[i].nodes[j].z += gv->dt * s3;
-  //     } //for fiberclmn ends
-  //   }//if fiber2thread ends
-  // }//for fiber row ends
+  }
+
+  for (i = 0; i < total_fibers_row; ++i){
+    if (fiber2thread(i, total_fibers_row, total_threads) == tid){
+      for (j = 0; j < total_fibers_clmn; ++j){
+        fiberarray[i].nodes[j].x += gv->dt * s1;
+      	fiberarray[i].nodes[j].y += gv->dt * s2;
+      	fiberarray[i].nodes[j].z += gv->dt * s3;
+      } //for fiberclmn ends
+    }//if fiber2thread ends
+  }//for fiber row ends
+#endif
 
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
 
   t3 = Timer::get_cur_time();
 
-  printf("Fiber%dtid%d: T_get_SpreadVelocity=%f\n", gv->taskid, tid, t3 - t2);
+#ifdef PERF
+  printf("Fiber%dtid%d: T_get_Sprd_Vel=%f\n", gv->taskid, tid, t3 - t2);
   fflush(stdout);
+#endif
 
   //reset
   if (tid == 0){
@@ -289,6 +298,6 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   }
 
 #ifdef DEBUG_PRINT
-  // printf("----- Fiber%dtid%d: fiber_get_SpreadVelocity Exit! -----\n", my_rank, tid);
+  printf("----- Fiber%dtid%d: fiber_get_SpreadVelocity Exit! -----\n", my_rank, tid);
 #endif //DEBUG_PRINT
 }

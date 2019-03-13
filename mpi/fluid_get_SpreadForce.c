@@ -21,6 +21,7 @@
  */
 
 #include "do_thread.h"
+#include "timer.h"
 
 /* Step1: Influential domain for force-spreading and velocity interpolation. */
 /* Step2: Do actual force spreading. */
@@ -68,8 +69,10 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
   total_sub_grids = num_cubes_x * num_cubes_y * num_cubes_z;
 
+  double t0 = 0, t1 = 0;
+
   //Annuling Forces on Fluid grid :: Necessary to annul in every time step, because it is between fluid and fiber
-#if 0
+#if 1
   int fluid_mac_rank;
 
   for (BI = 0; BI < num_cubes_x; BI++)
@@ -129,6 +132,8 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 // #ifdef DEBUG_PRINT
 //   printf("**** Fluid task%d_tid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
+    t0 = Timer::get_cur_time();
+
     int position = 0;
     while (position < gv->ifd_recv_count){
 
@@ -178,13 +183,19 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 
     }
     
+    t1 = Timer::get_cur_time();
+
 // #ifdef VERIFY
 //   fclose(oFile);
-// #endif    
+// #endif
+
+#ifdef PERF
+    printf("Fluid%dtid%d: T_search_SpreadForce=%f\n", my_rank, tid, t1-t0);
+#endif //DEBUG_PRINT    
 
   }
 
 #ifdef DEBUG_PRINT
-  printf("**** Fluid task%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
+  printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG and Exit******\n", my_rank);
 #endif //DEBUG_PRINT
 }

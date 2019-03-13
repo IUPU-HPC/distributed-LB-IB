@@ -21,6 +21,7 @@
  */
 
 #include "do_thread.h"
+#include "timer.h"
 
 extern int c[19][3];
 extern double t[19];
@@ -273,6 +274,10 @@ void  stream_distrfunc(LV lv){//df2
   int  fromProc, toProc, my_rank, send_tid;
   my_rank = gv->taskid;
 
+  double t0 = 0, t1 = 0, t2 = 0, t3 = 0;
+
+  t2 = Timer::get_cur_time();
+
   //prepare message
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
@@ -389,6 +394,8 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
     }// if cube2thread ends
   }//BK
 
+  t3 = Timer::get_cur_time();
+
 #ifdef CHECK_STREAM
   printf("Fluid task%d: Pass Prepare streaming msg\n", my_rank);
   fflush(stdout);
@@ -400,6 +407,8 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
   //   MPI_Barrier(MPI_COMM_WORLD);
 
   //send message
+  t0 = Timer::get_cur_time();
+
   for(int iPop = 1; iPop < 19; iPop++){
 #ifdef CHECK_STREAM      
     if (tid == 0){    
@@ -415,7 +424,9 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
     //   MPI_Barrier(MPI_COMM_WORLD);
   }
 
-#if 0
-  printf("****************stream_distfunc() Exit*******\n");
+  t1 = Timer::get_cur_time();
+
+#ifdef PERF
+  printf("Fluid%dtid%d: T_prepare_stream=%f, T_stream=%f\n", my_rank, tid, t3-t2, t1-t0);
 #endif
 }

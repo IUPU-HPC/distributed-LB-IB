@@ -41,7 +41,8 @@ void* do_thread(void* v){
   int num_fluid_tasks = gv->num_fluid_tasks;
   int my_rank = gv->taskid;
   double t0, t1;
-  double t2=0, t2_1=0, t3=0, t3_1=0, t4=0, t5=0, t6=0, tail=0;
+  double t2=0, t3=0, t4=0, t5=0, t6=0, tail=0;
+  double t00, t11, t4_1=0, t4_2=0, t4_3=0, t4_4=0;
   double startTime=0, endTime=0;
   char filename[80];
 
@@ -51,7 +52,7 @@ void* do_thread(void* v){
 
     t0 = get_cur_time();
 
-    // Fiber tasks
+    /******************* Part-1: Fiber compute force locally *******************/
     if (my_rank >= num_fluid_tasks){
 #ifdef DEBUG_PRINT
       if (tid==0){
@@ -90,9 +91,6 @@ void* do_thread(void* v){
       pthread_barrier_wait(&(gv->barr));
 #endif      
 
-      t1 = get_cur_time();
-      t2_1 += t1 - t0;
-
 #ifdef DEBUG_PRINT
     printf("Fiber%dtid%d finish calculate local force\n", my_rank, tid);
 #endif //DEBUG_PRINT
@@ -101,14 +99,16 @@ void* do_thread(void* v){
       // pthread_barrier_wait(&(gv->barr));
     }
 
-    //check whether barrier long is becuase of this
-    if(tid==0){
-      MPI_Barrier(MPI_COMM_WORLD);
-    }
-
     t1 = get_cur_time();
     t2 += t1 - t0;
 
+    if(tid == 0){
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+    /**************************************Part-1: end **************************************/
+
+    /******************* Part-2: Fiber spread force to influential fluid *******************/
+    t0 = get_cur_time();
 
     if (my_rank >= num_fluid_tasks){
 
@@ -119,10 +119,8 @@ void* do_thread(void* v){
       }
 #endif //DEBUG_PRINT
 
-      t0 = get_cur_time();
       fiber_SpreadForce(lv);
-      t1 = get_cur_time();
-      t3_1 += t1 - t0;
+
     }
     else{
 #ifdef DEBUG_PRINT
@@ -132,21 +130,18 @@ void* do_thread(void* v){
       }
 #endif //DEBUG_PRINT
 
-      t0 = get_cur_time();
       fluid_get_SpreadForce(lv);
-      t1 = get_cur_time();
-      t4 += t1- t0;
+
     }
 
     t1 = get_cur_time();
     t3 += t1 - t0;
-    t4 += t1 - t0;
 
-    pthread_barrier_wait(&(gv->barr));
+    pthread_barrier_wait(&(gv->barr));    
     if(tid==0){
       MPI_Barrier(MPI_COMM_WORLD);
     }
-    
+
 #ifdef DEBUG_PRINT
     if(tid==0){
       printf("Task%d: After fluid_get_SpreadForce\n", my_rank);
@@ -171,12 +166,15 @@ void* do_thread(void* v){
       pthread_barrier_wait(&(gv->barr));
     }
 #endif
+    /**************************************Part-2: end **************************************/   
 
-#if 1
-
+    /******************************** Part-3: Fluid streaming *******************************/
     // Fluid tasks
+    t0 = get_cur_time();
+
     if(my_rank < num_fluid_tasks){
 
+      t00 = get_cur_time();
 #ifdef DEBUG_PRINT
       if(tid==0){
         printf("Fluid%d: Start compute_DF1\n", my_rank);
@@ -200,7 +198,10 @@ void* do_thread(void* v){
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
+      t11 = get_cur_time();
+      t4_1 += t11 - t00;
 
+      t00 = get_cur_time();
 #ifdef DEBUG_PRINT
       if(tid==0){
         printf("Fluid%d: Start streaming\n", my_rank);
@@ -225,7 +226,10 @@ void* do_thread(void* v){
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
+      t11 = get_cur_time();
+      t4_2 += t11 - t00;
 
+      t00 = get_cur_time();
       bounceback_rigidwalls(lv);
       pthread_barrier_wait(&(gv->barr));
       // if (tid == 0)
@@ -241,7 +245,10 @@ void* do_thread(void* v){
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
+      t11 = get_cur_time();
+      t4_3 += t11 - t00;
 
+      t00 = get_cur_time();
       compute_rho_and_u(lv);
       pthread_barrier_wait(&(gv->barr));
       // if (tid == 0)
@@ -257,14 +264,22 @@ void* do_thread(void* v){
       }
       pthread_barrier_wait(&(gv->barr));
 #endif
+      t11 = get_cur_time();
+      t4_4 += t11 - t00;
+
     }
 
-// VERIFY
+    t1 = get_cur_time();
+    t4 += t1 - t0;
+
     // pthread_barrier_wait(&(gv->barr));
     if (tid == 0)
       MPI_Barrier(MPI_COMM_WORLD);
     pthread_barrier_wait(&(gv->barr));
 
+    /**************************************Part-3: end **************************************/ 
+
+    /******************************** Part-4: Fluid to Fiber velocity *******************************/
     // move_fiber
     if (my_rank < num_fluid_tasks){
       t0 = get_cur_time();
@@ -276,7 +291,7 @@ void* do_thread(void* v){
       t0 = get_cur_time();
       fiber_get_SpreadVelocity(lv);
       t1 = get_cur_time();
-      t6 += t1 - t0;
+      t5 += t1 - t0;
     }
 
     pthread_barrier_wait(&(gv->barr));
@@ -306,7 +321,12 @@ void* do_thread(void* v){
     }
 #endif
 
+    /**************************************Part-4: end **************************************/
+
+    /******************************** Part-5: Fluid wrap up *******************************/
     // Fluid tasks
+    t0 = get_cur_time();
+
     if(my_rank < num_fluid_tasks){
       copy_inout_to_df2(lv);
       pthread_barrier_wait(&(gv->barr));
@@ -333,7 +353,9 @@ void* do_thread(void* v){
 #endif //DEBUG_PRINT
     }
 
-// VERIFY
+    t1 = get_cur_time();
+    t6 += t1 - t0;
+    /**************************************Part-5: end **************************************/
 
 #ifdef SAVE
     if (tid == 0 && (gv->time % gv->dump == 0)){
@@ -352,8 +374,6 @@ void* do_thread(void* v){
       }
     }
     pthread_barrier_wait(&(gv->barr));
-#endif
-
 #endif
 
 #if 1
@@ -395,13 +415,17 @@ void* do_thread(void* v){
 
   // if(tid == 0){
     if(my_rank >= num_fluid_tasks){
-      printf("Fiber%dtid%d: compute_force=%.3f || %.3f, fiber_SpreadForce=%.3f || %.3f, fiber_get_SpreadVelocity=%.3f, tail=%.3f, total=%.3f\n",
-        my_rank, tid, t2, t2_1, t3, t3_1, t6, tail, endTime-startTime);
+      printf("Fiber%dtid%d: T_comp_F=%.3f, T_Sprd_F=%.3f, T_get_Sprd_Vel=%.3f, T_barr=%.3f, total=%.3f\n",
+        my_rank, tid, t2, t3, t5, tail, endTime-startTime);
       fflush(stdout);
     }
     else{
-      printf("Fluid%dtid%d: t2=%.3f, fluid_get_SpreadForce=%.3f, fluid_SpreadVelocity=%.3f, tail=%.3f, total=%.3f\n",
-        my_rank, tid, t2, t4, t5, tail, endTime-startTime);
+      printf("Fluid%dtid%d: T_wait=%.3f, T_get_Sprd_F=%.3f, \
+T_stream=%.3f, T_4_1=%.3f, T_4_2=%.3f, T4_3=%.3f, T4_4=%.3f, \
+T_Sprd_Vel=%.3f, T_tail=%.3f, T_barr=%.3f, total=%.3f\n",
+        my_rank, tid, t2, t3, 
+        t4, t4_1, t4_2, t4_3, t4_4,
+        t5, t6, tail, endTime-startTime);
       fflush(stdout);
     }
   // }
