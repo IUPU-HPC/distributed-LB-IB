@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include <array>
+#include <vector>
 #include <map>
 #include <iostream>
 
@@ -60,7 +62,7 @@
 */
 
 #define PERF
-// #define SAVE
+#define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY
 // #define CHECK_STREAM
@@ -183,7 +185,8 @@ typedef struct fluid_grid_t {
   Sub_Fluidgrid* sub_fluid_grid;
 } Fluidgrid;
 
-typedef std::map<long, int> IFDMap;
+// typedef std::map<long, int> IFDMap;
+typedef std::map<std::array<int, 3>, int> IFDMap;
 
 /* Global info */
 typedef struct gv_t {

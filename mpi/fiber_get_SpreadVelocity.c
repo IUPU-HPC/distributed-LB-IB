@@ -23,7 +23,7 @@
 #include "do_thread.h"
 #include "timer.h"
 
-extern IFDMap ifdmap;
+extern std::vector<IFDMap> vecOfIfdmap;
 
 #if 0
 void search_velocity(char* msg, int recv_cnt, int inneri, int innerj, int innerk, double* vel_x, double* vel_y, double* vel_z){
@@ -292,9 +292,9 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
     for (int toProc = 0; toProc < num_fluid_tasks; toProc++){  
       // set ifd_last_pos to default value 0
       gv->ifd_last_pos[toProc] = 0;
-    }
-
-    ifdmap.clear(); //remove all elements from the map container
+      vecOfIfdmap[toProc].clear(); //remove all elements from the map container
+      // std::cout << vecOfIfdmap[toProc].size() << "\n";
+    }   
   }
 
 #ifdef DEBUG_PRINT
