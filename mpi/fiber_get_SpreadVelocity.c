@@ -1,5 +1,5 @@
 /*  -- Distributed-LB-IB --
- * Copyright 2018 Indiana University Purdue University Indianapolis 
+ * Copyright 2018 Indiana University Purdue University Indianapolis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *   
+ *
  * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
  *
  * @file:
@@ -23,7 +23,8 @@
 #include "do_thread.h"
 #include "timer.h"
 
-extern std::vector<IFDMap> vecOfIfdmap;
+extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
+extern MsgMap msg_pos;
 
 #if 0
 void search_velocity(char* msg, int recv_cnt, int inneri, int innerj, int innerk, double* vel_x, double* vel_y, double* vel_z){
@@ -100,6 +101,9 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   // long global_index;
   int ifd_msg_pos;
   // std::pair<IFDMap::iterator, bool> ret;
+  std::array<int, 3> arr3;
+  std::array<int, 2> arr2;
+  int fl_tid;
 
   double t0 = 0, t1 = 0, t_search = 0, t2 = 0, t3 = 0;
 
@@ -111,7 +115,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   dim_x = gv->fluid_grid->x_dim;
   dim_y = gv->fluid_grid->y_dim;
   dim_z = gv->fluid_grid->z_dim;
-  
+
   int cube_size = gv->cube_size;
   int num_cubes_x = gv->fluid_grid->num_cubes_x;
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
@@ -132,14 +136,14 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   if (tid == 0){
     Timer::time_start();
     for (int fromProc = 0; fromProc < num_fluid_tasks; fromProc++){
-      MPI_Recv(gv->ifd_bufpool[fromProc], gv->ifd_max_bufsize, MPI_CHAR, fromProc, 0, MPI_COMM_WORLD, &status);	
+      MPI_Recv(gv->ifd_send_msg[fromProc], gv->ifd_max_bufsize, MPI_CHAR, fromProc, 0, MPI_COMM_WORLD, &status);
       MPI_Get_count(&status, MPI_CHAR, &recv_cnt);
 
       if (recv_cnt > 1){
 
       	assert(recv_cnt == gv->ifd_last_pos[fromProc]);
 
-#ifdef IFD_FLUID2FIBER        
+#ifdef IFD_FLUID2FIBER
         printf("-COUNT- Fiber%d: recv velocity from Fluid%d, recv_cnt=%d, ifd_max_bufsize=%d\n",
           my_rank, fromProc, recv_cnt, gv->ifd_max_bufsize);
         fflush(stdout);
@@ -158,7 +162,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
     double time_elapsed = Timer::time_end();
 
-#ifdef PERF    
+#ifdef PERF
     printf("Fiber task%d: T_recv_vel_msg=%f\n", my_rank, time_elapsed);
     fflush(stdout);
 #endif
@@ -176,8 +180,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   for (i = 0; i < total_fibers_row; ++i){
     if (fiber2thread(i, total_fibers_row, total_threads) == tid){
       for (j = 0; j < total_fibers_clmn; ++j){
-        s1=0; 
-        s2=0; 
+        s1=0;
+        s2=0;
         s3=0;
 
         fibernode = &(fiberarray[i].nodes[j]);
@@ -191,7 +195,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
         for (jj = 0; jj < IFD_SIZE; jj++) //y direction
         for (kk = 0; kk < IFD_SIZE; kk++){//z direction
 
-          X = istart + ii; 
+          X = istart + ii;
           Y = jstart + jj;
           Z = kstart + kk;
 
@@ -206,19 +210,21 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
 #if 0
           BI = inneri / cube_size; //BI should be inneri/cube_size but BI_end seems correct
-          BJ = innerj / cube_size; 
-          BK = innerk / cube_size; 
+          BJ = innerj / cube_size;
+          BK = innerk / cube_size;
           li = inneri % cube_size;
           lj = innerj % cube_size;
           lk = innerk % cube_size;
-            
+
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           //node_idx = (inneri%cube_size) *cube_size*cube_size +(innerj%cube_size) *cube_size +innerk%cube_size;
           node_idx = (li) * cube_size * cube_size +(lj) * cube_size + lk;
 #endif
           //find ifd Fluid toProc
-          ifd_fld_proc = global2task(X, Y, Z, gv);
-          ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk];
+          fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
+          arr2[0] = ifd_fld_proc;
+          arr2[1] = fl_tid;
+          ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk] + msg_pos[arr2];
 
           vel_x = 0;
           vel_y = 0;
@@ -228,21 +234,21 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
           // search_velocity(, gv->ifd_last_pos[ifd_fld_proc], inneri, innerj, innerk, &vel_x, &vel_y, &vel_z); //need to optimize
 
-          vel_x = *((double*)(gv->ifd_bufpool[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3));
-          vel_y = *((double*)(gv->ifd_bufpool[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3 + sizeof(double)));
-          vel_z = *((double*)(gv->ifd_bufpool[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3 + sizeof(double) * 2));
+          vel_x = *((double*)(gv->ifd_send_msg[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3));
+          vel_y = *((double*)(gv->ifd_send_msg[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3 + sizeof(double)));
+          vel_z = *((double*)(gv->ifd_send_msg[ifd_fld_proc] + ifd_msg_pos + sizeof(int) * 3 + sizeof(double) * 2));
 
           t1 = Timer::get_cur_time();
           t_search += t1 - t0;
 
 #ifdef VERIFY
-          fprintf(oFile, "velocity at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n", 
+          fprintf(oFile, "velocity at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n",
                       i, j, X, Y, Z, vel_x, vel_y, vel_z);
 #endif
 
           /*notice the difference for spreading and for interpolation here, cf is used for spreading*/
           /*factors in nondimensionalizing h^(-3) and dxdydz cancel each other*/
-          s1 += vel_x * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64; 
+          s1 += vel_x * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
           s2 += vel_y * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
           s3 += vel_z * (1.0+cos(c_x*rx)) * (1.0+cos(c_y*ry)) * (1.0+cos(c_z*rz)) * c_64;
 
@@ -288,13 +294,22 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
   //reset
   if (tid == 0){
-    gv->num_influenced_macs = 0;
-    for (int toProc = 0; toProc < num_fluid_tasks; toProc++){  
+    gv->num_influenced_proc = 0;
+    for (int toProc = 0; toProc < num_fluid_tasks; toProc++){
       // set ifd_last_pos to default value 0
       gv->ifd_last_pos[toProc] = 0;
-      vecOfIfdmap[toProc].clear(); //remove all elements from the map container
-      // std::cout << vecOfIfdmap[toProc].size() << "\n";
-    }   
+      msg_pos.clear();
+
+      for (j = 0; j < total_threads; j++){
+        gv->ifd_last_pos_proc_thd[i][j] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
+
+        Ifdmap_proc_thd[toProc][j].clear(); //remove all elements from the map container
+        // std::cout << Ifdmap_proc_thd[toProc][j].size() << "\n";
+
+        // free gv->ifd_fluid_thread_msg[i][j]
+
+      }
+    }
   }
 
 #ifdef DEBUG_PRINT

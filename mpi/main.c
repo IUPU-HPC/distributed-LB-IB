@@ -33,7 +33,8 @@ void needs_argument(int i, int argc, const char *flag) {
 }
 
 // IFDMap ifdmap;
-std::vector<IFDMap> vecOfIfdmap;
+std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
+MsgMap msg_pos;
 
 int main(int argc, char* argv[]) {
 
@@ -41,14 +42,20 @@ int main(int argc, char* argv[]) {
   GV gv;
   gv = (GV) calloc (1, sizeof(*gv));
 
-#if 0
+#if 1
   int X=0, Y=0, Z=0;
   std::array<int, 3> a;
   a[0]=X; a[1]=Y; a[2]=Z;
-  vecOfIfdmap.resize(1);
-  vecOfIfdmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
-  std::cout << vecOfIfdmap[0].size() << "\n";
-  std::cout << "Max size is " << vecOfIfdmap[0].max_size() << "\n";
+
+  std::vector<IFDMap> threadmap;
+  threadmap.resize(1);
+  threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
+  std::cout << "thread[0] size = "<< threadmap[0].size() << "\n";
+  std::cout << "Max size is " << threadmap[0].max_size() << "\n";
+
+  Ifdmap_proc_thd.push_back(threadmap);
+  std::cout << "Proc[0] size = "<< Ifdmap_proc_thd[0].size() << "\n";
+  std::cout << "Ifdmap_proc_thd[0][0] size = "<< Ifdmap_proc_thd[0][0].size() << "\n";
 #endif
 
   // Parse command line

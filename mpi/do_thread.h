@@ -187,6 +187,7 @@ typedef struct fluid_grid_t {
 
 // typedef std::map<long, int> IFDMap;
 typedef std::map<std::array<int, 3>, int> IFDMap;
+typedef std::map<std::array<int, 2>, int> MsgMap;
 
 /* Global info */
 typedef struct gv_t {
@@ -225,14 +226,16 @@ typedef struct gv_t {
   MPI_Comm cartcomm;
 
   // Fiber <--> Fluid influential domain
-  char** ifd_bufpool;          //fiber task pack message in bufferpool, and then send message to fluid tasks
+  char** ifd_send_msg;          //fiber task pack message in bufferpool, and then send message to fluid tasks
   // int* ifd_bufpool_msg_size;  //each message size
-  int* ifd_last_pos;          //Track last position of each fluid process's buffer
+  int* ifd_last_pos; // each message size, last position
+  int** ifd_last_pos_proc_thd;          //Track last position of each fluid thread's send msg buffer
+  char*** ifd_fluid_thread_msg;
   char* ifd_recv_buf;
   int ifd_recv_count;          //Track number of char in received message
-  pthread_mutex_t* lock_ifd_fluid_task_msg;
-  int* influenced_macs;        //Fluid taskid of influential domain
-  int num_influenced_macs;
+  pthread_mutex_t** lock_ifd_proc_thd; // each fluid and each thread within that fluid has a lock
+  // int* influenced_macs;        //Fluid taskid of influential domain
+  int num_influenced_proc;
   int ifd_max_bufsize;
   // IFDMap ifdmap;
 

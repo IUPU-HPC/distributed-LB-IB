@@ -29,7 +29,7 @@ CXXFLAGS += -std=c++11 -fPIC
 
 CC      ?= mpicc
 CFLAGS ?=
-CFLAGS += -std=c11 -fPIC
+CFLAGS += -fPIC
 
 LDFLAGS ?=
 

@@ -1,5 +1,5 @@
 /*  -- Distributed-LB-IB --
- * Copyright 2018 Indiana University Purdue University Indianapolis 
+ * Copyright 2018 Indiana University Purdue University Indianapolis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *   
+ *
  * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
  *
  * @file:
@@ -22,7 +22,7 @@
 
 #include <do_thread.h>
 
-extern std::vector<IFDMap> vecOfIfdmap;
+extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
 
 int c[19][3] = { //{x, y, z}
             { 0, 0, 0},
@@ -110,7 +110,7 @@ void init_stream_msg(GV gv, int dir, int points){
     fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
     exit(1);
   }
-  
+
   gv->stream_msg[dir] = (char*) malloc ((sizeof(int)* 4 + sizeof(double))* points);
   // printf("Fluid%d: Init stream_msg[%d] = %d\n", gv->taskid, dir, (sizeof(int)* 4 + sizeof(double))* points);
 
@@ -135,6 +135,8 @@ void init_gv(GV gv) {
   Q = gv->ty;
   R = gv->tz;
 
+  int total_threads = P*Q*R;
+
   Px = gv->num_fluid_task_x;
   Py = gv->num_fluid_task_y;
   Pz = gv->num_fluid_task_z;
@@ -151,15 +153,15 @@ void init_gv(GV gv) {
   // printf("Task%d: Enter init_gv\n", my_rank);
 
   // determine the ifd_max_bufsize received by a fluid task
-  // int ifd_size = 64; //4*4*4, x,y,z: (-2,2)
   gv->ifd_max_bufsize = 0;
-  for(i = 0; i < num_fiber_tasks; i++){
+  for (i = 0; i < num_fiber_tasks; i++){
+    // an estimate of this ifd_max_bufsize
     tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE * IFD_SIZE *
-                        (gv->fiber_shape->sheets[i].width + IFD_SIZE) * 
+                        (gv->fiber_shape->sheets[i].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
-    // printf("tmp=%d, row=%d, col=%d\n", 
+    // printf("tmp=%d, row=%d, col=%d\n",
       // tmp, gv->fiber_shape->sheets[i].width,gv->fiber_shape->sheets[i].height);
-    if(tmp > gv->ifd_max_bufsize)
+    if (tmp > gv->ifd_max_bufsize)
       gv->ifd_max_bufsize = tmp;
   }
   // printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
@@ -186,7 +188,7 @@ void init_gv(GV gv) {
       printf("Fluid%d: stream_recv_max_bufsize=%d\n", my_rank, gv->stream_recv_max_bufsize);
       fflush(stdout);
     }
-    
+
     int destCoord[3], srcCoord[3];
     for (int streamdir = 0; streamdir < 19; ++streamdir) {
       destCoord[0] = gv->rankCoord[0] + c[streamdir][0];
@@ -205,13 +207,13 @@ void init_gv(GV gv) {
       gv->streamSrc[streamdir] = src;
 
 #if 1
-      printf("Fluid%2d: streamdir=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n", 
+      printf("Fluid%2d: streamdir=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n",
         gv->rank[0], streamdir, destCoord[0], destCoord[1], destCoord[2], dest,
         srcCoord[0], srcCoord[1], srcCoord[2], src);
       fflush(stdout);
 #endif
       // if(gv->rank[0] != dest){
-        
+
       //   gv->streamdir[streamdir] = dest;
 
       //   // if(streamdir < 7){
@@ -234,50 +236,64 @@ void init_gv(GV gv) {
   //TODO: for all the fiber sheets, shift.
   if (gv->taskid >= gv->num_fluid_tasks){
 
-    // fiber taskid in group = gv->rank[1]
-    for (i = 0; i < gv->fiber_shape->sheets[gv->rank[1]].num_rows; i++) {
-      for (j = 0; j < gv->fiber_shape->sheets[gv->rank[1]].num_cols; j++){
-        gv->fiber_shape->sheets[gv->rank[1]].fibers[i].nodes[j].x += gv->u_l*gv->dt;
+    // fiber taskid in group =
+    int taskid_fiber_group = gv->rank[1];
+    for (i = 0; i < gv->fiber_shape->sheets[taskid_fiber_group].num_rows; i++) {
+      for (j = 0; j < gv->fiber_shape->sheets[taskid_fiber_group].num_cols; j++){
+        gv->fiber_shape->sheets[taskid_fiber_group].fibers[i].nodes[j].x += gv->u_l*gv->dt;
         //TODO: if v_l, w_l !=0, then ADD .y, .z = v_l, w_l times gv->dt.
       }
     }
 
     /*MPI changes*/
-    vecOfIfdmap.resize(num_fluid_tasks);
-    gv->ifd_bufpool = (char **) malloc(sizeof(char*) * num_fluid_tasks);
-    // gv->ifd_bufpool_msg_size = (int *) malloc(sizeof(int) * num_fluid_tasks);
+
+    Ifdmap_proc_thd.resize(num_fluid_tasks);
+    gv->ifd_send_msg = (char **) malloc(sizeof(char*) * num_fluid_tasks);
+    gv->num_influenced_proc = 0;
     gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
-    gv->lock_ifd_fluid_task_msg = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * num_fluid_tasks);
-    gv->num_influenced_macs = 0;
-    gv->influenced_macs = (int*) malloc(sizeof(int) * num_fluid_tasks);
+
+    // change to fluid thread
+    gv->ifd_last_pos_proc_thd = (int**) malloc(sizeof(int*) * num_fluid_tasks);
+    gv->lock_ifd_proc_thd = (pthread_mutex_t**) malloc(sizeof(pthread_mutex_t*) * num_fluid_tasks);
+    gv->ifd_fluid_thread_msg = (char***) malloc(sizeof(char**) * num_fluid_tasks);
 
     int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * IFD_SIZE * IFD_SIZE *
-                        (gv->fiber_shape->sheets[gv->rank[1]].width + IFD_SIZE) * 
+                        (gv->fiber_shape->sheets[gv->rank[1]].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[gv->rank[1]].height + IFD_SIZE);
 
-    printf("Fiber%d of %d: Init width+4=%d, height+4=%d, max_msg_size=%d\n", 
-      gv->rank[1], gv->size[1], 
-      gv->fiber_shape->sheets[gv->rank[1]].width, 
-      gv->fiber_shape->sheets[gv->rank[1]].height, 
-      max_msg_size);                    
+    printf("Fiber%d of %d: Init width+4=%d, height+4=%d, max_msg_size=%d\n",
+      gv->rank[1], gv->size[1],
+      gv->fiber_shape->sheets[gv->rank[1]].width+4,
+      gv->fiber_shape->sheets[gv->rank[1]].height+4,
+      max_msg_size);
 
     for (i = 0; i < num_fluid_tasks; i++){
 
-      // Initialize ifd_bufpool
-      gv->ifd_bufpool[i] = (char*) malloc(sizeof(char) * max_msg_size);
-      // gv->ifd_bufpool_msg_size[i] = 0;
+      // Initialize ifd_send_msg
+      gv->ifd_send_msg[i] = (char*) malloc(sizeof(char) * max_msg_size);
+      Ifdmap_proc_thd[i].resize(total_threads);
+      gv->ifd_last_pos[i] = 0;
 
-      gv->ifd_last_pos[i] = 0;     // Initialize gv->ifd_last_pos
+      gv->ifd_last_pos_proc_thd[i] = (int*) malloc(sizeof(int) * total_threads);
+      gv->lock_ifd_proc_thd[i] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
+      gv->ifd_fluid_thread_msg[i] = (char**) malloc(sizeof(char*) * total_threads);
 
-      // Initialize mutex lock_ifd_fluid_task_msg
-      if (pthread_mutex_init(&gv->lock_ifd_fluid_task_msg[i], NULL)){
-        fprintf(stderr, "Unable to initialize lock_ifd_fluid_task_msg mutex\n");
-        exit(1);
+      for (j = 0; j < total_threads; i++){
+        gv->ifd_last_pos_proc_thd[i][j] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
+
+        // Initialize mutex lock_ifd_proc_thd
+        if (pthread_mutex_init(&gv->lock_ifd_proc_thd[i][j], NULL)){
+          fprintf(stderr, "Unable to initialize lock_ifd_proc_thd mutex (%d,%d)\n", i, j);
+          exit(1);
+        }
+
+        // doesn't need to pre allocate so much memory
+        // TODO: test performance allocate when needed
+        gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / total_threads);
       }
-
-      gv->influenced_macs[i] = 0;     // Initialize gv->influenced_macs
-
     }
+
+
   } //endif fiber machine init
 
   // printf("***********Gv Init exit*****\n");
