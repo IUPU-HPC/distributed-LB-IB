@@ -165,10 +165,10 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           
           pthread_mutex_lock(&gv->lock_ifd_fluid_task_msg[ifd_fld_proc]);
 
-          t4 = Timer::get_cur_time();
+          // t4 = Timer::get_cur_time();
           ret = vecOfIfdmap[ifd_fld_proc].insert(std::make_pair(a, gv->ifd_last_pos[ifd_fld_proc]));
-          t5 = Timer::get_cur_time();
-          t_insert += t5 - t4;
+          // t5 = Timer::get_cur_time();
+          // t_insert += t5 - t4;
 
           if (ret.second == true){
 
@@ -189,7 +189,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
             gv->ifd_last_pos[ifd_fld_proc] += sizeof(int) * 3 + sizeof(double) * 3;
           }
           else{ //already exist
-            t4 = Timer::get_cur_time();
+            // t4 = Timer::get_cur_time();
             // auto res = vecOfIfdmap[ifd_fld_proc].find(a);
             // ifd_msg_pos = res->second;
 
@@ -200,8 +200,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
             tid, X, Y, Z, ifd_fld_proc, ifd_msg_pos, vecOfIfdmap[ifd_fld_proc].size());
             fflush(stdout);
 #endif            
-            t5 = Timer::get_cur_time();
-            t_find += t5 - t4;
+            // t5 = Timer::get_cur_time();
+            // t_find += t5 - t4;
 
             *((double*)(msg + ifd_msg_pos + sizeof(int) * 3))                      += elastic_force_x;
             *((double*)(msg + ifd_msg_pos + sizeof(int) * 3 + sizeof(double)))     += elastic_force_y;

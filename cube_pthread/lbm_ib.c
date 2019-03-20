@@ -25,8 +25,8 @@
 #include <string.h>
 
 // #define DEBUG_PRINT
-// #define SAVE
-// #define DUMP_VERIFY
+#define SAVE
+#define DUMP_VERIFY
 // #define USE_CATALYST
 // #define USE_FV
 // #define VERIFY
@@ -3153,7 +3153,7 @@ void* do_thread(void* v){
 
      t0 = get_cur_time();
 
-    /******************* Part-1: Fiber compute force locally *******************/    
+    /******************* Part-1: Fiber compute force locally *******************/
      #ifdef DEBUG_PRINT
      printf("\n\nStart time step %d ...\n", gv->time);
      #endif //DEBUG_PRINT
@@ -3307,7 +3307,7 @@ void* do_thread(void* v){
     pthread_barrier_wait(&(gv->barr));
 #endif
 
-    /**************************************Part-2: end **************************************/   
+    /**************************************Part-2: end **************************************/
 
     /******************************** Part-3: Fluid streaming *******************************/
     t0 = get_cur_time();
@@ -3465,7 +3465,7 @@ void* do_thread(void* v){
     t4 += t1 - t0;
 
 
-    /**************************************Part-3: end **************************************/ 
+    /**************************************Part-3: end **************************************/
 
     /******************************** Part-4: Fluid to Fiber velocity *******************************/
      t0 = get_cur_time();
@@ -3661,7 +3661,7 @@ void* do_thread(void* v){
    printf("tid%d: T_comp_F=%.3f, T_Sprd_F=%.3f, \
 T_stream=%.3f, T_4_1=%.3f, T_4_2=%.3f, T4_3=%.3f, T4_4=%.3f, \
 T_Sprd_Vel=%.3f, T_tail=%.3f, total=%.3f\n",
-        tid, t2, t3, 
+        tid, t2, t3,
         t4, t4_1, t4_2, t4_3, t4_4,
         t5, t6, endTime-startTime);
 

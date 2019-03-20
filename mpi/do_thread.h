@@ -61,8 +61,8 @@
 * Using Block Distribution on Threads for both 1D (FIber to thread:fiber2thread ) and 3D (Fluid_Sub_cube to thread :cube2thread)
 */
 
-#define PERF
-#define SAVE
+// #define PERF
+// #define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY
 // #define CHECK_STREAM
