@@ -1,5 +1,5 @@
 /*  -- Distributed-LB-IB --
- * Copyright 2018 Indiana University Purdue University Indianapolis 
+ * Copyright 2018 Indiana University Purdue University Indianapolis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *   
+ *
  * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
  *
  * @file:
@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
   GV gv;
   gv = (GV) calloc (1, sizeof(*gv));
 
+#if 0
   int X=0, Y=0, Z=0;
   std::array<int, 3> a;
   a[0]=X; a[1]=Y; a[2]=Z;
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) {
   vecOfIfdmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
   std::cout << vecOfIfdmap[0].size() << "\n";
   std::cout << "Max size is " << vecOfIfdmap[0].max_size() << "\n";
+#endif
 
   // Parse command line
   for (int i = 1; i < argc; i++) {
@@ -244,17 +246,17 @@ int main(int argc, char* argv[]) {
   }
 
   //Error Check for Fluid grid can be divided by fluid_task
-  if ( (gv->fluid_grid->z_dim % gv->num_fluid_task_z != 0) || 
-       (gv->fluid_grid->y_dim % gv->num_fluid_task_y != 0) || 
+  if ( (gv->fluid_grid->z_dim % gv->num_fluid_task_z != 0) ||
+       (gv->fluid_grid->y_dim % gv->num_fluid_task_y != 0) ||
        (gv->fluid_grid->x_dim % gv->num_fluid_task_x != 0) ){
-    fprintf(stderr, "Check Fluid_task x: %d y: %d z: %d\n", 
+    fprintf(stderr, "Check Fluid_task x: %d y: %d z: %d\n",
                     gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
     exit(1);
   }
 
   //Error Check for Fluid grid can be divided by thread_per_task_xyz
-  if ( (gv->fluid_grid->z_dim % gv->tz != 0) || 
-       (gv->fluid_grid->y_dim % gv->ty != 0) || 
+  if ( (gv->fluid_grid->z_dim % gv->tz != 0) ||
+       (gv->fluid_grid->y_dim % gv->ty != 0) ||
        (gv->fluid_grid->x_dim % gv->tx != 0) ){
     fprintf(stderr, "Check Fluid_grid_z: %ld and tz: %d Should be multiple of 2 \n", gv->fluid_grid->z_dim, gv->tz);
     fprintf(stderr, "Check Fluid_grid_y: %ld and ty: %d Should be multiple of 2 \n", gv->fluid_grid->y_dim, gv->ty);
@@ -263,11 +265,11 @@ int main(int argc, char* argv[]) {
   }
 
   //Error check for Fluid grid can be divided by cube_size
-  if ( (gv->fluid_grid->x_dim % (gv->cube_size) != 0) || 
-       (gv->fluid_grid->y_dim % (gv->cube_size) != 0) || 
+  if ( (gv->fluid_grid->x_dim % (gv->cube_size) != 0) ||
+       (gv->fluid_grid->y_dim % (gv->cube_size) != 0) ||
        (gv->fluid_grid->z_dim % (gv->cube_size) != 0) ){
     fprintf(stderr, "cube_size: %d \
-                     The cubes should be distributed equally on the entire fluid grid\n", 
+                     The cubes should be distributed equally on the entire fluid grid\n",
                     gv->cube_size);
     exit(1);
   }
@@ -306,11 +308,11 @@ int main(int argc, char* argv[]) {
   if (gv->taskid == 0){
     printf("***********distributed-LB-IB Simulation using Pthreads cube starts************\n");
     printf("provided=%d\n", provided);
-    printf("    Fluidgrid: z %ld, y %ld, x %ld\n", 
+    printf("    Fluidgrid: z %ld, y %ld, x %ld\n",
       gv->fluid_grid->z_dim, gv->fluid_grid->y_dim, gv->fluid_grid->x_dim);
-    printf("    Fluid task dimension: Px %d, Py %d, Pz %d\n", 
+    printf("    Fluid task dimension: Px %d, Py %d, Pz %d\n",
       gv->num_fluid_task_x, gv->num_fluid_task_y, gv->num_fluid_task_z);
-    printf("    Fluid threads_per_task: x %d, y %d, z %d ; TuningFactor: cube_size %d\n", 
+    printf("    Fluid threads_per_task: x %d, y %d, z %d ; TuningFactor: cube_size %d\n",
       gv->tx, gv->ty, gv->tz, gv->cube_size);
     fflush(stdout);
   }
@@ -323,7 +325,7 @@ int main(int argc, char* argv[]) {
     for(int i = 0; i < gv->fiber_shape->num_sheets; ++i)
       if (gv->taskid == (gv->num_fluid_tasks + i)){
         gen_fiber_sheet(gv->fiber_shape->sheets + i);
-        printf("    Fibersheet %d : width %f, height %f, row %ld, clmn %ld, x0 %f, y0 %f, z0 %f\n ", 
+        printf("    Fibersheet %d : width %f, height %f, row %ld, clmn %ld, x0 %f, y0 %f, z0 %f\n ",
                      i, gv->fiber_shape->sheets[i].width, gv->fiber_shape->sheets[i].height,
                         gv->fiber_shape->sheets[i].num_rows, gv->fiber_shape->sheets[i].num_cols,
                         gv->fiber_shape->sheets[i].x_orig, gv->fiber_shape->sheets[i].y_orig,
@@ -369,16 +371,16 @@ int main(int argc, char* argv[]) {
     printf("Fluid PW[%d]: my_cart_rank PCM[%d], my coords(x,y,z) = (%d, %d, %d)\n",
       gv->rank[0], my_cart_rank, gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2]);
 
-    gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);  
+    gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
   init_gv(gv);
   MPI_Barrier(MPI_COMM_WORLD);
-#ifdef INIT  
+#ifdef INIT
   printf("Task%d Pass init gv!\n", gv->taskid);
   fflush(stdout);
-#endif  
+#endif
 
 #if 0
   //allocating memory for mutex
@@ -393,7 +395,7 @@ int main(int argc, char* argv[]) {
     }
   }
 #endif
-  
+
   // Init barrier
   pthread_barrier_t barr;
   if (pthread_barrier_init(&barr, NULL, gv->threads_per_task)){
@@ -405,7 +407,7 @@ int main(int argc, char* argv[]) {
   // Fiber print corner points
   if (gv->taskid >= gv->num_fluid_tasks){
     printf("Friber task%d gen_fiber_sheet complete!\n", gv->taskid);
-#if 0    
+#if 0
     printf("Printing for Corner Points(z,y) : 0,0 \n");
     print_fiber_sub_grid(gv, 0, 0, 0, 0);
     printf("Printing for Corner Points(z,y) : 51,0 \n");
@@ -421,7 +423,7 @@ int main(int argc, char* argv[]) {
 //     char filename[80];
 //     sprintf(filename, "Fiber%d_init.dat", gv->taskid);
 //     save_fiber_sub_grid(gv, 0, 0, gv->fiber_shape->sheets[0].num_rows - 1, gv->fiber_shape->sheets[0].num_cols - 1, filename);
-// #endif    
+// #endif
   }
   else{
     init_eqlbrmdistrfuncDF0(gv);
@@ -503,7 +505,7 @@ int main(int argc, char* argv[]) {
 
 #if 0
   pthread_mutex_destroy(&gv->lock_Fluid[gv->threads_per_task]);
-#endif  
+#endif
   // Need to do
   // pthread_mutex_destroy(&gv->lock_ifd_fluid_task_msg[gv->threads_per_task]);
   free(gv->fluid_grid->sub_fluid_grid);
