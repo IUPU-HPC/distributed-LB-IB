@@ -157,8 +157,8 @@ void init_gv(GV gv) {
     tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE * IFD_SIZE *
                         (gv->fiber_shape->sheets[i].width + IFD_SIZE) * 
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
-    // printf("tmp=%d, row=%d, col=%d\n", 
-      // tmp, gv->fiber_shape->sheets[i].width,gv->fiber_shape->sheets[i].height);
+    printf("tmp=%d B, width=%f, height=%f\n", 
+      tmp, gv->fiber_shape->sheets[i].width,gv->fiber_shape->sheets[i].height);
     if(tmp > gv->ifd_max_bufsize)
       gv->ifd_max_bufsize = tmp;
   }
@@ -255,10 +255,10 @@ void init_gv(GV gv) {
                         (gv->fiber_shape->sheets[gv->rank[1]].width + IFD_SIZE) * 
                         (gv->fiber_shape->sheets[gv->rank[1]].height + IFD_SIZE);
 
-    printf("Fiber%d of %d: Init width+4=%d, height+4=%d, max_msg_size=%d\n", 
+    printf("Fiber%d of %d: Init width+IFD_SIZE=%f, height+IFD_SIZE=%f, max_msg_size=%d B\n", 
       gv->rank[1], gv->size[1], 
-      gv->fiber_shape->sheets[gv->rank[1]].width, 
-      gv->fiber_shape->sheets[gv->rank[1]].height, 
+      gv->fiber_shape->sheets[gv->rank[1]].width + IFD_SIZE, 
+      gv->fiber_shape->sheets[gv->rank[1]].height + IFD_SIZE, 
       max_msg_size);                    
 
     for (i = 0; i < num_fluid_tasks; i++){
