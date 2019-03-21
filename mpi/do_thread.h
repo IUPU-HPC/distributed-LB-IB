@@ -210,7 +210,7 @@ typedef struct gv_t {
   pthread_t *threads;
   //pthread_mutex_t lock_Fluid;
   /*Lock for every thread for optimisation*/
-  pthread_mutex_t *lock_Fluid;
+  // pthread_mutex_t *lock_Fluid;
   pthread_barrier_t barr; // to put a bariier after every routine and also in some parts of Fiber's force compuatation
 /*PTHREAD_Change*/
 

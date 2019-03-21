@@ -42,20 +42,22 @@ int main(int argc, char* argv[]) {
   GV gv;
   gv = (GV) calloc (1, sizeof(*gv));
 
-#if 1
+#if 0
   int X=0, Y=0, Z=0;
   std::array<int, 3> a;
   a[0]=X; a[1]=Y; a[2]=Z;
 
-  std::vector<IFDMap> threadmap;
-  threadmap.resize(1);
-  threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
-  std::cout << "thread[0] size = "<< threadmap[0].size() << "\n";
-  std::cout << "Max size is " << threadmap[0].max_size() << "\n";
+  for(int i=0; i<3; i++){
+    std::vector<IFDMap> threadmap; //each proc has one threadmap, each thread has a IFDMap
+    threadmap.resize(4);
+    threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
+    std::cout << "thread[0] size = "<< threadmap[0].size() << "\n";
+    std::cout << "Max size is " << threadmap[0].max_size() << "\n";
 
-  Ifdmap_proc_thd.push_back(threadmap);
-  std::cout << "Proc[0] size = "<< Ifdmap_proc_thd[0].size() << "\n";
-  std::cout << "Ifdmap_proc_thd[0][0] size = "<< Ifdmap_proc_thd[0][0].size() << "\n";
+    Ifdmap_proc_thd.push_back(threadmap);
+    printf("Proc[%d] size = %d\n", i, Ifdmap_proc_thd[i].size());
+    std::cout << "Ifdmap_proc_thd[0][0] size = "<< Ifdmap_proc_thd[i][0].size() << "\n";
+  }
 #endif
 
   // Parse command line
@@ -298,6 +300,10 @@ int main(int argc, char* argv[]) {
   fflush(stdout);
 
   gv->num_fluid_tasks = gv->total_tasks - gv->fiber_shape->num_sheets;
+
+  printf("%d: width=%d, height=%d\n",
+      gv->taskid, gv->fiber_shape->sheets[0].width,
+      gv->fiber_shape->sheets[0].height);
 
   int color;
   if(gv->taskid < gv->num_fluid_tasks)

@@ -159,12 +159,13 @@ void init_gv(GV gv) {
     tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE * IFD_SIZE *
                         (gv->fiber_shape->sheets[i].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
-    // printf("tmp=%d, row=%d, col=%d\n",
-      // tmp, gv->fiber_shape->sheets[i].width,gv->fiber_shape->sheets[i].height);
+    printf("%d: tmp=%d, width=%d, height=%d\n",
+      my_rank, tmp, gv->fiber_shape->sheets[0].width,
+      gv->fiber_shape->sheets[0].height);
     if (tmp > gv->ifd_max_bufsize)
       gv->ifd_max_bufsize = tmp;
   }
-  // printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
+  printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
 
   // Fluid task
   if (gv->taskid < gv->num_fluid_tasks){
@@ -206,7 +207,7 @@ void init_gv(GV gv) {
       gv->streamDest[streamdir] = dest;
       gv->streamSrc[streamdir] = src;
 
-#if 1
+#if 0
       printf("Fluid%2d: streamdir=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n",
         gv->rank[0], streamdir, destCoord[0], destCoord[1], destCoord[2], dest,
         srcCoord[0], srcCoord[1], srcCoord[2], src);
@@ -238,6 +239,11 @@ void init_gv(GV gv) {
 
     // fiber taskid in group =
     int taskid_fiber_group = gv->rank[1];
+    printf("taskid_fiber_group=%d, width=%d, height=%d\n", 
+      taskid_fiber_group, 
+      gv->fiber_shape->sheets[taskid_fiber_group].width,
+      gv->fiber_shape->sheets[taskid_fiber_group].height);
+
     for (i = 0; i < gv->fiber_shape->sheets[taskid_fiber_group].num_rows; i++) {
       for (j = 0; j < gv->fiber_shape->sheets[taskid_fiber_group].num_cols; j++){
         gv->fiber_shape->sheets[taskid_fiber_group].fibers[i].nodes[j].x += gv->u_l*gv->dt;
@@ -258,21 +264,36 @@ void init_gv(GV gv) {
     gv->ifd_fluid_thread_msg = (char***) malloc(sizeof(char**) * num_fluid_tasks);
 
     int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * IFD_SIZE * IFD_SIZE *
-                        (gv->fiber_shape->sheets[gv->rank[1]].width + IFD_SIZE) *
-                        (gv->fiber_shape->sheets[gv->rank[1]].height + IFD_SIZE);
+                        (gv->fiber_shape->sheets[taskid_fiber_group].width + IFD_SIZE) *
+                        (gv->fiber_shape->sheets[taskid_fiber_group].height + IFD_SIZE);
 
-    printf("Fiber%d of %d: Init width+4=%d, height+4=%d, max_msg_size=%d\n",
+
+    printf("Fiber%d of %d: Init width+IFD_SIZE=%d, height+IFD_SIZE=%d, max_msg_size=%d\n",
       gv->rank[1], gv->size[1],
-      gv->fiber_shape->sheets[gv->rank[1]].width+4,
-      gv->fiber_shape->sheets[gv->rank[1]].height+4,
+      (gv->fiber_shape->sheets[taskid_fiber_group].width),
+      (gv->fiber_shape->sheets[taskid_fiber_group].height),
       max_msg_size);
 
     for (i = 0; i < num_fluid_tasks; i++){
 
       // Initialize ifd_send_msg
       gv->ifd_send_msg[i] = (char*) malloc(sizeof(char) * max_msg_size);
-      Ifdmap_proc_thd[i].resize(total_threads);
       gv->ifd_last_pos[i] = 0;
+#if 0
+      int X=0, Y=0, Z=0;
+      std::array<int, 3> a;
+      a[0]=X; a[1]=Y; a[2]=Z;
+#endif      
+      std::vector<IFDMap> threadmap;
+      threadmap.resize(total_threads);
+#if 0      
+      threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
+      printf("-- thread[0] size = %d\n", threadmap[0].size());
+#endif
+      // Ifdmap_proc_thd.push_back(threadmap);
+      Ifdmap_proc_thd[i] = threadmap;
+      printf("-- toProc[%d] of %d has num_threadmap = %d\n", 
+        i, Ifdmap_proc_thd.size(), Ifdmap_proc_thd[i].size());
 
       gv->ifd_last_pos_proc_thd[i] = (int*) malloc(sizeof(int) * total_threads);
       gv->lock_ifd_proc_thd[i] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
@@ -287,12 +308,15 @@ void init_gv(GV gv) {
           exit(1);
         }
 
+        printf("-- pass init ifd_last_pos_proc_thd/lock_ifd_proc_thd[%d][%d]\n", 
+          i, j);
         // doesn't need to pre allocate so much memory
         // TODO: test performance allocate when needed
         gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / total_threads);
       }
     }
 
+    printf("***********Fiber Init exit*****\n");
 
   } //endif fiber machine init
 

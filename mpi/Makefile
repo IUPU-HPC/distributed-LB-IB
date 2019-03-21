@@ -1,5 +1,5 @@
 ## -- Distributed-LB-IB --
- # Copyright 2018 Indiana University Purdue University Indianapolis 
+ # Copyright 2018 Indiana University Purdue University Indianapolis
  #
  # Licensed under the Apache License, Version 2.0 (the "License");
  # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  # See the License for the specific language governing permissions and
  # limitations under the License.
- #   
+ #
  # @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
  #
  # @file:
@@ -29,7 +29,7 @@ CXXFLAGS += -std=c++11 -fPIC
 
 CC      ?= mpicc
 CFLAGS ?=
-CFLAGS += -fPIC
+CFLAGS += -std=c11 -fPIC
 
 LDFLAGS ?=
 
