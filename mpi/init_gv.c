@@ -159,13 +159,13 @@ void init_gv(GV gv) {
     tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE * IFD_SIZE *
                         (gv->fiber_shape->sheets[i].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
-    printf("%d: tmp=%d, width=%d, height=%d\n",
+    printf("%d: tmp=%d, width=%f, height=%f\n",
       my_rank, tmp, gv->fiber_shape->sheets[0].width,
       gv->fiber_shape->sheets[0].height);
     if (tmp > gv->ifd_max_bufsize)
       gv->ifd_max_bufsize = tmp;
   }
-  printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
+  // printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
 
   // Fluid task
   if (gv->taskid < gv->num_fluid_tasks){
@@ -239,7 +239,7 @@ void init_gv(GV gv) {
 
     // fiber taskid in group =
     int taskid_fiber_group = gv->rank[1];
-    printf("taskid_fiber_group=%d, width=%d, height=%d\n", 
+    printf("taskid_fiber_group=%d, width=%f, height=%f\n", 
       taskid_fiber_group, 
       gv->fiber_shape->sheets[taskid_fiber_group].width,
       gv->fiber_shape->sheets[taskid_fiber_group].height);
@@ -268,10 +268,10 @@ void init_gv(GV gv) {
                         (gv->fiber_shape->sheets[taskid_fiber_group].height + IFD_SIZE);
 
 
-    printf("Fiber%d of %d: Init width+IFD_SIZE=%d, height+IFD_SIZE=%d, max_msg_size=%d\n",
+    printf("Fiber%d of %d: Init width+IFD_SIZE=%f, height+IFD_SIZE=%f, max_msg_size=%d\n",
       gv->rank[1], gv->size[1],
-      (gv->fiber_shape->sheets[taskid_fiber_group].width),
-      (gv->fiber_shape->sheets[taskid_fiber_group].height),
+      gv->fiber_shape->sheets[taskid_fiber_group].width + IFD_SIZE,
+      gv->fiber_shape->sheets[taskid_fiber_group].height + IFD_SIZE,
       max_msg_size);
 
     for (i = 0; i < num_fluid_tasks; i++){
@@ -299,17 +299,17 @@ void init_gv(GV gv) {
       gv->lock_ifd_proc_thd[i] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
       gv->ifd_fluid_thread_msg[i] = (char**) malloc(sizeof(char*) * total_threads);
 
-      for (j = 0; j < total_threads; i++){
+      for (j = 0; j < total_threads; j++){
         gv->ifd_last_pos_proc_thd[i][j] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
+        // printf("-- pass init ifd_last_pos_proc_thd[%d][%d]\n", i, j);
 
         // Initialize mutex lock_ifd_proc_thd
         if (pthread_mutex_init(&gv->lock_ifd_proc_thd[i][j], NULL)){
           fprintf(stderr, "Unable to initialize lock_ifd_proc_thd mutex (%d,%d)\n", i, j);
           exit(1);
         }
-
-        printf("-- pass init ifd_last_pos_proc_thd/lock_ifd_proc_thd[%d][%d]\n", 
-          i, j);
+        // printf("-- pass init lock_ifd_proc_thd[%d][%d]\n", i, j);
+        
         // doesn't need to pre allocate so much memory
         // TODO: test performance allocate when needed
         gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / total_threads);
