@@ -159,9 +159,12 @@ void init_gv(GV gv) {
     tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE * IFD_SIZE *
                         (gv->fiber_shape->sheets[i].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
-    printf("%d: tmp=%d, width=%f, height=%f\n",
-      my_rank, tmp, gv->fiber_shape->sheets[0].width,
-      gv->fiber_shape->sheets[0].height);
+#if 0
+    printf("%d: tmp=%d, width=%f, height=%f, row=%d, col=%d\n",
+      my_rank, tmp, 
+      gv->fiber_shape->sheets[0].width, gv->fiber_shape->sheets[0].height,
+      gv->fiber_shape->sheets[0].num_rows, gv->fiber_shape->sheets[0].num_cols);
+#endif
     if (tmp > gv->ifd_max_bufsize)
       gv->ifd_max_bufsize = tmp;
   }
@@ -309,7 +312,7 @@ void init_gv(GV gv) {
           exit(1);
         }
         // printf("-- pass init lock_ifd_proc_thd[%d][%d]\n", i, j);
-        
+
         // doesn't need to pre allocate so much memory
         // TODO: test performance allocate when needed
         gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / total_threads);

@@ -442,6 +442,7 @@ int main(int argc, char* argv[]) {
     init_eqlbrmdistrfuncDF0(gv);
     init_df1(gv);
     init_df_inout(gv);
+
 #ifdef INIT
     printf("Fluid task%d init_eqlbrmdistrfuncDF0, init_df1, init_df_inout complete!\n", gv->taskid);
 #endif
@@ -459,9 +460,12 @@ int main(int argc, char* argv[]) {
   // print_fluid_sub_grid(gv, 127, 127, 127, 127, 127, 127, gv->cube_size);
   // print_fluid_cube(gv, 4, 0, 0, 4, 0, 0, gv->cube_size);
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  /*----------------------Simulation start--------------------------------*/
+
   double t_start = Timer::get_cur_time();
 
-  //Shared Distribution to Thread in each machine
+  //Launch threads in each fluid/fiber task
   pthread_t *threads;
   pthread_attr_t *attrs;
   void *retval;

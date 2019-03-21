@@ -96,7 +96,11 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
-  // printf("fiber_SpreadForce: num_cubes_x %ld\n", num_cubes_x);
+#if 1
+  printf("Fiber%dtid%d: step1 start prepare ifd_fluid_thread_msg\n",
+    gv->taskid, tid, t1-t0, t_lock, t_insert, t_find);
+  fflush(stdout);
+#endif
 
   total_sub_grids = num_cubes_x * num_cubes_y * num_cubes_z;
 
@@ -161,23 +165,26 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           //find ifd Fluid toProc
           fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
-          msg = gv->ifd_fluid_thread_msg[i][j];
+          msg = gv->ifd_fluid_thread_msg[ifd_fld_proc][fl_tid];
 
 #ifdef PERF
           t2 = Timer::get_cur_time();
 #endif
 
-          pthread_mutex_lock(&gv->lock_ifd_proc_thd[i][j]);
+          pthread_mutex_lock(&gv->lock_ifd_proc_thd[ifd_fld_proc][fl_tid]);
 
           // t4 = Timer::get_cur_time();
-          ret = Ifdmap_proc_thd[ifd_fld_proc][fl_tid].insert(std::make_pair(arr3, gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid]));
+          ret = Ifdmap_proc_thd[ifd_fld_proc][fl_tid].insert(
+            std::make_pair(arr3, gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid]));
           // t5 = Timer::get_cur_time();
           // t_insert += t5 - t4;
 
           if (ret.second == true){
-#if 0
-            printf("Tid%d: INSERT_NEW Fluid(%d, %d, %d) ifd_last_pos_proc_thd[%d]=%d, IFD_SIZE=%d\n",
-            tid, X, Y, Z, ifd_fld_proc, gv->ifd_last_pos_proc_thd[ifd_fld_proc], vecOfIfdmap[ifd_fld_proc].size());
+#if 1
+            printf("Tid%d: INSERT_NEW Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
+              tid, ifd_fld_proc, fl_tid, X, Y, Z, 
+              gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid], 
+              Ifdmap_proc_thd[ifd_fld_proc][fl_tid].size());
             fflush(stdout);
 #endif
 
@@ -199,9 +206,11 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
             ifd_msg_pos = Ifdmap_proc_thd[ifd_fld_proc][fl_tid][arr3];
 
-#if 0
-            printf("Tid%d: EXIST Fluid(%d, %d, %d) to Proc%d, ifd_msg_pos=%d, IFD_SIZE=%d\n",
-            tid, X, Y, Z, ifd_fld_proc, ifd_msg_pos, vecOfIfdmap[ifd_fld_proc].size());
+#if 1
+            printf("Tid%d: EXIST Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
+              tid, ifd_fld_proc, fl_tid, X, Y, Z,
+              gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid], 
+              Ifdmap_proc_thd[ifd_fld_proc][fl_tid].size());
             fflush(stdout);
 #endif
             // t5 = Timer::get_cur_time();
@@ -213,7 +222,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           }
 
-          pthread_mutex_unlock(&gv->lock_ifd_proc_thd[i][j]);
+          pthread_mutex_unlock(&gv->lock_ifd_proc_thd[ifd_fld_proc][fl_tid]);
 
 #ifdef PERF
           t3 = Timer::get_cur_time();
@@ -236,7 +245,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   pthread_barrier_wait(&(gv->barr));
 
 #ifdef PERF
-  printf("Fiber task%d tid%d: T_prep_ifd_msg=%f, t_lock=%f, t_insert=%f, t_find=%f\n",
+  printf("Fiber%d tid%d: T_prep_ifd_msg=%f, t_lock=%f, t_insert=%f, t_find=%f\n",
     gv->taskid, tid, t1-t0, t_lock, t_insert, t_find);
   fflush(stdout);
 #endif
