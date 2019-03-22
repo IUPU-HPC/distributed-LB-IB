@@ -111,7 +111,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
     MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
 
 #ifdef IFD_FIBER2FLUID
-    printf("Fluid task%d tid%d receive a message with ifd_recv_count=%d\n", my_rank, tid, gv->ifd_recv_count);
+    printf("Fluid%dtid%d receive a message with ifd_recv_count=%d\n", my_rank, tid, gv->ifd_recv_count);
     fflush(stdout);
 #endif    
 

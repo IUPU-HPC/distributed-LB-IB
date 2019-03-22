@@ -267,17 +267,18 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           int last_pos = gv->ifd_last_pos[i];
           msg_pos.insert(std::make_pair(arr2, last_pos));
 
-          printf("msg_pos insert (%d, %d) --> (%d), start_size=%d\n", 
-            i, j, last_pos, size);
+          printf("Tid%d: msg_pos insert (%d, %d) --> (%d), size=%d\n", 
+            tid, i, j, last_pos, size);
 
           // step 3: memcpy to send_msg
-          char* dest = gv->ifd_send_msg[i] + last_pos * point_size;
+          char* dest = gv->ifd_send_msg[i] + last_pos;
           memcpy(dest, src, size);
 
           gv->ifd_last_pos[i] += size;
 
         }
       }
+    printf("Tid%d: Pass accumulate copy\n", tid);  
   }
 
 

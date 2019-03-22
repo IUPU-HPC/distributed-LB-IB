@@ -54,8 +54,8 @@ fluid_task_z=1
 fluid_task_x=1
 cube_size=4
 thread_per_task_x=2
-thread_per_task_y=2
-thread_per_task_z=2
+thread_per_task_y=4
+thread_per_task_z=4
 
 #fiber
 num_fibersht=1
