@@ -186,7 +186,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
             ifd_msg_pos = gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid];
 
-#if 1
+#if 0
             printf("Tid%d: (%d, %d) INSERT_NEW Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
               tid, i, j, ifd_fld_proc, fl_tid, 
               X, Y, Z, ifd_msg_pos, 
@@ -210,7 +210,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
             ifd_msg_pos = Ifdmap_proc_thd[ifd_fld_proc][fl_tid][arr3];
 
-#if 1
+#if 0
             printf("Tid%d: (%d,%d) EXIST Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
               tid, i, j, ifd_fld_proc, fl_tid, 
               X, Y, Z, ifd_msg_pos, 

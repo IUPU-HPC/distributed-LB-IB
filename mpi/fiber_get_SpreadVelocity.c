@@ -226,12 +226,13 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           arr2[1] = fl_tid;
           ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk] + msg_pos[arr2];
 
+#if 0
           printf("Tid%d: fibernode(%d, %d)read local_ifd_msg_pos[%d][%d][%d]=%d, (%d, %d, %d):(%d,%d) --> %d, ifd_msg_pos=%d\n",
               tid, i, j, ii, jj, kk, fibernode->ifd_msg_pos[ii][jj][kk], 
               X, Y, Z, ifd_fld_proc, fl_tid, msg_pos[arr2],
               ifd_msg_pos);
           fflush(stdout);
-
+#endif
           vel_x = 0;
           vel_y = 0;
           vel_z = 0;

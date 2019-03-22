@@ -54,7 +54,7 @@ void* do_thread(void* v){
 
     /******************* Part-1: Fiber compute force locally *******************/
     if (my_rank >= num_fluid_tasks){
-#if 1
+#if 0
       if (tid==0){
         printf("\n\nTask%d Tid%d: Start time step %ld ...\n", my_rank, tid, gv->time);
       }
