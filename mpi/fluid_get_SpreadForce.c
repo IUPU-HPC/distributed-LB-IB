@@ -131,12 +131,12 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   }
   else{
 // #ifdef DEBUG_PRINT
-  printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
+  // printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
     t0 = Timer::get_cur_time();
 
     int position = 0;
-#if 1
+
     while (position < gv->ifd_recv_count){
 
       X = *((int*)(gv->ifd_recv_buf + position));
@@ -164,10 +164,12 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//owner_tid is thread id in the fluid task
 
+#if 0
       printf("tid%d: pos=%d, (my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
         tid, position, my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk);
       fflush(stdout);
-
+#endif
+      
       assert(my_rank == toProc);
 
       if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 task will recv wrong cube
@@ -184,7 +186,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       position += sizeof(int) * 3 + sizeof(double) * 3;
 
     }
-#endif    
+    
     t1 = Timer::get_cur_time();
 
 // #ifdef VERIFY

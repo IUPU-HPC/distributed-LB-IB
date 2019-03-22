@@ -315,7 +315,7 @@ void init_gv(GV gv) {
 
         // doesn't need to pre allocate so much memory
         // TODO: test performance allocate when needed
-        gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / total_threads);
+        gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / (P*Q));
       }
     }
 

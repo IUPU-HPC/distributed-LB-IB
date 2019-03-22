@@ -301,10 +301,6 @@ int main(int argc, char* argv[]) {
 
   gv->num_fluid_tasks = gv->total_tasks - gv->fiber_shape->num_sheets;
 
-  printf("%d: width=%d, height=%d\n",
-      gv->taskid, gv->fiber_shape->sheets[0].width,
-      gv->fiber_shape->sheets[0].height);
-
   int color;
   if(gv->taskid < gv->num_fluid_tasks)
     //Fuild Group
