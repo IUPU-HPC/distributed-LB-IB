@@ -104,14 +104,15 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   // fluid task starts
   // fluid task thread 0 do receive
   if (tid == 0){
-#ifdef DEBUG_PRINT
-    printf("Fluid task%d gv->ifd_max_bufsize=%d\n", my_rank, gv->ifd_max_bufsize);
-#endif //DEBUG_PRINT
+// #ifdef DEBUG_PRINT
+//     printf("Fluid task%d gv->ifd_max_bufsize=%d\n", my_rank, gv->ifd_max_bufsize);
+// #endif //DEBUG_PRINT
     MPI_Recv(gv->ifd_recv_buf, gv->ifd_max_bufsize, MPI_CHAR, fiber_mac_rank, 0, MPI_COMM_WORLD, &status);
     MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
 
 #ifdef IFD_FIBER2FLUID
-    printf("Fluid%dtid%d receive a message with ifd_recv_count=%d\n", my_rank, tid, gv->ifd_recv_count);
+    printf("Fluid%dtid%d receive a message with ifd_recv_count=%d, ifd_max_bufsize=%d\n", 
+      my_rank, tid, gv->ifd_recv_count, gv->ifd_max_bufsize);
     fflush(stdout);
 #endif    
 
@@ -130,11 +131,12 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
   }
   else{
 // #ifdef DEBUG_PRINT
-//   printf("**** Fluid task%d_tid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
+  printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
     t0 = Timer::get_cur_time();
 
     int position = 0;
+#if 1
     while (position < gv->ifd_recv_count){
 
       X = *((int*)(gv->ifd_recv_buf + position));
@@ -162,9 +164,9 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//owner_tid is thread id in the fluid task
 
-      // printf("(my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
-      //   my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk);
-      // fflush(stdout);
+      printf("tid%d: pos=%d, (my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
+        tid, position, my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk);
+      fflush(stdout);
 
       assert(my_rank == toProc);
 
@@ -182,7 +184,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       position += sizeof(int) * 3 + sizeof(double) * 3;
 
     }
-    
+#endif    
     t1 = Timer::get_cur_time();
 
 // #ifdef VERIFY

@@ -96,7 +96,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
-#if 1
+#if 0
   printf("Fiber%dtid%d: step1 start prepare ifd_fluid_thread_msg\n",
     gv->taskid, tid, t1-t0, t_lock, t_insert, t_find);
   fflush(stdout);
@@ -256,7 +256,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
   // step 2: accumulate each thread size (scan)
   if (tid == 0){
-    for(i = 0; i < num_fluid_tasks; i++)
+    for(i = 0; i < num_fluid_tasks; i++){
       for(j = 0; j < total_threads; j++){
         char* src = gv->ifd_fluid_thread_msg[i][j];
         int size = gv->ifd_last_pos_proc_thd[i][j];
@@ -271,14 +271,35 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
             tid, i, j, last_pos, size);
 
           // step 3: memcpy to send_msg
-          char* dest = gv->ifd_send_msg[i] + last_pos;
+          char* dest = (char*)(gv->ifd_send_msg[i] + last_pos);
           memcpy(dest, src, size);
 
           gv->ifd_last_pos[i] += size;
 
         }
       }
-    printf("Tid%d: Pass accumulate copy\n", tid);  
+    }  
+    printf("Tid%d: Pass accumulate copy\n", tid);
+
+    for (i = 0; i < num_fluid_tasks; i++){
+      char* tmp_msg = gv->ifd_send_msg[i];
+      for (int position=0; position < gv->ifd_last_pos[i]; position += point_size){
+        X = *((int*)(tmp_msg + position));
+        Y = *((int*)(tmp_msg + position + sizeof(int)));
+        Z = *((int*)(tmp_msg + position + sizeof(int) * 2));
+        elastic_force_x = *((double*)(tmp_msg + position + sizeof(int) * 3));
+        elastic_force_y = *((double*)(tmp_msg + position + sizeof(int) * 3 + sizeof(double)));
+        elastic_force_z = *((double*)(tmp_msg + position + sizeof(int) * 3 + sizeof(double)* 2));
+
+        fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
+
+        printf("tid%d: pos=%d, (i,toProc)=(%d, %d), (X,Y,Z)=(%d, %d, %d)\n", 
+        tid, position, i, ifd_fld_proc, X, Y, Z);
+        fflush(stdout);
+
+        assert(i == ifd_fld_proc);
+      }
+    }
   }
 
 
@@ -325,13 +346,15 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 #endif
   }
 
-  //reset
-  if (tid == 0){
-    gv->num_influenced_proc = 0;
-  }
+  // //reset
+  // if (tid == 0){
+  //   gv->num_influenced_proc = 0;
+  // }
 
+  // wait until all fiber threads complete computation
+  pthread_barrier_wait(&(gv->barr));
 
-#ifdef DEBUG_PRINT
-  printf("----- Fiber task:%d fiber_SpreadForce Exit! -----\n", my_rank);
+#if 0
+  printf("----- Fiber%dtid%d: fiber_SpreadForce Exit! -----\n", my_rank, tid);
 #endif //DEBUG_PRINT
 }
