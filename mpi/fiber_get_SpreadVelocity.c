@@ -171,7 +171,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   // other fiber threads wait until tid=0 complete receive
   pthread_barrier_wait(&(gv->barr));
 
-#ifdef VERIFY
+#ifdef IFD_FLUID2FIBER_DUMP
   char fName[80];
   sprintf(fName, "Fiber%d_vel.dat", tid);
   FILE* oFile = fopen(fName, "w");
@@ -226,6 +226,12 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           arr2[1] = fl_tid;
           ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk] + msg_pos[arr2];
 
+          printf("Tid%d: fibernode(%d, %d)read local_ifd_msg_pos[%d][%d][%d]=%d, (%d, %d, %d):(%d,%d) --> %d, ifd_msg_pos=%d\n",
+              tid, i, j, ii, jj, kk, fibernode->ifd_msg_pos[ii][jj][kk], 
+              X, Y, Z, ifd_fld_proc, fl_tid, msg_pos[arr2],
+              ifd_msg_pos);
+          fflush(stdout);
+
           vel_x = 0;
           vel_y = 0;
           vel_z = 0;
@@ -241,7 +247,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           t1 = Timer::get_cur_time();
           t_search += t1 - t0;
 
-#ifdef VERIFY
+#ifdef IFD_FLUID2FIBER_DUMP
           fprintf(oFile, "velocity at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n",
                       i, j, X, Y, Z, vel_x, vel_y, vel_z);
 #endif
@@ -262,7 +268,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
     }//if fiber2thread ends
   }//for fiber row ends
 
-#ifdef VERIFY
+#ifdef IFD_FLUID2FIBER_DUMP
   fclose(oFile);
 #endif
 
@@ -295,16 +301,16 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   //reset
   if (tid == 0){
     gv->num_influenced_proc = 0;
-    for (int toProc = 0; toProc < num_fluid_tasks; toProc++){
+    for (int i = 0; i < num_fluid_tasks; i++){
       // set ifd_last_pos to default value 0
-      gv->ifd_last_pos[toProc] = 0;
+      gv->ifd_last_pos[i] = 0;
       msg_pos.clear();
 
       for (j = 0; j < total_threads; j++){
         gv->ifd_last_pos_proc_thd[i][j] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
 
-        Ifdmap_proc_thd[toProc][j].clear(); //remove all elements from the map container
-        // std::cout << Ifdmap_proc_thd[toProc][j].size() << "\n";
+        Ifdmap_proc_thd[i][j].clear(); //remove all elements from the map container
+        // std::cout << Ifdmap_proc_thd[i][j].size() << "\n";
 
         // free gv->ifd_fluid_thread_msg[i][j]
 

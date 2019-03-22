@@ -66,8 +66,10 @@
 // #define DEBUG_PRINT
 // #define VERIFY
 // #define CHECK_STREAM
-// #define IFD_FIBER2FLUID
-// #define IFD_FLUID2FIBER
+#define IFD_FIBER2FLUID
+#define IFD_FIBER2FLUID_DUMP
+#define IFD_FLUID2FIBER
+#define IFD_FLUID2FIBER_DUMP
 // #define INIT
 
 #define PI 3.14159265358979

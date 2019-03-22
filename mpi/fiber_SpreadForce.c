@@ -106,7 +106,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
   total_threads = gv->tx * gv->ty * gv->tz; //gv->total_threads
 
-#ifdef VERIFY
+#ifdef IFD_FIBER2FLUID_DUMP
   char fName[80];
   sprintf(fName, "Fiber%d_spread_elastic_force.dat", tid);
   FILE* oFile = fopen(fName, "w");
@@ -145,7 +145,10 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           // NEED this check in case of fiber moving out of bound
           if (X < 0 || X >= dim_x) {
-            fprintf(stderr, "X out of bound: %d, x bound=%d!\n", X, gv->fluid_grid->x_dim); exit(1);
+            fprintf(stderr, "X out of bound: %d, x bound=%d! fibernode(%f, %f, %f)\n", 
+              X, gv->fluid_grid->x_dim, 
+              fibernode->x, fibernode->y, fibernode->z); 
+            exit(1);
           }
           if (Y < 0 || Y >= dim_y) {
             fprintf(stderr, "Y out of bound: %d, y bound=%d!\n", Y, gv->fluid_grid->y_dim); exit(1);
@@ -158,7 +161,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           elastic_force_y = fibernode->elastic_force_y * tmp_dist;
           elastic_force_z = fibernode->elastic_force_z * tmp_dist;
 
-#ifdef VERIFY
+#ifdef IFD_FIBER2FLUID_DUMP
           fprintf(oFile, "elastic_force at (%2d,%2d):(%2d,%2d,%2d): %.24f,%.24f,%.24f\n",
                       i, j, X, Y, Z, elastic_force_x, elastic_force_y, elastic_force_z);
 #endif
@@ -180,15 +183,16 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           // t_insert += t5 - t4;
 
           if (ret.second == true){
+
+            ifd_msg_pos = gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid];
+
 #if 1
-            printf("Tid%d: INSERT_NEW Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
-              tid, ifd_fld_proc, fl_tid, X, Y, Z, 
-              gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid], 
+            printf("Tid%d: (%d, %d) INSERT_NEW Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
+              tid, i, j, ifd_fld_proc, fl_tid, 
+              X, Y, Z, ifd_msg_pos, 
               Ifdmap_proc_thd[ifd_fld_proc][fl_tid].size());
             fflush(stdout);
 #endif
-
-            ifd_msg_pos = gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid];
 
             *((int*)(msg + ifd_msg_pos))                  = X;
             *((int*)(msg + ifd_msg_pos + sizeof(int)))    = Y;
@@ -207,9 +211,9 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
             ifd_msg_pos = Ifdmap_proc_thd[ifd_fld_proc][fl_tid][arr3];
 
 #if 1
-            printf("Tid%d: EXIST Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
-              tid, ifd_fld_proc, fl_tid, X, Y, Z,
-              gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid], 
+            printf("Tid%d: (%d,%d) EXIST Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
+              tid, i, j, ifd_fld_proc, fl_tid, 
+              X, Y, Z, ifd_msg_pos, 
               Ifdmap_proc_thd[ifd_fld_proc][fl_tid].size());
             fflush(stdout);
 #endif
@@ -236,7 +240,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
     }//if fiber2thread ends
   }//for fiber row ends
 
-#ifdef VERIFY
+#ifdef IFD_FIBER2FLUID_DUMP
   fclose(oFile);
 #endif
 
@@ -263,6 +267,9 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           int last_pos = gv->ifd_last_pos[i];
           msg_pos.insert(std::make_pair(arr2, last_pos));
 
+          printf("msg_pos insert (%d, %d) --> (%d), start_size=%d\n", 
+            i, j, last_pos, size);
+
           // step 3: memcpy to send_msg
           char* dest = gv->ifd_send_msg[i] + last_pos * point_size;
           memcpy(dest, src, size);
@@ -285,7 +292,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         // gv->influenced_macs[gv->num_influenced_macs] = toProc;
 
 #ifdef IFD_FIBER2FLUID
-        printf("-COUNT- Fiber task%d: send msg to Fluid task%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d\n",
+        printf("-COUNT- Fiber%d: send msg to Fluid%d, ifd_last_pos[%d]=%d, ifd_max_bufsize=%d\n",
           my_rank, toProc, toProc, gv->ifd_last_pos[toProc], gv->ifd_max_bufsize);
         fflush(stdout);
 #endif
