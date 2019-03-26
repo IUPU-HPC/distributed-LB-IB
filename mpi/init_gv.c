@@ -117,7 +117,8 @@ void init_stream_msg(GV gv, int dir, int points){
 void init_gv(GV gv) {
   int i, j;
   int BI, BJ, BK; //to identify the Sub grids
-  int cube_idx, node_idx;
+  long cube_idx;
+  int node_idx;
   int temp_taskid;
   int li, lj, lk; //local access point inside cube
   int P, Q, R;

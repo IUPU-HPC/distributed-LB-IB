@@ -74,7 +74,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   int BI, BJ, BK;
   int li, lj, lk;
   int total_sub_grids, dim_x, dim_y, dim_z;
-  int cube_idx, node_idx;
+  long cube_idx;
+  int node_idx;
   int P, Q, R, total_threads;
   /* Todo: Move the following variables to GV to save time */
   double c_x = PI / (2.0 * dx);

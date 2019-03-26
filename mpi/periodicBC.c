@@ -41,7 +41,8 @@ void periodicBC(LV lv){
   int        BI, BJ, BJ_first, BJ_last, BK, BK_first, BK_last;
   int        cube_size;
   int        li, lj, lk;
-  int        cube_idx_first, cube_idx_last, node_idx_first, node_idx_last;
+  long       cube_idx_first, cube_idx_last;
+  int        node_idx_first, node_idx_last;
   int        starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
 
   int P = gv->tx;
