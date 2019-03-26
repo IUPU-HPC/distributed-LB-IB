@@ -235,7 +235,7 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   Fluidgrid *grid;
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
-    int ksi, num_cubes_y, num_cubes_z;
+  int ksi, num_cubes_y, num_cubes_z;
   long cube_idx;
   int toProc;
   Fluidnode *node;
