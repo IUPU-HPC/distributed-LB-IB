@@ -23,12 +23,14 @@
 #include "do_thread.h"
 
 void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv){
-  int total_sub_grids;
+  long total_sub_grids;
   int dim_x = fluid_grid->x_dim;
   int dim_y = fluid_grid->y_dim;
   int dim_z = fluid_grid->z_dim;
 
-  /*Calculate total no of cubes on each dimension*/
+  /*Calculate total no of cubes*/
+  total_sub_grids = (dim_x * dim_y * dim_z) / (cube_size * cube_size * cube_size);
+
   int num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
   int num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
   int num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
@@ -51,7 +53,7 @@ void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv){
     for (int BJ = 0; BJ < num_cubes_y; ++BJ)
       for (int BK = 0; BK < num_cubes_z; ++BK){
         if (taskid == cube2task(BI, BJ, BK, gv)){
-          int cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+          long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           Fluidnode *nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes =
             (Fluidnode*)calloc(cube_size * cube_size * cube_size, sizeof(Fluidnode));
           for (int li = 0; li < cube_size; ++li)

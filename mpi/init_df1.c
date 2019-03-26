@@ -28,7 +28,7 @@ void init_df1(GV gv) {
   for (BK = 0; BK < num_cubes_z; ++BK){
     tmp_task = cube2task(BI, BJ, BK, gv);
     if (gv->taskid == tmp_task){ //MPI changes
-      int cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+      long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       Fluidnode* nodes = gv->fluid_grid->sub_fluid_grid[cube_idx].nodes;
       starting_x = starting_y = starting_z = 0;
       stopping_x = stopping_y = stopping_z = cube_size - 1;
