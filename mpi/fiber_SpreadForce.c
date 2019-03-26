@@ -228,6 +228,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           pthread_mutex_unlock(&gv->lock_ifd_proc_thd[ifd_fld_proc][fl_tid]);
 
+          assert(ifd_msg_pos <= (gv->ifd_max_bufsize / (gv->tx * gv->ty)));
+
 #ifdef PERF
           t3 = Timer::get_cur_time();
           t_lock += t3 - t2;
