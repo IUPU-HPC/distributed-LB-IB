@@ -36,7 +36,7 @@ void compute_rho_and_u(LV lv){
   int ksi;
   double s1, s2, s3, s4; //sum of df2, df2[x,y,z] * c[ksi][x,y,z]
   int BI, BJ, BK; //to identify the Sub grids
-  int cube_idx;
+  long cube_idx;
   int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z; //To identify buffer zone
   int li, lj, lk, node_idx; //local access point inside cube
 

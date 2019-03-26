@@ -49,7 +49,7 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfeq*/
   int num_cubes_x = gv->fluid_grid->num_cubes_x;
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
-  int  tmp_task;
+  int tmp_task;
 
   /*PTHREAD_Change*/
 
@@ -59,7 +59,7 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfeq*/
       for (int BK = 0; BK < num_cubes_z; ++BK){
         tmp_task = cube2task(BI, BJ, BK, gv);
         if (gv->taskid == tmp_task){ //MPI changes
-          int cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+          long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
           Fluidnode *nodes = fluidgrid->sub_fluid_grid[cube_idx].nodes;
           starting_x = starting_y = starting_z = 0;
           stopping_x = stopping_y = stopping_z = cube_size - 1;

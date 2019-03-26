@@ -121,7 +121,8 @@ void print_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   Fluidgrid *grid;
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
-  int ksi, cube_idx, num_cubes_y, num_cubes_z;
+  int ksi, num_cubes_y, num_cubes_z;
+  long cube_idx;
   int toProc;
   Fluidnode *node;
   int cube_size = gv->cube_size;
@@ -186,7 +187,8 @@ void print_fluid_cube(GV gv, int BI_start, int BJ_start, int BK_start,
   Fluidgrid *grid;
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK;
-  int ksi, cube_idx, num_cubes_y, num_cubes_z;
+  int ksi, num_cubes_y, num_cubes_z;
+  long cube_idx;
   int toProc;
   Fluidnode *node;
   int cube_size = gv->cube_size;
@@ -232,7 +234,8 @@ void save_fluid_sub_grid(GV gv, int start_x, int start_y, int start_z,
   Fluidgrid *grid;
   Sub_Fluidgrid *sub_grid;
   int li, lj, lk, BI, BJ, BK, BI_start, BJ_start, BK_start, BI_end, BJ_end, BK_end;
-  int ksi, cube_idx, num_cubes_y, num_cubes_z;
+  int ksi, num_cubes_y, num_cubes_z;
+  long cube_idx;
   int toProc;
   Fluidnode *node;
   int cube_size = gv->cube_size;

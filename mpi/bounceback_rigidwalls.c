@@ -33,7 +33,7 @@ void bounceback_rigidwalls(LV lv){
 
   int BI, BJ, BK; //to identify the Sub grids
   int cube_size;
-  int cube_idx;
+  long cube_idx;
   int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z; //To identify buffer zone
   int li, lj, lk, node_idx; //local access point inside cube
   int dim_z;
