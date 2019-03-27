@@ -267,9 +267,9 @@ int main(int argc, char* argv[]) {
   if ( (gv->fluid_grid->z_dim % gv->tz != 0) ||
        (gv->fluid_grid->y_dim % gv->ty != 0) ||
        (gv->fluid_grid->x_dim % gv->tx != 0) ){
-    fprintf(stderr, "Check Fluid_grid_z: %ld and tz: %d Should be multiple of 2 \n", gv->fluid_grid->z_dim, gv->tz);
-    fprintf(stderr, "Check Fluid_grid_y: %ld and ty: %d Should be multiple of 2 \n", gv->fluid_grid->y_dim, gv->ty);
-    fprintf(stderr, "Check Fluid_grid_x: %ld and tx: %d Should be multiple of 2 \n", gv->fluid_grid->z_dim, gv->tx);
+    fprintf(stderr, "Check Fluid_grid_z: %d and Should be multiple of tz: %d\n", gv->fluid_grid->z_dim, gv->tz);
+    fprintf(stderr, "Check Fluid_grid_y: %d and Should be multiple of ty: %d\n", gv->fluid_grid->y_dim, gv->ty);
+    fprintf(stderr, "Check Fluid_grid_x: %d and Should be multiple of tx: %d\n", gv->fluid_grid->z_dim, gv->tx);
     exit(1);
   }
 
@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
        (gv->fluid_grid->y_dim % (gv->cube_size) != 0) ||
        (gv->fluid_grid->z_dim % (gv->cube_size) != 0) ){
     fprintf(stderr, "cube_size: %d \
-                     The cubes should be distributed equally on the entire fluid grid\n",
+The cubes should be distributed equally on the entire fluid grid\n",
                     gv->cube_size);
     exit(1);
   }

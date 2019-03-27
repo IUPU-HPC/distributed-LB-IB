@@ -147,16 +147,19 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           // NEED this check in case of fiber moving out of bound
           if (X < 0 || X >= dim_x) {
-            fprintf(stderr, "X out of bound: %d, x bound=%d! fibernode(%f, %f, %f)\n", 
-              X, gv->fluid_grid->x_dim, 
-              fibernode->x, fibernode->y, fibernode->z); 
+            fprintf(stderr, "X out of bound: %d, dim_x=%d! fibernode(%f, %f, %f)\n", 
+              X, dim_x, fibernode->x, fibernode->y, fibernode->z); 
             exit(1);
           }
           if (Y < 0 || Y >= dim_y) {
-            fprintf(stderr, "Y out of bound: %d, y bound=%d!\n", Y, gv->fluid_grid->y_dim); exit(1);
+            fprintf(stderr, "Y out of bound: %d, dim_y=%d! fibernode(%f, %f, %f)\n", 
+              Y, dim_y,fibernode->x, fibernode->y, fibernode->z); 
+            exit(1);
           }
           if (Z < 0 || Z >= dim_z) {
-            fprintf(stderr, "Z out of bound: %d, z bound=%d!\n", Z, gv->fluid_grid->z_dim); exit(1);
+            fprintf(stderr, "Z out of bound: %d, dim_z=%d! fibernode(%f, %f, %f)\n", 
+              Z, dim_z, fibernode->x, fibernode->y, fibernode->z);
+            exit(1);
           }
 
           elastic_force_x = fibernode->elastic_force_x * tmp_dist;
@@ -230,7 +233,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           pthread_mutex_unlock(&gv->lock_ifd_proc_thd[ifd_fld_proc][fl_tid]);
 
-          assert(ifd_msg_pos <= (gv->ifd_max_bufsize / (gv->tx * gv->ty)));
+          assert(ifd_msg_pos <= (gv->ifd_max_bufsize));
 
 #ifdef PERF
           t3 = Timer::get_cur_time();

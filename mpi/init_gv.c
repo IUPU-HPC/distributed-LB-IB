@@ -162,7 +162,7 @@ void init_gv(GV gv) {
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
 #if 0
     printf("%d: tmp=%d, width=%f, height=%f, row=%d, col=%d\n",
-      my_rank, tmp, 
+      my_rank, tmp,
       gv->fiber_shape->sheets[0].width, gv->fiber_shape->sheets[0].height,
       gv->fiber_shape->sheets[0].num_rows, gv->fiber_shape->sheets[0].num_cols);
 #endif
@@ -243,8 +243,8 @@ void init_gv(GV gv) {
 
     // fiber taskid in group =
     int taskid_fiber_group = gv->rank[1];
-    printf("taskid_fiber_group=%d, width=%f, height=%f\n", 
-      taskid_fiber_group, 
+    printf("taskid_fiber_group=%d, width=%f, height=%f\n",
+      taskid_fiber_group,
       gv->fiber_shape->sheets[taskid_fiber_group].width,
       gv->fiber_shape->sheets[taskid_fiber_group].height);
 
@@ -287,16 +287,16 @@ void init_gv(GV gv) {
       int X=0, Y=0, Z=0;
       std::array<int, 3> a;
       a[0]=X; a[1]=Y; a[2]=Z;
-#endif      
+#endif
       std::vector<IFDMap> threadmap;
       threadmap.resize(total_threads);
-#if 0      
+#if 0
       threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
       printf("-- thread[0] size = %d\n", threadmap[0].size());
 #endif
       // Ifdmap_proc_thd.push_back(threadmap);
       Ifdmap_proc_thd[i] = threadmap;
-      printf("-- toProc[%d] of %d has num_threadmap = %d\n", 
+      printf("-- toProc[%d] of %d has num_threadmap = %d\n",
         i, Ifdmap_proc_thd.size(), Ifdmap_proc_thd[i].size());
 
       gv->ifd_last_pos_proc_thd[i] = (int*) malloc(sizeof(int) * total_threads);
@@ -316,7 +316,7 @@ void init_gv(GV gv) {
 
         // doesn't need to pre allocate so much memory
         // TODO: test performance allocate when needed
-        gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size / (P*Q));
+        gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size);
       }
     }
 
