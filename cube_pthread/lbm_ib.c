@@ -25,8 +25,8 @@
 #include <string.h>
 
 // #define DEBUG_PRINT
-#define SAVE
-#define DUMP_VERIFY
+/*#define SAVE*/
+/*#define DUMP_VERIFY*/
 // #define USE_CATALYST
 // #define USE_FV
 // #define VERIFY
@@ -3856,9 +3856,10 @@ int main(int argc, char* argv[]) {
   int total_fibers_row    = gv->fiber_shape->sheets[0].num_rows;  /* no of fibres along height */
   int total_fibers_clmn   = gv->fiber_shape->sheets[0].num_cols;  /* no of fibres along width  or column should be 512 for 1024:*/
 
-  int fluidgrid_z         = gv->fluid_grid->x_dim; // along z
+  int fluidgrid_x         = gv->fluid_grid->x_dim; // along x
   int fluidgrid_y         = gv->fluid_grid->y_dim; // along y
-  int fluidgrid_x         = gv->fluid_grid->z_dim; // along x
+  int fluidgrid_z         = gv->fluid_grid->z_dim; // along z
+  
   double fibersheet_xo    = gv->fiber_shape->sheets[0].x_orig; //initial position of the fiber sheet chosen somewher in the middle of grid
   double fibersheet_yo    = gv->fiber_shape->sheets[0].y_orig;
   double fibersheet_zo    = gv->fiber_shape->sheets[0].z_orig;
