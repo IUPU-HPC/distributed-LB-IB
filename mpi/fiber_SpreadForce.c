@@ -147,17 +147,17 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           // NEED this check in case of fiber moving out of bound
           if (X < 0 || X >= dim_x) {
-            fprintf(stderr, "X out of bound: %d, dim_x=%d! fibernode(%f, %f, %f)\n", 
-              X, dim_x, fibernode->x, fibernode->y, fibernode->z); 
+            fprintf(stderr, "X out of bound: %d, dim_x=%d! fibernode(%f, %f, %f)\n",
+              X, dim_x, fibernode->x, fibernode->y, fibernode->z);
             exit(1);
           }
           if (Y < 0 || Y >= dim_y) {
-            fprintf(stderr, "Y out of bound: %d, dim_y=%d! fibernode(%f, %f, %f)\n", 
-              Y, dim_y,fibernode->x, fibernode->y, fibernode->z); 
+            fprintf(stderr, "Y out of bound: %d, dim_y=%d! fibernode(%f, %f, %f)\n",
+              Y, dim_y,fibernode->x, fibernode->y, fibernode->z);
             exit(1);
           }
           if (Z < 0 || Z >= dim_z) {
-            fprintf(stderr, "Z out of bound: %d, dim_z=%d! fibernode(%f, %f, %f)\n", 
+            fprintf(stderr, "Z out of bound: %d, dim_z=%d! fibernode(%f, %f, %f)\n",
               Z, dim_z, fibernode->x, fibernode->y, fibernode->z);
             exit(1);
           }
@@ -175,7 +175,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
           msg = gv->ifd_fluid_thread_msg[ifd_fld_proc][fl_tid];
 
-#ifdef PERF
+#ifdef IFD_FORCE_PERF
           t2 = Timer::get_cur_time();
 #endif
 
@@ -193,8 +193,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
 #if 0
             printf("Tid%d: (%d, %d) INSERT_NEW Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
-              tid, i, j, ifd_fld_proc, fl_tid, 
-              X, Y, Z, ifd_msg_pos, 
+              tid, i, j, ifd_fld_proc, fl_tid,
+              X, Y, Z, ifd_msg_pos,
               Ifdmap_proc_thd[ifd_fld_proc][fl_tid].size());
             fflush(stdout);
 #endif
@@ -217,8 +217,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
 #if 0
             printf("Tid%d: (%d,%d) EXIST Ifdmap_proc_thd[%d][%d] (%d, %d, %d) --> %d, SIZE=%d\n",
-              tid, i, j, ifd_fld_proc, fl_tid, 
-              X, Y, Z, ifd_msg_pos, 
+              tid, i, j, ifd_fld_proc, fl_tid,
+              X, Y, Z, ifd_msg_pos,
               Ifdmap_proc_thd[ifd_fld_proc][fl_tid].size());
             fflush(stdout);
 #endif
@@ -235,7 +235,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
           assert(ifd_msg_pos <= (gv->ifd_max_bufsize));
 
-#ifdef PERF
+#ifdef IFD_FORCE_PERF
           t3 = Timer::get_cur_time();
           t_lock += t3 - t2;
 #endif
@@ -255,7 +255,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
 
-#ifdef PERF
+#ifdef IFD_FORCE_PERF
   printf("Fiber%d tid%d: T_prep_ifd_msg=%f, t_lock=%f, t_insert=%f, t_find=%f\n",
     gv->taskid, tid, t1-t0, t_lock, t_insert, t_find);
   fflush(stdout);
@@ -263,7 +263,9 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
   // step 2: accumulate each thread size (scan)
   if (tid == 0){
+#ifdef IFD_FORCE_PERF
     t0 = Timer::get_cur_time();
+#endif
     for(i = 0; i < num_fluid_tasks; i++){
       for(j = 0; j < total_threads; j++){
         char* src = gv->ifd_fluid_thread_msg[i][j];
@@ -275,7 +277,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           int last_pos = gv->ifd_last_pos[i];
           msg_pos.insert(std::make_pair(arr2, last_pos));
 
-          printf("Tid%d: msg_pos insert (%d, %d) --> (%d), size=%d\n", 
+          printf("Tid%d: msg_pos insert (%d, %d) --> (%d), size=%d\n",
             tid, i, j, last_pos, size);
 
 #if 0
@@ -289,7 +291,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
             fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
 
-            printf("tid%d: pos=%d, (i,toProc)=(%d, %d), (X,Y,Z)=(%d, %d, %d)\n", 
+            printf("tid%d: pos=%d, (i,toProc)=(%d, %d), (X,Y,Z)=(%d, %d, %d)\n",
               tid, position, i, ifd_fld_proc, X, Y, Z);
             fflush(stdout);
 
@@ -306,8 +308,11 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
         }
       }
     }
+
+#ifdef IFD_FORCE_PERF
     t1 = Timer::get_cur_time();
     printf("Tid%d: Pass accumulate copy, t_copy=%f\n", tid, t1-t0);
+#endif
 
 #if 0
     for (i = 0; i < num_fluid_tasks; i++){
@@ -322,14 +327,14 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 
         fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
 
-        printf("tid%d: pos=%d, (i,toProc)=(%d, %d), (X,Y,Z)=(%d, %d, %d)\n", 
+        printf("tid%d: pos=%d, (i,toProc)=(%d, %d), (X,Y,Z)=(%d, %d, %d)\n",
           tid, position, i, ifd_fld_proc, X, Y, Z);
         fflush(stdout);
 
         assert(i == ifd_fld_proc);
       }
     }
-#endif    
+#endif
   }
 
 
@@ -370,7 +375,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
     }
     t1 = Timer::get_cur_time();
 
-#ifdef PERF
+#ifdef IFD_FORCE_PERF
     printf("Fiber%dtid%d: T_SpreadForce_send_msg=%f\n", my_rank, tid, t1-t0);
     fflush(stdout);
 #endif
