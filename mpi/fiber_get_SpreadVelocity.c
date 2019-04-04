@@ -132,11 +132,15 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   double s1 = 0, s2 = 0, s3 = 0;
   double vel_x = 0, vel_y = 0, vel_z = 0;
 
+#ifdef IFD_VEL_PERF
   t2 = Timer::get_cur_time();
+#endif
 
   //fiber task thread 0 send the message out
   if (tid == 0){
-    Timer::time_start();
+#ifdef IFD_VEL_PERF
+    t0 = Timer::get_cur_time();
+#endif
     for (int fromProc = 0; fromProc < num_fluid_tasks; fromProc++){
       MPI_Recv(gv->ifd_send_msg[fromProc], gv->ifd_max_bufsize, MPI_CHAR, fromProc, 0, MPI_COMM_WORLD, &status);
       MPI_Get_count(&status, MPI_CHAR, &recv_cnt);
@@ -162,10 +166,9 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
       }
     }
 
-    double time_elapsed = Timer::time_end();
-
-#ifdef PERF
-    printf("Fiber task%d: T_recv_vel_msg=%f\n", my_rank, time_elapsed);
+#ifdef IFD_VEL_PERF
+    t1 = Timer::get_cur_time();
+    printf("Fiber task%d: T_recv_vel_msg=%f\n", my_rank, t1 - t0);
     fflush(stdout);
 #endif
   }
@@ -230,7 +233,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
 
 #if 0
           printf("Tid%d: fibernode(%d, %d)read local_ifd_msg_pos[%d][%d][%d]=%d, (%d, %d, %d):(%d,%d) --> %d, ifd_msg_pos=%d\n",
-              tid, i, j, ii, jj, kk, fibernode->ifd_msg_pos[ii][jj][kk], 
+              tid, i, j, ii, jj, kk, fibernode->ifd_msg_pos[ii][jj][kk],
               X, Y, Z, ifd_fld_proc, fl_tid, msg_pos[arr2],
               ifd_msg_pos);
           fflush(stdout);
@@ -294,9 +297,8 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
   // wait until all fiber threads complete computation
   pthread_barrier_wait(&(gv->barr));
 
+#ifdef IFD_VEL_PERF
   t3 = Timer::get_cur_time();
-
-#ifdef PERF
   printf("Fiber%dtid%d: T_get_Sprd_Vel=%f\n", gv->taskid, tid, t3 - t2);
   fflush(stdout);
 #endif

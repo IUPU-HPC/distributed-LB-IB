@@ -1,5 +1,5 @@
 /*  -- Distributed-LB-IB --
- * Copyright 2018 Indiana University Purdue University Indianapolis 
+ * Copyright 2018 Indiana University Purdue University Indianapolis
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *   
+ *
  * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
  *
  * @file:
@@ -89,7 +89,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 #if 0
         X = BI * cube_size + li;
         Y = BJ * cube_size + lj;
-        Z = BK * cube_size + lk; 
+        Z = BK * cube_size + lk;
         printf("Tid%d write (%d, %d, %d)\n", tid, X, Y, Z);
 #endif
         node_idx = li* cube_size * cube_size + lj * cube_size + lk;
@@ -111,10 +111,10 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
     MPI_Get_count(&status, MPI_CHAR, &gv->ifd_recv_count);
 
 #ifdef IFD_FIBER2FLUID
-    printf("Fluid%dtid%d receive a message with ifd_recv_count=%d, ifd_max_bufsize=%d\n", 
+    printf("Fluid%dtid%d receive a message with ifd_recv_count=%d, ifd_max_bufsize=%d\n",
       my_rank, tid, gv->ifd_recv_count, gv->ifd_max_bufsize);
     fflush(stdout);
-#endif    
+#endif
 
   }
 
@@ -133,8 +133,10 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
 // #ifdef DEBUG_PRINT
   // printf("**** Fluid%dtid%d: fluid_get_SpreadForce recv MSG******\n", my_rank, tid);
 // #endif //DEBUG_PRINT
-    t0 = Timer::get_cur_time();
 
+#ifdef IFD_FORCE_PERF
+    t0 = Timer::get_cur_time();
+#endif
     int position = 0;
 
     while (position < gv->ifd_recv_count){
@@ -154,7 +156,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       lj = Y % cube_size;
       lk = Z % cube_size;
 
-      // printf("(X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
+      // printf("(X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n",
       //   X, Y, Z, BI, BJ, BK, li, lj, lk);
       // fflush(stdout);
 
@@ -165,11 +167,11 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
       owner_tid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//owner_tid is thread id in the fluid task
 
 #if 0
-      printf("tid%d: pos=%d, (my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n", 
+      printf("tid%d: pos=%d, (my_rank,toProc)=(%d, %d), (X,Y,Z)=(%ld, %ld, %ld), (BI,BJ,BK)=(%ld, %ld, %ld), (li, lj, lk)=(%ld, %ld, %ld)\n",
         tid, position, my_rank, toProc, X, Y, Z, BI, BJ, BK, li, lj, lk);
       fflush(stdout);
 #endif
-      
+
       assert(my_rank == toProc);
 
       if (tid == owner_tid){// since stop message alonhg with data is sent to all fluid machines, so N-1 task will recv wrong cube
@@ -179,23 +181,25 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
         nodes[node_idx].elastic_force_y = elastic_force_y;
         nodes[node_idx].elastic_force_z = elastic_force_z;
         // pthread_mutex_unlock(&(gv->lock_Fluid[owner_tid]));
-        // printf("Tid%d update (%d,%d,%d) || elastic_force (%.6f,%.24f,%.24f)\n", 
+        // printf("Tid%d update (%d,%d,%d) || elastic_force (%.6f,%.24f,%.24f)\n",
         //   tid, X, Y, Z, elastic_force_x, elastic_force_y, elastic_force_z);
       }
 
       position += sizeof(int) * 3 + sizeof(double) * 3;
 
     }
-    
+
+#ifdef IFD_FORCE_PERF
     t1 = Timer::get_cur_time();
+#endif
 
 // #ifdef VERIFY
 //   fclose(oFile);
 // #endif
 
-#ifdef PERF
+#ifdef IFD_FORCE_PERF
     printf("Fluid%dtid%d: T_search_SpreadForce=%f\n", my_rank, tid, t1-t0);
-#endif //DEBUG_PRINT    
+#endif
 
   }
 
