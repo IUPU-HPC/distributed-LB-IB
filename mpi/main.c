@@ -377,7 +377,7 @@ The cubes should be distributed equally on the entire fluid grid\n",
     ierr = MPI_Cart_rank(gv->cartcomm, gv->rankCoord, &my_cart_rank);
     MPI_Comm_size(gv->cartcomm, &gv->size[2]);
     if(ierr != 0) printf("ERROR[%d] MPI_Cart_rank\n", ierr);
-    printf("Fluid PW[%d]: my_cart_rank PCM[%d], my coords(x,y,z) = (%d, %d, %d)\n",
+    printf("Fluid world_rank=%d: cart_rank=%d, cart_coords(x,y,z) = (%d, %d, %d)\n",
       gv->rank[0], my_cart_rank, gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2]);
 
     gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);
@@ -459,7 +459,7 @@ The cubes should be distributed equally on the entire fluid grid\n",
   MPI_Barrier(MPI_COMM_WORLD);
   /*----------------------Simulation start--------------------------------*/
 
-  double t_start = Timer::get_cur_time();
+  double startTime = Timer::get_cur_time();
 
   //Launch threads in each fluid/fiber task
   pthread_t *threads;
@@ -506,9 +506,12 @@ The cubes should be distributed equally on the entire fluid grid\n",
 #endif
 
   MPI_Barrier(MPI_COMM_WORLD);
-  double time_elapsed = Timer::get_cur_time();
+  double endTime = Timer::get_cur_time();
+  double MFLUPS = gv->fluid_grid->x_dim * gv->fluid_grid->y_dim * gv->fluid_grid->z_dim *
+                  gv->timesteps * 1e-6 / (endTime -startTime);
 
-  printf("Task%d: TOTAL TIME TAKEN IN Seconds: %f\n", gv->taskid, time_elapsed - t_start);
+  printf("Task%d: TOTAL TIME TAKEN IN Seconds:%f, MFLUPS=%f, MFLUPS/core=%f\n", 
+    gv->taskid, endTime -startTime, MFLUPS, MFLUPS/(gv->num_fluid_tasks*gv->threads_per_task) );
   fflush(stdout);
 
   if(gv->taskid < gv->num_fluid_tasks) MPI_Comm_free(&gv->cartcomm);

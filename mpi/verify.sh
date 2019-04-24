@@ -1,4 +1,4 @@
-timestep=10
+timestep=200
 dump=10
 
 # #fluid
@@ -46,16 +46,16 @@ dump=10
 # fiber_z0=11.5
 
 #fluid
-fluid_grid_z=128
-fluid_grid_y=128
-fluid_grid_x=128
+fluid_grid_x=256
+fluid_grid_y=256
+fluid_grid_z=224
 fluid_task_y=1
 fluid_task_z=1
 fluid_task_x=1
 cube_size=4
-thread_per_task_x=2
+thread_per_task_x=1
 thread_per_task_y=4
-thread_per_task_z=4
+thread_per_task_z=7
 
 #fiber
 num_fibersht=1

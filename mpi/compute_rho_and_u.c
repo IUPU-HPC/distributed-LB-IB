@@ -21,8 +21,7 @@
  */
 
 #include "do_thread.h"
-
-extern int c[19][3];
+#include "lb.h"
 
 void compute_rho_and_u(LV lv){
   //printf("**********Inside compute_rho**********\n");

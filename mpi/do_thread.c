@@ -23,8 +23,7 @@
 #include "do_thread.h"
 #include "timer.h"
 
-static inline double get_cur_time()
-{
+double get_cur_time(){
   struct timeval tv;
   double t;
 

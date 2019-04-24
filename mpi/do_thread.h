@@ -64,10 +64,10 @@
 // #define IFD_FORCE_PERF
 // #define IFD_VEL_PERF
 #define STREAM_PERF
+#define CHECK_STREAM
 // #define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY
-// #define CHECK_STREAM
 // #define IFD_FIBER2FLUID
 // #define IFD_FIBER2FLUID_DUMP
 // #define IFD_FLUID2FIBER
@@ -376,7 +376,5 @@ void replace_old_DF(LV);// it copies DF2 to DF1
 void* do_thread(void* v); //IB-LBM simulation moved to do_thread called via ptheread_create
 int check_1d(int x, int y, int z, int* dir);
 int check_2d(int x, int y, int z, int* dir);
-
-// static inline double get_cur_time();
 
 #endif //DO_THREAD_H

@@ -20,11 +20,19 @@
  * @date:
  */
 
-#include <do_thread.h>
+#include "do_thread.h"
+#include "lb.h"
 
 extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
+inline int check_dim(int in, int dim){
+  if (in < 0 || in >= dim){
+    return 0;
+  }
+  else
+    return in;
+} 
 
-int c[19][3] = { //{x, y, z}
+const int c[19][3] = { //{x, y, z}
             { 0, 0, 0},
 
             { 1, 0, 0}, {-1, 0, 0}, { 0, 0, 1}, //1, 2, 3
@@ -36,7 +44,7 @@ int c[19][3] = { //{x, y, z}
             {-1, 1, 0}, { 1, 1, 0}, {-1,-1, 0}  //16, 17, 18
 }; // stores 19 different velocity directions for ksi
 
-double t[19] = {
+const double t[19] = {
             1./3.,
 
             1./18., 1./18., 1./18., //1~6
@@ -197,21 +205,36 @@ void init_gv(GV gv) {
     int destCoord[3], srcCoord[3];
     for (int streamdir = 0; streamdir < 19; ++streamdir) {
       destCoord[0] = gv->rankCoord[0] + c[streamdir][0];
+      // destCoord[0] = check_dim(destCoord[0], Px);
+
       destCoord[1] = gv->rankCoord[1] + c[streamdir][1];
+      // destCoord[1] = check_dim(destCoord[1], Py);
+
       destCoord[2] = gv->rankCoord[2] + c[streamdir][2];
+      // destCoord[2] = check_dim(destCoord[2], Pz);
+
+      // printf("Fluid%d dest: %d %d %d\n", my_rank, destCoord[0], destCoord[1], destCoord[2]);
 
       srcCoord[0] = gv->rankCoord[0] - c[streamdir][0];
+      // srcCoord[0] = check_dim(srcCoord[0], Px);
+
       srcCoord[1] = gv->rankCoord[1] - c[streamdir][1];
+      // srcCoord[1] = check_dim(srcCoord[1], Py);
+
       srcCoord[2] = gv->rankCoord[2] - c[streamdir][2];
+      // srcCoord[2] = check_dim(srcCoord[2], Pz);
+
+      // printf("Fluid%d src: %d, %d, %d\n", my_rank, srcCoord[0], srcCoord[1],srcCoord[2]);
 
       int dest, src;
+
       MPI_Cart_rank(gv->cartcomm, destCoord, &dest);
       MPI_Cart_rank(gv->cartcomm, srcCoord, &src);
 
       gv->streamDest[streamdir] = dest;
       gv->streamSrc[streamdir] = src;
 
-#if 0
+#if 1
       printf("Fluid%2d: streamdir=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n",
         gv->rank[0], streamdir, destCoord[0], destCoord[1], destCoord[2], dest,
         srcCoord[0], srcCoord[1], srcCoord[2], src);
@@ -296,9 +319,10 @@ void init_gv(GV gv) {
 #endif
       // Ifdmap_proc_thd.push_back(threadmap);
       Ifdmap_proc_thd[i] = threadmap;
+#if 0
       printf("-- toProc[%d] of %d has num_threadmap = %d\n",
         i, Ifdmap_proc_thd.size(), Ifdmap_proc_thd[i].size());
-
+#endif
       gv->ifd_last_pos_proc_thd[i] = (int*) malloc(sizeof(int) * total_threads);
       gv->lock_ifd_proc_thd[i] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
       gv->ifd_fluid_thread_msg[i] = (char**) malloc(sizeof(char*) * total_threads);

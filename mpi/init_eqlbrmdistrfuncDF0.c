@@ -9,34 +9,7 @@
 */
 
 #include "do_thread.h"
-
-extern int c[19][3];
-extern double t[19];
-
-// compute local equilibrium from rho and u
-double computeEquilibrium(int iPop, double rho,
-                          double ux, double uy, double uz, double uSqr)
-{
-    double c_u = c[iPop][0]*ux + c[iPop][1]*uy + c[iPop][2]*uz;
-    return rho * t[iPop] * (
-               1. + 3.*c_u + 4.5*c_u*c_u - 1.5*uSqr
-           );
-}
-
-  // initialize a node to its local equilibrium term
-void iniEquilibrium(Fluidnode* node) {
-    int iPop;
-    double rho = node->rho;
-    double ux = node->vel_x;
-    double uy = node->vel_y;
-    double uz = node->vel_z;
-
-    double uSqr = ux*ux + uy*uy + uz*uz;
-    for (iPop = 0; iPop < 19; ++iPop) {
-        node->dfeq[iPop] =
-            computeEquilibrium(iPop, rho, ux, uy, uz, uSqr);
-    }
-}
+#include "lb.h"
 
 void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfeq*/
   Fluidgrid     *fluidgrid;
@@ -67,7 +40,7 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfeq*/
             for (int lj = starting_y; lj <= stopping_y; ++lj){
               for (int lk = starting_z; lk <= stopping_z; ++lk){
                 int node_idx = li * cube_size * cube_size + lj * cube_size + lk; //local node index inside a cube.
-                iniEquilibrium(nodes+node_idx);
+                computeEquilibrium(nodes+node_idx);
 
                 // for (int ksi = 0; ksi<19; ++ksi){
                 //   if (ksi == 0){

@@ -759,7 +759,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
   dim_y = gv->fluid_grid->y_dim;
   dim_z = gv->fluid_grid->z_dim;
 
-  total_sub_grids = (dim_x*dim_y*dim_z) / pow(cube_size,3);
+  total_sub_grids = (dim_x*dim_y*dim_z) / (cube_size*cube_size*cube_size);
 
   /*gv->num_cubes_y     = total_sub_grids/cube_size;
   gv->num_cubes_z     = total_sub_grids/cube_size;
@@ -800,7 +800,7 @@ void init_gv(GV gv, Fibershape* fiber_shape, Fluidgrid* fluid_grid, int cube_siz
   gv->g_l = gv->u_l * gv->u_l / (gv->Fr * gv->L_l);  /*How...? PN*/
   gv->g_l = 0.0; // gravity is equal to zero.
 
-  gv->Kb_l  = gv->Kbhat * gv->rho_l * gv->u_l * gv->u_l * pow(gv->L_l,4); // For bending Force
+  gv->Kb_l  = gv->Kbhat * gv->rho_l * gv->u_l * gv->u_l * (gv->L_l *gv->L_l *gv->L_l *gv->L_l); // For bending Force
   //Not used any more.gv->Kst_l = gv->Ksthat * gv->rho_l * gv->u_l * gv->u_l * gv->L_l;       // For stretching Force may be used fo tethered points only
   gv->Ks_l = gv->Kshat * gv->rho_l * gv->u_l * gv->u_l * gv->L_l;
   //printf("GV->Ks_l:::::%f\n",gv->Ks_l);
@@ -1025,7 +1025,7 @@ void compute_bendingforce(LV lv) {
 
   ds1                 = fiber_sheet_w / (total_fibers_clmn -1); // gap between fiber nodes along the z-dim.
   ds2                 = fiber_sheet_h / (total_fibers_row-1);   // gap between two neighboring fibers along y-dim.
-  bending_const       = gv->Kb_l / pow(ds2, 3);           // KB and alpha1 pow 3
+  bending_const       = gv->Kb_l / (ds2*ds2*ds2);           // KB and alpha1 pow 3
 
   /* compute force along the fibers (row) */
   for (i = 0; i < total_fibers_row; ++i) {
@@ -1094,7 +1094,7 @@ void compute_bendingforce(LV lv) {
   #endif //DEBUG_PRINT
   /* computing bending force along direction normal to fibers (column), bending_const may be different */
   Fibersheet* sheet = fiber_shape->sheets + 0;
-  bending_const     = gv->Kb_l / pow(ds2, 3); // KB and alpha1 pow 3
+  bending_const     = gv->Kb_l / (ds2*ds2*ds2); // KB and alpha1 pow 3
 
   for (j = 0; j < total_fibers_clmn; ++j){
     if (fiber2thread(0, total_fibers_row, total_threads) == tid){
@@ -1401,7 +1401,7 @@ void get_influentialdomain_fluid_grid_and_SpreadForce(LV lv){//Fiber influences 
   dim_y           = gv->fluid_grid->y_dim;
   dim_z           = gv->fluid_grid->z_dim;
   cube_size       = gv->cube_size;
-  total_sub_grids = (dim_x*dim_y*dim_z) /pow(cube_size,3);
+  total_sub_grids = (dim_x*dim_y*dim_z) / (cube_size*cube_size*cube_size);
   num_cubes_x     = gv->num_cubes_x;
   num_cubes_y     = gv->num_cubes_y;
   num_cubes_z     = gv->num_cubes_z;
@@ -1604,9 +1604,13 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfreq*/
                             (gv->c[ksi][0]*nodes[node_idx].vel_x
                                 + gv->c[ksi][1]*nodes[node_idx].vel_y
                                 + gv->c[ksi][2]*nodes[node_idx].vel_z)
-                            + 4.5 * (pow(gv->c[ksi][0]*nodes[node_idx].vel_x
+                            + 4.5 * ( (gv->c[ksi][0]*nodes[node_idx].vel_x
                                 + gv->c[ksi][1]*nodes[node_idx].vel_y
-                                + gv->c[ksi][2]*nodes[node_idx].vel_z, 2))
+                                + gv->c[ksi][2]*nodes[node_idx].vel_z) * 
+                                      (gv->c[ksi][0]*nodes[node_idx].vel_x
+                                + gv->c[ksi][1]*nodes[node_idx].vel_y
+                                + gv->c[ksi][2]*nodes[node_idx].vel_z)
+                                       )
                             - 1.5 * (nodes[node_idx].vel_x * nodes[node_idx].vel_x
                                 + nodes[node_idx].vel_y * nodes[node_idx].vel_y
                                 + nodes[node_idx].vel_z * nodes[node_idx].vel_z));
@@ -1617,9 +1621,13 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfreq*/
                             (gv->c[ksi][0]*nodes[node_idx].vel_x
                             +gv->c[ksi][1]*nodes[node_idx].vel_y
                             +gv->c[ksi][2]*nodes[node_idx].vel_z)
-                         + 4.5 *(pow(gv->c[ksi][0]*nodes[node_idx].vel_x
+                         + 4.5 *( (gv->c[ksi][0]*nodes[node_idx].vel_x
                             + gv->c[ksi][1]*nodes[node_idx].vel_y
-                            + gv->c[ksi][2]*nodes[node_idx].vel_z,2))
+                            + gv->c[ksi][2]*nodes[node_idx].vel_z) *
+                                  (gv->c[ksi][0]*nodes[node_idx].vel_x
+                            + gv->c[ksi][1]*nodes[node_idx].vel_y
+                            + gv->c[ksi][2]*nodes[node_idx].vel_z)
+                         )
                         - 1.5 * (nodes[node_idx].vel_x *nodes[node_idx].vel_x
                             +nodes[node_idx].vel_y *nodes[node_idx].vel_y
                             +nodes[node_idx].vel_z *nodes[node_idx].vel_z));
@@ -1729,6 +1737,8 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
   num_cubes_x = gv->num_cubes_x;
   num_cubes_y = gv->num_cubes_y;
   num_cubes_z = gv->num_cubes_z;
+  double cs_l_2 = gv->cs_l*gv->cs_l;
+  double cs_l_4 = cs_l_2 * cs_l_2;
 
   //printf("*************ENTRY OF DF1\n");
   //print_fluid_sub_grid(gv, lookup_fluid_start_x, lookup_fluid_start_y, lookup_fluid_start_z,
@@ -1776,10 +1786,10 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
                             ( (gv->c[ksi][0] - nodes[node_idx].vel_x) * nodes[node_idx].elastic_force_x
                             + (gv->c[ksi][1] - nodes[node_idx].vel_y) * nodes[node_idx].elastic_force_y
                             + (gv->c[ksi][2] - nodes[node_idx].vel_z) * (nodes[node_idx].elastic_force_z
-                            + nodes[node_idx].rho * gv->g_l) ) / (gv->cs_l*gv->cs_l)
+                            + nodes[node_idx].rho * gv->g_l) ) / cs_l_2
                         + ( gv->c[ksi][0] * nodes[node_idx].vel_x
                           + gv->c[ksi][1] * nodes[node_idx].vel_y
-                          + gv->c[ksi][2] * nodes[node_idx].vel_z) / pow(gv->cs_l,4)
+                          + gv->c[ksi][2] * nodes[node_idx].vel_z) / cs_l_4
                             * ( gv->c[ksi][0] * nodes[node_idx].elastic_force_x
                               + gv->c[ksi][1] * nodes[node_idx].elastic_force_y
                               + gv->c[ksi][2] * ( nodes[node_idx].elastic_force_z
@@ -1792,9 +1802,13 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
                             ( gv->c[ksi][0] * nodes[node_idx].vel_x
                             + gv->c[ksi][1] * nodes[node_idx].vel_y
                             + gv->c[ksi][2] * nodes[node_idx].vel_z)
-                         + 4.5 * ( pow(gv->c[ksi][0] * nodes[node_idx].vel_x
+                         + 4.5 * ( (gv->c[ksi][0] * nodes[node_idx].vel_x
                                  + gv->c[ksi][1] * nodes[node_idx].vel_y
-                                 + gv->c[ksi][2] * nodes[node_idx].vel_z, 2))
+                                 + gv->c[ksi][2] * nodes[node_idx].vel_z) *
+                                 (gv->c[ksi][0] * nodes[node_idx].vel_x
+                                 + gv->c[ksi][1] * nodes[node_idx].vel_y
+                                 + gv->c[ksi][2] * nodes[node_idx].vel_z)
+                         )
                          - 1.5 * ( nodes[node_idx].vel_x * nodes[node_idx].vel_x
                                  + nodes[node_idx].vel_y * nodes[node_idx].vel_y
                                  + nodes[node_idx].vel_z * nodes[node_idx].vel_z));
@@ -1810,7 +1824,7 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
                                     (nodes[node_idx].elastic_force_z + nodes[node_idx].rho*gv->g_l) ) / (gv->cs_l*gv->cs_l)
                           + ( gv->c[ksi][0] * nodes[node_idx].vel_x
                             + gv->c[ksi][1] * nodes[node_idx].vel_y
-                            + gv->c[ksi][2] * nodes[node_idx].vel_z) / pow(gv->cs_l,4)
+                            + gv->c[ksi][2] * nodes[node_idx].vel_z) / cs_l_4
                               * ( gv->c[ksi][0] * nodes[node_idx].elastic_force_x
                                 + gv->c[ksi][1] * nodes[node_idx].elastic_force_y
                                 + gv->c[ksi][2] * ( nodes[node_idx].elastic_force_z
@@ -1823,9 +1837,13 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
                              ( gv->c[ksi][0] * nodes[node_idx].vel_x
                              + gv->c[ksi][1] * nodes[node_idx].vel_y
                              + gv->c[ksi][2] * nodes[node_idx].vel_z)
-                          + 4.5 * ( pow( gv->c[ksi][0] * nodes[node_idx].vel_x
+                          + 4.5 * ( ( gv->c[ksi][0] * nodes[node_idx].vel_x
                                        + gv->c[ksi][1] * nodes[node_idx].vel_y
-                                       + gv->c[ksi][2] * nodes[node_idx].vel_z, 2))
+                                       + gv->c[ksi][2] * nodes[node_idx].vel_z) * 
+                                    ( gv->c[ksi][0] * nodes[node_idx].vel_x
+                                       + gv->c[ksi][1] * nodes[node_idx].vel_y
+                                       + gv->c[ksi][2] * nodes[node_idx].vel_z)
+                          )
                           - 1.5 * ( nodes[node_idx].vel_x * nodes[node_idx].vel_x
                                   + nodes[node_idx].vel_y * nodes[node_idx].vel_y
                                   + nodes[node_idx].vel_z * nodes[node_idx].vel_z));
@@ -1842,7 +1860,7 @@ printf("****************Inside compute_eqlbrmdistrfuncDF1*************\n");
                                                + nodes[node_idx].rho * gv->g_l) ) / (gv->cs_l*gv->cs_l)
                           + ( gv->c[ksi][0] * nodes[node_idx].vel_x
                             + gv->c[ksi][1] * nodes[node_idx].vel_y
-                            + gv->c[ksi][2] * nodes[node_idx].vel_z) / pow(gv->cs_l,4)
+                            + gv->c[ksi][2] * nodes[node_idx].vel_z) / cs_l_4
                               * ( gv->c[ksi][0] * nodes[node_idx].elastic_force_x
                                 + gv->c[ksi][1] * nodes[node_idx].elastic_force_y
                                 + gv->c[ksi][2] * ( nodes[node_idx].elastic_force_z
@@ -3880,10 +3898,12 @@ int main(int argc, char* argv[]) {
 
   printf("***********total_threads = P*Q*R =%d  ************\n\n",total_threads);
   //Error Chek#2
+#if 0  
   if (total_fibers_row%2 !=0 ||  total_threads%2 !=0){
-    fprintf(stderr,"Check #Fiber_row ==:%d and total threads ==:%d :Should be multiple of 2", total_fibers_row, total_threads);
+    fprintf(stderr,"Check #Fiber_row ==:%d and total threads ==:%d :Should be multiple of 2\n", total_fibers_row, total_threads);
     exit(1);
   }
+#endif
 
   if ((fluidgrid_z/k_cubedim) % R !=0){
     fprintf(stderr,"Check Fluid_elem_z== :%d and  R==:%d :Should be divisible \n", fluidgrid_z, R);
@@ -4014,11 +4034,15 @@ int main(int argc, char* argv[]) {
 #endif
 
    double endTime = get_cur_time();
+   double MFLUPS = fluidgrid_x * fluidgrid_y * fluidgrid_z * gv->TIME_STOP * 1e-6 / (endTime -startTime);
+
+   printf("TOTAL TIME TAKEN IN Seconds:%f, MFLUPS=%f, MFLUPS/core=%f\n", 
+    endTime -startTime, MFLUPS, MFLUPS/total_threads);
+
    free(gv->fluid_grid->sub_fluid_grid);
    free(gv->fluid_grid);
    free(gv);
    pthread_mutex_destroy(&gv->lock_Fluid[total_threads]);
 
-   printf("TOTAL TIME TAKEN IN Seconds:%f\n", endTime -startTime);
    return 0;
 }
