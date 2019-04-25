@@ -64,7 +64,7 @@
 // #define IFD_FORCE_PERF
 // #define IFD_VEL_PERF
 #define STREAM_PERF
-#define CHECK_STREAM
+// #define CHECK_STREAM
 // #define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY
@@ -245,11 +245,13 @@ typedef struct gv_t {
 
   //streaming
   char* stream_msg[19];
-  pthread_mutex_t lock_stream_msg[19];
   int stream_last_pos[19];
   char* stream_recv_buf;
   int stream_recv_max_bufsize;
   int stream_msg_recv_cnt;
+  pthread_mutex_t* lock_stream_thd_msg[19];
+  int* stream_thd_last_pos[19];
+  char** stream_thd_msg[19];
   // int streamdir[19];
   int streamDest[19]; //used in MPI_SendRecv when streaming
   int streamSrc[19];

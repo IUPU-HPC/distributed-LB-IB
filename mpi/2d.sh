@@ -13,21 +13,21 @@ timestep=1
 # thread_per_task_z=2
 
 #fluid
-fluid_grid_z=256
-fluid_grid_y=256
-fluid_grid_x=64
-fluid_task_z=4
-fluid_task_y=4
-fluid_task_x=1
+fluid_grid_z=84
+fluid_grid_y=96
+fluid_grid_x=96
+fluid_task_z=1
+fluid_task_y=3
+fluid_task_x=3
 cube_size=4
-thread_per_task_x=2
-thread_per_task_y=2
-thread_per_task_z=2
+thread_per_task_x=1
+thread_per_task_y=4
+thread_per_task_z=7
 
 #fiber
 num_fibersht=1
-fiber_width=20
-fiber_height=20
+fiber_width=4
+fiber_height=4
 fiber_row=52
 fiber_clmn=52
 fiber_x0=20

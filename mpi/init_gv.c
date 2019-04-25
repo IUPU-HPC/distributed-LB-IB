@@ -108,19 +108,30 @@ void init_gv_constant(GV gv){
   //printf("GV->Ks_l:::::%f\n",gv->Ks_l);
 }
 
-void init_stream_msg(GV gv, int dir, int points){
+// dir = aggr_stream_dir
+void init_stream_msg_and_lock(GV gv, int dir, int points){
   int cube_size =  gv->cube_size;
-  int i;
+  int toTid;
+  int total_threads = gv->threads_per_task;
 
   gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
-  // Initialize mutex lock_stream_msg
-  if (pthread_mutex_init(&gv->lock_stream_msg[dir], NULL)){
-    fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
-    exit(1);
-  }
-
   gv->stream_msg[dir] = (char*) malloc ((sizeof(int)* 4 + sizeof(double))* points);
   // printf("Fluid%d: Init stream_msg[%d] = %d\n", gv->taskid, dir, (sizeof(int)* 4 + sizeof(double))* points);
+
+  gv->lock_stream_thd_msg[dir] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
+  gv->stream_thd_last_pos[dir] = (int*) malloc(sizeof(int) * total_threads);
+  gv->stream_thd_msg[dir]      = (char**)malloc(sizeof(char*) * total_threads);
+  for(toTid = 0; toTid < total_threads; ++toTid){
+    // Initialize mutex lock_stream_msg
+    if (pthread_mutex_init(&gv->lock_stream_thd_msg[dir][toTid], NULL)){
+      fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
+      exit(1);
+    }
+
+    // malloc stream_thd_msg
+    gv->stream_thd_last_pos[dir][toTid] = 0;
+    gv->stream_thd_msg[dir][toTid] = (char*) malloc ((sizeof(int)* 4 + sizeof(double))* points / 5);
+  }
 
 }
 
@@ -255,7 +266,8 @@ void init_gv(GV gv) {
       //   gv->streamdir[streamdir] = -1;
       // }
 
-      init_stream_msg(gv, streamdir, max_stream_msg_points); //need to optimize
+      init_stream_msg_and_lock(gv, streamdir, max_stream_msg_points); //need to optimize
+      // printf("init_stream_msg_and_lock %d\n", streamdir);
     }
   }
 

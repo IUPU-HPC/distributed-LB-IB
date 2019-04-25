@@ -24,42 +24,41 @@
 #include "timer.h"
 #include "lb.h"
 
-void insert_msg(LV lv, int nextX, int nextY, int nextZ, int dir, int iPop, double df1_tosend){
-  GV gv = lv->gv;
-  int tid = lv->tid;
+// dir = aggr_stream_dir
+void insert_msg (GV gv, int tid, int nextX, int nextY, int nextZ,
+                        int dir, int toTid, int iPop, double df1_tosend){
   int my_rank = gv->taskid;
 
   int dim_x = gv->fluid_grid->x_dim;
   int dim_y = gv->fluid_grid->y_dim;
   int dim_z = gv->fluid_grid->z_dim;
 
-  pthread_mutex_lock(&gv->lock_stream_msg[dir]);
+  pthread_mutex_lock(&gv->lock_stream_thd_msg[dir][toTid]);
 
-  *((int*)(gv->stream_msg[dir] + gv->stream_last_pos[dir]))                     = nextX;
-  *((int*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int)))       = nextY;
-  *((int*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int) * 2))   = nextZ;
-  *((int*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int) * 3))   = iPop;
-  *((double*)(gv->stream_msg[dir] + gv->stream_last_pos[dir] + sizeof(int) * 4)) = df1_tosend;
+  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid]))                      = nextX;
+  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int)))        = nextY;
+  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 2))    = nextZ;
+  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 3))    = iPop;
+  *((double*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 4)) = df1_tosend;
 
 #if 0
-  assertf(nextX < dim_x, "insert_msg_ERROR: nextX=%d, position=%d", nextX, gv->stream_last_pos[dir]);
-  assertf(nextY < dim_y, "insert_msg_ERROR: nextY=%d, position=%d", nextY, gv->stream_last_pos[dir]);
-  assertf(nextZ < dim_z, "insert_msg_ERROR: nextZ=%d, position=%d", nextZ, gv->stream_last_pos[dir]);
-  assertf(iPop < 19, "insert_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_last_pos[dir]);
-  assert(gv->stream_last_pos[dir] < gv->stream_recv_max_bufsize);
+  assertf(nextX < dim_x, "insert_msg_ERROR: nextX=%d, position=%d", nextX, gv->stream_thd_last_pos[dir][toTid]);
+  assertf(nextY < dim_y, "insert_msg_ERROR: nextY=%d, position=%d", nextY, gv->stream_thd_last_pos[dir][toTid]);
+  assertf(nextZ < dim_z, "insert_msg_ERROR: nextZ=%d, position=%d", nextZ, gv->stream_thd_last_pos[dir][toTid]);
+  assertf(iPop < 19, "insert_msg_ERROR: iPop=%d, position=%d", iPop, gv->stream_thd_last_pos[dir][toTid]);
+  assert(gv->stream_thd_last_pos[dir][toTid] < gv->stream_recv_max_bufsize);
 
-  printf("Fluid%dtid%d: insert_msg on Sdir %2d, next(%d,%d,%d)[%2d]=%f, gv->stream_last_pos[%d]=%d\n",
-              my_rank, tid, dir, nextX, nextY, nextZ, iPop, df1_tosend, dir, gv->stream_last_pos[dir]);
+  printf("Fluid%dtid%d: insert_msg on Sdir %2d, next(%d,%d,%d)[%2d]=%f, gv->stream_thd_last_pos[%d][%d]=%d\n",
+              my_rank, tid, dir, nextX, nextY, nextZ, iPop, df1_tosend, dir, toTid, gv->stream_thd_last_pos[dir][toTid]);
 #endif
 
-  gv->stream_last_pos[dir] += sizeof(int) * 4 + sizeof(double);
+  gv->stream_thd_last_pos[dir][toTid] += sizeof(int) * 4 + sizeof(double);
 
-  pthread_mutex_unlock(&gv->lock_stream_msg[dir]);
+  pthread_mutex_unlock(&gv->lock_stream_thd_msg[dir][toTid]);
 }
 
-void check_msg(LV lv, char* stream_msg, int sendcnt, int dest, int dir){
-  GV gv = lv->gv;
-  int tid = lv->tid;
+void check_msg(GV gv, int tid, char* stream_msg, int sendcnt, int dest, int dir){
+
   int my_rank = gv->taskid;
   int BI, BJ, BK, li, lj, lk, iPop;
   double df1_tosend;
@@ -110,9 +109,7 @@ next(X,Y,Z)=(%d,%d,%d), (BI,BJ,BK)=(%d,%d,%d), (li,lj,lk)=(%d,%d,%d), df1_tosend
   }
 }
 
-void get_df2_from_stream_msg(LV lv, int stream_msg_count, int dir, int src){
-  GV gv = lv->gv;
-  int tid = lv->tid;
+void get_df2_from_stream_msg(GV gv, int tid, int stream_msg_count, int dir, int src){
   int my_rank = gv->taskid;
 
   int position = 0;
@@ -144,7 +141,7 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count, int dir, int src){
     BJ = Y / cube_size;
     lj = Y % cube_size;
 
-    BK = Z / cube_size;        
+    BK = Z / cube_size;
     lk = Z % cube_size;
 
     toTid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);//toTid is thread id in the fluid machine
@@ -175,9 +172,8 @@ void get_df2_from_stream_msg(LV lv, int stream_msg_count, int dir, int src){
 
 }
 
-void streaming_on_direction(LV lv, int dir, int dest, int src){
-  GV gv = lv->gv;
-  int tid = lv->tid;
+void streaming_on_direction(GV gv, int tid, int dir, int dest, int src){
+
   int stream_msg_recv_cnt;
   int my_rank = gv->taskid;
   MPI_Status status;
@@ -192,14 +188,14 @@ void streaming_on_direction(LV lv, int dir, int dest, int src){
 #endif //CHECK_STREAM
 
 #if 0
-    check_msg(lv, gv->stream_msg[dir], gv->stream_last_pos[dir], dest, dir);
+    check_msg(gv, tid, gv->stream_msg[dir], gv->stream_last_pos[dir], dest, dir);
 #endif
 
     // if (gv->stream_last_pos[dir] > 0) {
       MPI_Sendrecv(gv->stream_msg[dir], gv->stream_last_pos[dir], MPI_CHAR,
-      dest, dir, gv->stream_recv_buf, gv->stream_recv_max_bufsize,
-      MPI_CHAR, src, dir,
-      gv->cartcomm, &status);
+        dest, dir, gv->stream_recv_buf, gv->stream_recv_max_bufsize,
+        MPI_CHAR, src, dir,
+        gv->cartcomm, &status);
       MPI_Get_count(&status, MPI_CHAR, &gv->stream_msg_recv_cnt);
 
       // reset gv->stream_last_pos[dir]
@@ -223,7 +219,7 @@ void streaming_on_direction(LV lv, int dir, int dest, int src){
 #endif
 
   // if (gv->stream_msg_recv_cnt > 0){
-    get_df2_from_stream_msg(lv, gv->stream_msg_recv_cnt, dir, src);
+    get_df2_from_stream_msg(gv, tid, gv->stream_msg_recv_cnt, dir, src);
 
 #ifdef CHECK_STREAM
   printf("#Pass_get_df2 Fluid%dtid%d: from_stream_msg src=%d, dir=%d, recv_cnt=%d\n",
@@ -241,9 +237,9 @@ void streaming_on_direction(LV lv, int dir, int dest, int src){
 }
 
 int findDir(GV gv, int toProc){
-  for(int streamdir = 1; streamdir < 19; streamdir++){
-    if (toProc == gv->streamDest[streamdir])
-      return streamdir;
+  for(int aggr_stream_dir = 1; aggr_stream_dir < 19; aggr_stream_dir++){
+    if (toProc == gv->streamDest[aggr_stream_dir])
+      return aggr_stream_dir;
   }
 }
 
@@ -265,15 +261,31 @@ void  stream_distrfunc(LV lv){//df2
   int node_df1_idx, node_df2_idx, cube_size;
   int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;
 
-  int BI, BJ, BK, li, lj, lk, X, Y, Z, iPop, dir;
+  int BI, BJ, BK, li, lj, lk, X, Y, Z, iPop, aggr_stream_dir;
   int nextX, nextY, nextZ, nextBI, nextBJ, nextBK, nextli, nextlj, nextlk;
 
-  int Px, Py, Pz;
-  int num_cubes_per_proc_x, num_cubes_per_proc_y, num_cubes_per_proc_z;
+  // int P[3], cubes_per_task[3], T[3], cubes_per_thd[3], t[3], toTid, total_threads;
+  int Px, Py, Pz, cubes_per_task_x, cubes_per_task_y, cubes_per_task_z,
+      tx, ty, tz, cubes_per_thd_x, cubes_per_thd_y, cubes_per_thd_z,
+      ti, tj, tk, toTid, total_threads;
+
+  // P[0] = gv->num_fluid_task_x;
+  // P[1] = gv->num_fluid_task_y;
+  // P[2] = gv->num_fluid_task_z;
+
+  // T[0] = gv->tx;
+  // T[1] = gv->ty;
+  // T[2] = gv->tz;
 
   Px = gv->num_fluid_task_x;
   Py = gv->num_fluid_task_y;
   Pz = gv->num_fluid_task_z;
+
+  tx = gv->tx;
+  ty = gv->ty;
+  tz = gv->tz;
+
+  total_threads = gv->threads_per_task;
 
   int rank_x, rank_y, rank_z;
   int Pyz = Py * Pz;
@@ -284,10 +296,26 @@ void  stream_distrfunc(LV lv){//df2
   int num_cubes_y = gv->fluid_grid->num_cubes_y;
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
-  num_cubes_per_proc_x = num_cubes_x / Px; // along x: how many cubes in each process
-  num_cubes_per_proc_y = num_cubes_y / Py; // along y: how many cubes in each process
-  num_cubes_per_proc_z = num_cubes_z / Pz; // along y: how many cubes in each process
+  // cubes_per_task[0] = num_cubes_x / P[0]; // along x: how many cubes in each process
+  // cubes_per_task[1] = num_cubes_y / P[1]; // along y: how many cubes in each process
+  // cubes_per_task[2] = num_cubes_z / P[2]; // along y: how many cubes in each process
 
+  // cubes_per_thd[0] = cubes_per_task[0] / T[0];
+  // cubes_per_thd[1] = cubes_per_task[1] / T[1];
+  // cubes_per_thd[2] = cubes_per_task[2] / T[2];
+
+  cubes_per_task_x = num_cubes_x / Px; // along x: how many cubes in each process
+  cubes_per_task_y = num_cubes_y / Py; // along y: how many cubes in each process
+  cubes_per_task_z = num_cubes_z / Pz; // along y: how many cubes in each process
+
+  cubes_per_thd_x = cubes_per_task_x / tx;
+  cubes_per_thd_y = cubes_per_task_y / ty;
+  cubes_per_thd_z = cubes_per_task_z / tz;
+#if 0
+  printf("cubes_per_task (%d, %d, %d) cubes_per_thd(%d, %d, %d)\n",
+    cubes_per_task_x, cubes_per_task_y, cubes_per_task_z,
+    cubes_per_thd_x, cubes_per_thd_y, cubes_per_thd_z);
+#endif
   starting_x = starting_y = starting_z = 0;
   stopping_x = stopping_y = stopping_z = cube_size - 1;
 
@@ -301,7 +329,7 @@ void  stream_distrfunc(LV lv){//df2
 #ifdef STREAM_PERF
   t2 = Timer::get_cur_time();
 #endif
-  //prepare message
+  // step1: prepare message
   for (BI = 0; BI < num_cubes_x; ++BI)
   for (BJ = 0; BJ < num_cubes_y; ++BJ)
   for (BK = 0; BK < num_cubes_z; ++BK){
@@ -345,22 +373,25 @@ void  stream_distrfunc(LV lv){//df2
           nextBJ = nextY / cube_size;
           nextlj = nextY % cube_size;
 
-          nextBK = nextZ / cube_size;                   
+          nextBK = nextZ / cube_size;
           nextlk = nextZ % cube_size;
 
           // toProc = global2task(nextX, nextY, nextZ, gv);
           // toProc = my_rank; // Used in 1 fluid node test case to improve performance
-          // toProc = (nextBI / num_cubes_per_proc_x) * Py * Pz 
-          //         + (nextBJ / num_cubes_per_proc_y) * Pz 
+          // toProc = (nextBI / num_cubes_per_proc_x) * Py * Pz
+          //         + (nextBJ / num_cubes_per_proc_y) * Pz
           //         + nextBK / num_cubes_per_proc_z;
-          rank_x = nextBI / num_cubes_per_proc_x;
-          rank_y = nextBJ / num_cubes_per_proc_y;
-          rank_z = nextBK / num_cubes_per_proc_z;
+          // rank_x = nextBI / cubes_per_task[0];
+          // rank_y = nextBJ / cubes_per_task[1];
+          // rank_z = nextBK / cubes_per_task[2];
+          rank_x = nextBI / cubes_per_task_x;
+          rank_y = nextBJ / cubes_per_task_y;
+          rank_z = nextBK / cubes_per_task_z;
           toProc = rank_x * Pyz + rank_y * Pz + rank_z;
 
           cube_df2_idx = nextBI * num_cubes_y * num_cubes_z + nextBJ * num_cubes_z + nextBK;
           nodes_df2 = gv->fluid_grid->sub_fluid_grid[cube_df2_idx].nodes;
-          node_df2_idx = nextli * cube_size * cube_size + nextlj * cube_size + nextlk;      
+          node_df2_idx = nextli * cube_size * cube_size + nextlj * cube_size + nextlk;
 
 #if 0
           if(my_rank==0)
@@ -381,8 +412,27 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 #endif
           }
           else{
-            dir = findDir(gv, toProc); //find the direction of streaming message
-            assert(dir > 0);
+            // t[0] = (nextBI % cubes_per_task[0]) / cubes_per_thd[0]; //i
+            // t[1] = (nextBJ % cubes_per_task[1]) / cubes_per_thd[1]; //j
+            // t[2] = (nextBK % cubes_per_task[2]) / cubes_per_thd[2]; //k
+
+            ti = (nextBI % cubes_per_task_x) / cubes_per_thd_x; //i
+            tj = (nextBJ % cubes_per_task_y) / cubes_per_thd_y; //j
+            tk = (nextBK % cubes_per_task_z) / cubes_per_thd_z; //k
+
+            //tid  = i * ty * tz + j * tz + k;
+            // toTid = t[0] * T[1] * T[2] + t[1] * T[2] + t[2];
+            toTid = ti * ty * tz + tj * tz + tk;
+#if 0
+            printf("Fluid%dTid%d: next(%d,%d,%d) nextB(%d,%d,%d) t(%d,%d,%d) toTid=%d\n",
+              my_rank, tid,
+              nextX, nextY, nextZ,
+              nextBI, nextBJ, nextBK,
+              ti, tj, tk,
+              toTid);
+#endif
+            aggr_stream_dir = findDir(gv, toProc); //find the direction of streaming message
+            assert(aggr_stream_dir > 0);
 #if 0
             printf("Fluid%dtid%d: iPop%2d, Sdir %2d, (X,Y,Z)=(%ld,%ld,%ld), df1_tosend=%f, next(X,Y,Z)=(%ld,%ld,%ld)\n",
               my_rank, tid, iPop, dir, X, Y, Z, nodes_df1[node_df1_idx].df1[iPop],
@@ -392,7 +442,8 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 #if 0
             t0 = Timer::get_cur_time();
 #endif
-            insert_msg(lv, nextX, nextY, nextZ, dir, iPop, nodes_df1[node_df1_idx].df1[iPop]);
+            insert_msg(gv, tid, nextX, nextY, nextZ,
+                      aggr_stream_dir, toTid, iPop, nodes_df1[node_df1_idx].df1[iPop]);
 
 #if 0
             t1 = Timer::get_cur_time();
@@ -453,10 +504,41 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 
   pthread_barrier_wait(&(gv->barr));
 
-  // if(tid==0)
-  //   MPI_Barrier(MPI_COMM_WORLD);
+  // step2: memcpy message, iPop = aggr_stream_dir
+  if(tid==0){
+#ifdef STREAM_PERF
+    t0 = Timer::get_cur_time();
+#endif
+    for (iPop = 1; iPop < 19; iPop++){
+      for (toTid = 0; toTid < total_threads; ++toTid){
+        char* src = gv->stream_thd_msg[iPop][toTid];
+        int size = gv->stream_thd_last_pos[iPop][toTid];
 
-  //send message
+        if (size > 0){
+          int last_pos = gv->stream_last_pos[iPop];
+
+          printf("Fluid%dTid%d: memcpy (%d, %d) --> (%d), size=%d\n",
+            my_rank, tid, iPop, toTid, iPop, size);
+
+          char* dest = (char*)(gv->stream_msg[iPop] + last_pos);
+          memcpy(dest, src, size);
+
+          gv->stream_last_pos[iPop] += size;
+        }
+
+        //reset
+        gv->stream_thd_last_pos[iPop][toTid] = 0;
+      }
+    }
+#ifdef STREAM_PERF
+    t1 = Timer::get_cur_time();
+    printf("Fluid%dTid%d: Pass stream accumulate copy, t_copy=%f\n", my_rank,tid, t1-t0);
+#endif
+  }
+
+  pthread_barrier_wait(&(gv->barr));
+
+  // step3: send message, iPop = aggr_stream_dir
   t0 = Timer::get_cur_time();
 
   for(iPop = 1; iPop < 19; iPop++){
@@ -468,7 +550,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
     }
 #endif //CHECK_STREAM
 
-    streaming_on_direction(lv, iPop, gv->streamDest[iPop], gv->streamSrc[iPop]);
+    streaming_on_direction(gv, tid, iPop, gv->streamDest[iPop], gv->streamSrc[iPop]);
 
     // if(tid==0)
     //   MPI_Barrier(MPI_COMM_WORLD);

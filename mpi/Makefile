@@ -34,7 +34,7 @@ CFLAGS += -std=c11 -fPIC
 LDFLAGS ?=
 
 ifeq ($(strip $(DEBUG)),0)
-	CXXFLAGS += -O3
+	CXXFLAGS += -O3 -DNDEBUG
 else
 	CXXFLAGS += -O0 -ggdb
 endif

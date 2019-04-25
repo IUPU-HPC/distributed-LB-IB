@@ -266,8 +266,8 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
 #ifdef IFD_FORCE_PERF
     t0 = Timer::get_cur_time();
 #endif
-    for(i = 0; i < num_fluid_tasks; i++){
-      for(j = 0; j < total_threads; j++){
+    for (i = 0; i < num_fluid_tasks; i++){
+      for (j = 0; j < total_threads; j++){
         char* src = gv->ifd_fluid_thread_msg[i][j];
         int size = gv->ifd_last_pos_proc_thd[i][j];
 

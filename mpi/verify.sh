@@ -49,9 +49,11 @@ dump=10
 fluid_grid_x=256
 fluid_grid_y=256
 fluid_grid_z=224
+
 fluid_task_y=1
 fluid_task_z=1
 fluid_task_x=1
+
 cube_size=4
 thread_per_task_x=1
 thread_per_task_y=4

@@ -507,11 +507,13 @@ The cubes should be distributed equally on the entire fluid grid\n",
 
   MPI_Barrier(MPI_COMM_WORLD);
   double endTime = Timer::get_cur_time();
-  double MFLUPS = gv->fluid_grid->x_dim * gv->fluid_grid->y_dim * gv->fluid_grid->z_dim *
-                  gv->timesteps * 1e-6 / (endTime -startTime);
+  double MFLUPS = gv->fluid_grid->x_dim * 1.0e-2 * 
+                  gv->fluid_grid->y_dim * 1.0e-2 *
+                  gv->fluid_grid->z_dim * 1.0e-2 *
+                  gv->timesteps / (endTime - startTime);
 
   printf("Task%d: TOTAL TIME TAKEN IN Seconds:%f, MFLUPS=%f, MFLUPS/core=%f\n", 
-    gv->taskid, endTime -startTime, MFLUPS, MFLUPS/(gv->num_fluid_tasks*gv->threads_per_task) );
+    gv->taskid, endTime - startTime, MFLUPS, MFLUPS/(gv->num_fluid_tasks*gv->threads_per_task) );
   fflush(stdout);
 
   if(gv->taskid < gv->num_fluid_tasks) MPI_Comm_free(&gv->cartcomm);
