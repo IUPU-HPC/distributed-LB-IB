@@ -1,4 +1,4 @@
-timestep=200
+timestep=2
 dump=10
 
 # #fluid
@@ -46,9 +46,9 @@ dump=10
 # fiber_z0=11.5
 
 #fluid
-fluid_grid_x=256
-fluid_grid_y=256
-fluid_grid_z=224
+fluid_grid_x=128
+fluid_grid_y=128
+fluid_grid_z=112
 
 fluid_task_y=1
 fluid_task_z=1

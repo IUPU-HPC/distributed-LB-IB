@@ -97,6 +97,10 @@
 #define Y_transfer_2D 2
 #define Z_transfer_2D 3
 
+#define STREAM_MSG_EACH_POINT_SIZE sizeof(int)*(3+5) + sizeof(double)*5
+//(sizeof(int)* 4 + sizeof(double)
+#define IFD_MSG_EACH_POINT_SIZE sizeof(int)*3 + sizeof(double)*3
+
 #define max(a,b) \
    ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
@@ -190,8 +194,12 @@ typedef struct fluid_grid_t {
 } Fluidgrid;
 
 // typedef std::map<long, int> IFDMap;
-typedef std::map<std::array<int, 3>, int> IFDMap;
+typedef std::map<std::array<int, 3>, int> Map3to1;
 typedef std::map<std::array<int, 2>, int> MsgMap;
+extern std::vector<std::vector<Map3to1> > Ifdmap_proc_thd;
+extern MsgMap send_ifd_msg_pos;
+
+extern std::vector<std::vector<Map3to1> > stream_thd_msg_map;
 
 /* Global info */
 typedef struct gv_t {
@@ -262,9 +270,6 @@ typedef struct lv_t{
   int tid;
   GV  gv;
 }* LV;
-
-extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
-extern MsgMap msg_pos;
 
 /* Debug help function */
 //print range of cubes ip: global i, j,k , iend, jend ,kend

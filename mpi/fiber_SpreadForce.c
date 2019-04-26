@@ -75,7 +75,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
   int ifd_fld_thd;
   // long global_index;
   int ifd_msg_pos;
-  std::pair<IFDMap::iterator, bool> ret;
+  std::pair<Map3to1::iterator, bool> ret;
   char* msg;
   std::array<int, 3> arr3;
   std::array<int, 2> arr2;
@@ -203,7 +203,7 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
             *((double*)(msg + ifd_msg_pos + sizeof(int) * 3 + sizeof(double)))     = elastic_force_y;
             *((double*)(msg + ifd_msg_pos + sizeof(int) * 3 + sizeof(double) * 2)) = elastic_force_z;
 
-            gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid] += sizeof(int) * 3 + sizeof(double) * 3;
+            gv->ifd_last_pos_proc_thd[ifd_fld_proc][fl_tid] += IFD_MSG_EACH_POINT_SIZE;
           }
           else{ //already exist
             // t4 = Timer::get_cur_time();
@@ -272,9 +272,9 @@ void fiber_SpreadForce(LV lv){//Fiber influences fluid
           arr2[0] = i;
           arr2[1] = j;
           int last_pos = gv->ifd_last_pos[i];
-          msg_pos.insert(std::make_pair(arr2, last_pos));
+          send_ifd_msg_pos.insert(std::make_pair(arr2, last_pos));
 
-          printf("Tid%d: msg_pos insert (%d, %d) --> (%d), size=%d\n",
+          printf("Tid%d: send_ifd_msg_pos insert (%d, %d) --> (%d), size=%d\n",
             tid, i, j, last_pos, size);
 
 #if 0

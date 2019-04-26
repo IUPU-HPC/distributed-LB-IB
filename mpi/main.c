@@ -32,9 +32,11 @@ void needs_argument(int i, int argc, const char *flag) {
   }
 }
 
-// IFDMap ifdmap;
-std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
-MsgMap msg_pos;
+// Map3to1 ifdmap;
+std::vector<std::vector<Map3to1> > Ifdmap_proc_thd;
+MsgMap send_ifd_msg_pos;
+
+std::vector<std::vector<Map3to1> > stream_thd_msg_map(19);
 
 int main(int argc, char* argv[]) {
 
@@ -48,7 +50,7 @@ int main(int argc, char* argv[]) {
   a[0]=X; a[1]=Y; a[2]=Z;
 
   for(int i=0; i<3; i++){
-    std::vector<IFDMap> threadmap; //each proc has one threadmap, each thread has a IFDMap
+    std::vector<Map3to1> threadmap; //each proc has one threadmap, each thread has a Map3to1
     threadmap.resize(4);
     threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
     std::cout << "thread[0] size = "<< threadmap[0].size() << "\n";

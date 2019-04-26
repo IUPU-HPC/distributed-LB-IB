@@ -114,12 +114,17 @@ void init_stream_msg_and_lock(GV gv, int dir, int points){
   int total_threads = gv->threads_per_task;
 
   gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
-  gv->stream_msg[dir] = (char*) malloc ((sizeof(int)* 4 + sizeof(double))* points);
+  gv->stream_msg[dir] = (char*) malloc ((STREAM_MSG_EACH_POINT_SIZE)* points);
   // printf("Fluid%d: Init stream_msg[%d] = %d\n", gv->taskid, dir, (sizeof(int)* 4 + sizeof(double))* points);
 
   gv->lock_stream_thd_msg[dir] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
   gv->stream_thd_last_pos[dir] = (int*) malloc(sizeof(int) * total_threads);
   gv->stream_thd_msg[dir]      = (char**)malloc(sizeof(char*) * total_threads);
+
+  std::vector<Map3to1> threadmap;
+  threadmap.resize(total_threads);
+  stream_thd_msg_map[dir] = threadmap;
+
   for(toTid = 0; toTid < total_threads; ++toTid){
     // Initialize mutex lock_stream_msg
     if (pthread_mutex_init(&gv->lock_stream_thd_msg[dir][toTid], NULL)){
@@ -129,7 +134,7 @@ void init_stream_msg_and_lock(GV gv, int dir, int points){
 
     // malloc stream_thd_msg
     gv->stream_thd_last_pos[dir][toTid] = 0;
-    gv->stream_thd_msg[dir][toTid] = (char*) malloc ((sizeof(int)* 4 + sizeof(double))* points / 5);
+    gv->stream_thd_msg[dir][toTid] = (char*) calloc (points, STREAM_MSG_EACH_POINT_SIZE);
   }
 
 }
@@ -175,7 +180,7 @@ void init_gv(GV gv) {
   gv->ifd_max_bufsize = 0;
   for (i = 0; i < num_fiber_tasks; i++){
     // an estimate of this ifd_max_bufsize
-    tmp = (sizeof(int)*3 + sizeof(double)*3) * IFD_SIZE * IFD_SIZE *
+    tmp = (IFD_MSG_EACH_POINT_SIZE) * IFD_SIZE * IFD_SIZE *
                         (gv->fiber_shape->sheets[i].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[i].height + IFD_SIZE);
 #if 0
@@ -189,7 +194,7 @@ void init_gv(GV gv) {
   }
   // printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
 
-  // Fluid task
+  /* ------------------ Fluid task initialization Start ---------------------- */
   if (gv->taskid < gv->num_fluid_tasks){
 
     // printf("row:%d, col:%d, ifd_max_bufsize = %d \n", gv->fiber_shape->sheets[0].num_rows, gv->fiber_shape->sheets[0].num_cols, gv->ifd_max_bufsize);
@@ -198,9 +203,9 @@ void init_gv(GV gv) {
     gv->ifd_recv_buf = (char*) malloc(sizeof(char) * gv->ifd_max_bufsize);
 
     // Initilize stream_msg
-    int max_stream_msg_points = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)) * 5; //TOO BIG: max_stream_msg_points: stream a 2D surface to neighbour
+    int max_stream_msg_points = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)); //TOO BIG: max_stream_msg_points: stream a 2D surface to neighbour
 
-    gv->stream_recv_max_bufsize = (sizeof(int) * 4 + sizeof(double)) * max_stream_msg_points;
+    gv->stream_recv_max_bufsize = (STREAM_MSG_EACH_POINT_SIZE) * max_stream_msg_points;//(X,Y,Z) + (iPop,df1)*5
 
     // use msg[0] as recv buffer
     gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
@@ -213,7 +218,7 @@ void init_gv(GV gv) {
     }
 
     int destCoord[3], srcCoord[3];
-    for (int streamdir = 0; streamdir < 19; ++streamdir) {
+    for (int streamdir = 1; streamdir < 19; ++streamdir) {
       destCoord[0] = gv->rankCoord[0] + c[streamdir][0];
       // destCoord[0] = check_dim(destCoord[0], Px);
 
@@ -269,8 +274,10 @@ void init_gv(GV gv) {
       // printf("init_stream_msg_and_lock %d\n", streamdir);
     }
   }
+  /* ------------------ Fluid task initialization End ---------------------- */
 
-  //Fiber task initialization
+
+  /* ------------------ Fiber task initialization Start -------------------- */
   /******* Shift fiber sheet for one time step ************/
   //TODO: for all the fiber sheets, shift.
   if (gv->taskid >= gv->num_fluid_tasks){
@@ -301,7 +308,7 @@ void init_gv(GV gv) {
     gv->lock_ifd_proc_thd = (pthread_mutex_t**) malloc(sizeof(pthread_mutex_t*) * num_fluid_tasks);
     gv->ifd_fluid_thread_msg = (char***) malloc(sizeof(char**) * num_fluid_tasks);
 
-    int max_msg_size = (sizeof(int) * 3 + sizeof(double) * 3) * IFD_SIZE * IFD_SIZE *
+    int max_msg_size = (IFD_MSG_EACH_POINT_SIZE) * IFD_SIZE * IFD_SIZE *
                         (gv->fiber_shape->sheets[taskid_fiber_group].width + IFD_SIZE) *
                         (gv->fiber_shape->sheets[taskid_fiber_group].height + IFD_SIZE);
 
@@ -322,7 +329,7 @@ void init_gv(GV gv) {
       std::array<int, 3> a;
       a[0]=X; a[1]=Y; a[2]=Z;
 #endif
-      std::vector<IFDMap> threadmap;
+      std::vector<Map3to1> threadmap;
       threadmap.resize(total_threads);
 #if 0
       threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
@@ -357,7 +364,8 @@ void init_gv(GV gv) {
 
     printf("***********Fiber Init exit*****\n");
 
-  } //endif fiber machine init
+  } 
+  /* ------------------ Fiber task initialization End ---------------------- */
 
   // printf("***********Gv Init exit*****\n");
 

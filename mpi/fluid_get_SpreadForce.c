@@ -185,7 +185,7 @@ void fluid_get_SpreadForce(LV lv){//Fiber influences fluid
         //   tid, X, Y, Z, elastic_force_x, elastic_force_y, elastic_force_z);
       }
 
-      position += sizeof(int) * 3 + sizeof(double) * 3;
+      position += IFD_MSG_EACH_POINT_SIZE;
 
     }
 

@@ -226,12 +226,12 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
           fl_tid = global2task_and_thread(X, Y, Z, gv, &ifd_fld_proc);
           arr2[0] = ifd_fld_proc;
           arr2[1] = fl_tid;
-          ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk] + msg_pos[arr2];
+          ifd_msg_pos = fibernode->ifd_msg_pos[ii][jj][kk] + send_ifd_msg_pos[arr2];
 
 #if 0
           printf("Tid%d: fibernode(%d, %d)read local_ifd_msg_pos[%d][%d][%d]=%d, (%d, %d, %d):(%d,%d) --> %d, ifd_msg_pos=%d\n",
               tid, i, j, ii, jj, kk, fibernode->ifd_msg_pos[ii][jj][kk],
-              X, Y, Z, ifd_fld_proc, fl_tid, msg_pos[arr2],
+              X, Y, Z, ifd_fld_proc, fl_tid, send_ifd_msg_pos[arr2],
               ifd_msg_pos);
           fflush(stdout);
 #endif
@@ -306,7 +306,7 @@ void fiber_get_SpreadVelocity(LV lv){ //Fiber recv spread velocity from Fluid
     for (int i = 0; i < num_fluid_tasks; i++){
       // set ifd_last_pos to default value 0
       gv->ifd_last_pos[i] = 0;
-      msg_pos.clear();
+      send_ifd_msg_pos.clear();
 
       for (j = 0; j < total_threads; j++){
         gv->ifd_last_pos_proc_thd[i][j] = 0;     // Initialize gv->ifd_fluid_thread_last_pos

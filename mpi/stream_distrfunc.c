@@ -27,19 +27,29 @@
 // dir = aggr_stream_dir
 inline void insert_msg (GV gv, int tid, int nextX, int nextY, int nextZ,
                         int dir, int toTid, int iPop, double df1_tosend){
-  int my_rank = gv->taskid;
+  // int my_rank = gv->taskid;
 
-  int dim_x = gv->fluid_grid->x_dim;
-  int dim_y = gv->fluid_grid->y_dim;
-  int dim_z = gv->fluid_grid->z_dim;
+  // int dim_x = gv->fluid_grid->x_dim;
+  // int dim_y = gv->fluid_grid->y_dim;
+  // int dim_z = gv->fluid_grid->z_dim;
+
+  std::pair<Map3to1::iterator, bool> ret;
+  std::array<int, 3> arr3;
+  arr3[0] = nextX; arr3[1] = nextY; arr3[2] = nextZ;
+  int cur_pos;
 
   pthread_mutex_lock(&gv->lock_stream_thd_msg[dir][toTid]);
 
-  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid]))                      = nextX;
-  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int)))        = nextY;
-  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 2))    = nextZ;
-  *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 3))    = iPop;
-  *((double*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 4)) = df1_tosend;
+  ret = stream_thd_msg_map[dir][toTid].insert(
+            std::make_pair(arr3, gv->stream_thd_last_pos[dir][toTid] + sizeof(int)*4 + sizeof(double)));
+
+  if (ret.second == true){
+
+    *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid]))                      = nextX;
+    *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int)))        = nextY;
+    *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 2))    = nextZ;
+    *((int*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 3))    = iPop;
+    *((double*)(gv->stream_thd_msg[dir][toTid] + gv->stream_thd_last_pos[dir][toTid] + sizeof(int) * 4)) = df1_tosend;
 
 #if 0
   assertf(nextX < dim_x, "insert_msg_ERROR: nextX=%d, position=%d", nextX, gv->stream_thd_last_pos[dir][toTid]);
@@ -52,7 +62,14 @@ inline void insert_msg (GV gv, int tid, int nextX, int nextY, int nextZ,
               my_rank, tid, dir, nextX, nextY, nextZ, iPop, df1_tosend, dir, toTid, gv->stream_thd_last_pos[dir][toTid]);
 #endif
 
-  gv->stream_thd_last_pos[dir][toTid] += sizeof(int) * 4 + sizeof(double);
+    gv->stream_thd_last_pos[dir][toTid] += STREAM_MSG_EACH_POINT_SIZE;
+  }
+  else{
+    cur_pos = stream_thd_msg_map[dir][toTid][arr3];
+    *((int*)(gv->stream_thd_msg[dir][toTid] + cur_pos))    = iPop;
+    *((double*)(gv->stream_thd_msg[dir][toTid] + cur_pos + sizeof(int))) = df1_tosend;
+    stream_thd_msg_map[dir][toTid][arr3] = cur_pos + sizeof(int) + sizeof(double);
+  }
 
   pthread_mutex_unlock(&gv->lock_stream_thd_msg[dir][toTid]);
 }
@@ -132,8 +149,6 @@ void get_df2_from_stream_msg(GV gv, int tid, int stream_msg_count, int dir, int 
     X = *((int*)(gv->stream_recv_buf + position));
     Y = *((int*)(gv->stream_recv_buf + position + sizeof(int)));
     Z = *((int*)(gv->stream_recv_buf + position + sizeof(int)* 2));
-    iPop  = *((int*)(gv->stream_recv_buf + position + sizeof(int)* 3));
-    df1_tosend = *((double*)(gv->stream_recv_buf + position + sizeof(int)* 4));
 
     BI = X / cube_size;
     li = X % cube_size;
@@ -164,10 +179,20 @@ void get_df2_from_stream_msg(GV gv, int tid, int stream_msg_count, int dir, int 
       cube_df2_idx  = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
       nodes_df2     = gv->fluid_grid->sub_fluid_grid[cube_df2_idx].nodes;
       node_df2_idx  = li * cube_size * cube_size + lj * cube_size + lk;//only local k will be endg point of prev cube
-      nodes_df2[node_df2_idx].df2[iPop]  = df1_tosend;
+
+      int cnt = sizeof(int)* 3;
+      for (int i=0; i < 5; ++i){
+        iPop  = *((int*)(gv->stream_recv_buf + position + cnt));
+        if (iPop != 0){ // prevent to read undefined iPop=0 data, at diagonal direction
+          df1_tosend = *((double*)(gv->stream_recv_buf + position + cnt + sizeof(int)));
+          nodes_df2[node_df2_idx].df2[iPop]  = df1_tosend;
+        }
+        cnt += sizeof(int) + sizeof(double);
+      }
+      
     }
 
-    position += sizeof(int) * 4 + sizeof(double);
+    position += STREAM_MSG_EACH_POINT_SIZE;
   }
 
 }
@@ -525,9 +550,6 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 
           gv->stream_last_pos[iPop] += size;
         }
-
-        //reset
-        gv->stream_thd_last_pos[iPop][toTid] = 0;
       }
     }
 #ifdef STREAM_PERF
@@ -557,6 +579,19 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
   }
 
   t1 = Timer::get_cur_time();
+
+  //reset & clear
+  if (tid == 0){
+    for (iPop = 1; iPop < 19; iPop++){
+
+      gv->stream_last_pos[iPop] = 0;
+
+      for (toTid = 0; toTid < total_threads; ++toTid){
+        gv->stream_thd_last_pos[iPop][toTid] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
+        stream_thd_msg_map[iPop][toTid].clear(); //remove all elements from the map container
+      }
+    }
+  }
 
 #ifdef STREAM_PERF
   printf("Fluid%dtid%d: T_prepare_stream=%f, T_self=%f, T_insert=%f, T_stream=%f\n",
