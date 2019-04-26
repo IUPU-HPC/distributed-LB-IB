@@ -263,6 +263,8 @@ typedef struct lv_t{
   GV  gv;
 }* LV;
 
+extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
+extern MsgMap msg_pos;
 
 /* Debug help function */
 //print range of cubes ip: global i, j,k , iend, jend ,kend

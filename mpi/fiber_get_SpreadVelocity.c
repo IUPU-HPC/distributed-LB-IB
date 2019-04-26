@@ -23,9 +23,6 @@
 #include "do_thread.h"
 #include "timer.h"
 
-extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
-extern MsgMap msg_pos;
-
 #if 0
 void search_velocity(char* msg, int recv_cnt, int inneri, int innerj, int innerk, double* vel_x, double* vel_y, double* vel_z){
 	int position = 0;

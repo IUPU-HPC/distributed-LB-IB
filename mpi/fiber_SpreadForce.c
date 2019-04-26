@@ -23,9 +23,6 @@
 #include "do_thread.h"
 #include "timer.h"
 
-extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
-extern MsgMap msg_pos;
-
 /* Step1: Influential domain for force-spreading and velocity interpolation. */
 /* Step2: Do actual force spreading. */
 // eqn 19 21, ..

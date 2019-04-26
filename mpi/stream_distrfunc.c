@@ -25,7 +25,7 @@
 #include "lb.h"
 
 // dir = aggr_stream_dir
-void insert_msg (GV gv, int tid, int nextX, int nextY, int nextZ,
+inline void insert_msg (GV gv, int tid, int nextX, int nextY, int nextZ,
                         int dir, int toTid, int iPop, double df1_tosend){
   int my_rank = gv->taskid;
 

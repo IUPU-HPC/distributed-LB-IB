@@ -23,7 +23,6 @@
 #include "do_thread.h"
 #include "lb.h"
 
-extern std::vector<std::vector<IFDMap> > Ifdmap_proc_thd;
 inline int check_dim(int in, int dim){
   if (in < 0 || in >= dim){
     return 0;
