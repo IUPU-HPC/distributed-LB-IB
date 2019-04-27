@@ -542,13 +542,13 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
         if (size > 0){
           int last_pos = gv->stream_last_pos[iPop];
 
-          printf("Fluid%dTid%d: memcpy (%d, %d) --> (%d), size=%d\n",
-            my_rank, tid, iPop, toTid, iPop, size);
-
           char* dest = (char*)(gv->stream_msg[iPop] + last_pos);
           memcpy(dest, src, size);
 
           gv->stream_last_pos[iPop] += size;
+
+          printf("Fluid%dTid%d: memcpy (%d, %d) --> (%d), size=%d, stream_last_pos[%d]=%d\n",
+            my_rank, tid, iPop, toTid, iPop, size, iPop, gv->stream_last_pos[iPop]);
         }
       }
     }
