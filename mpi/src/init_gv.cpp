@@ -1,0 +1,372 @@
+/*  -- Distributed-LB-IB --
+ * Copyright 2018 Indiana University Purdue University Indianapolis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @author: Yuankun Fu (Purdue University, fu121@purdue.edu)
+ *
+ * @file:
+ *
+ * @date:
+ */
+
+#include "do_thread.h"
+#include "lb.h"
+
+inline int check_dim(int in, int dim){
+  if (in < 0 || in >= dim){
+    return 0;
+  }
+  else
+    return in;
+} 
+
+const int c[19][3] = { //{x, y, z}
+            { 0, 0, 0},
+
+            { 1, 0, 0}, {-1, 0, 0}, { 0, 0, 1}, //1, 2, 3
+            { 0, 0,-1}, { 0,-1, 0}, { 0, 1, 0}, //4, 5, 6
+            { 1, 0, 1}, {-1, 0,-1}, { 1, 0,-1}, //7, 8, 9
+
+            {-1, 0, 1}, { 0,-1, 1}, { 0, 1,-1}, //10, 11, 12
+            { 0, 1, 1}, { 0,-1,-1}, { 1,-1, 0}, //13, 14, 15
+            {-1, 1, 0}, { 1, 1, 0}, {-1,-1, 0}  //16, 17, 18
+}; // stores 19 different velocity directions for ksi
+
+const double t[19] = {
+            1./3.,
+
+            1./18., 1./18., 1./18., //1~6
+            1./18., 1./18., 1./18.,
+
+            1./36., 1./36., 1./36., //7~18
+            1./36., 1./36., 1./36.,
+            1./36., 1./36., 1./36.,
+            1./36., 1./36., 1./36.
+};
+
+void init_gv_constant(GV gv){
+  int dim_x, dim_y, dim_z;
+
+  // gv->timesteps= 5; // add default value
+  //gv->N_WR = gv->TIME_STOP / gv->TIME_WR + 1;//param for Cd need to add later....
+  gv->dt = 1;      // Time step size, always equal 1!
+  gv->time = gv->dt; // Time step#, starting from 1.
+
+  dim_x = gv->fluid_grid->x_dim;
+  dim_y = gv->fluid_grid->y_dim;
+  dim_z = gv->fluid_grid->z_dim;
+
+  // fiber also needs fluid grid dimension infomation
+  int cube_size = gv->cube_size;
+  int num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
+  int num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
+  int num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
+
+  gv->ib = 2;         //0 and 1 are used for buffer zone
+  gv->ie = dim_x - 3; //dim_x-1 (i.e., the last node), dim_x-2 are used for buffer zone
+  gv->jb = 2;
+  gv->je = dim_y - 3;
+  gv->kb = 2;
+  gv->ke = dim_z - 3;
+
+  gv->Re = 1.5e2;
+  gv->rho_l = 1.0e0;
+  gv->u_l = 0.001;       /* choice of u_l should make Ma <0.1 */
+  // gv->u_l = 8;
+
+  //Todo: move it to fiber sheet!!
+  gv->L_l = 2.0e1;       /*the dimensionless char LENGTH, should shortest fiber or width of the sheet should be fibersheet_w*/
+
+  gv->nu_l = gv->u_l * gv->L_l / gv->Re; //viscosity
+  gv->tau = 0.5 * (6.0 * gv->nu_l + 1.0);
+  gv->Fr = 1.0e10;        /* huge number of Fr means gra is not significant */
+  //NO IB if Kbhat and Kshat = 0.0
+  gv->Kbhat = 0.005;  /* Dimensionless flexure Modulus Kb(.0001-.05) Prateek */
+  gv->Kshat = 2.0e1;  /*Streching Compression Coefficient of fiber Kst(20) Prateek */
+  gv->Ksthat = 0.0e0; //TODO:add Ksthat value /*relative stiffness of the virtual spring tethered to the fixed point*/
+  gv->cs_l = 1.0 / (sqrt(3));    /* non-dimensional */ /*cs is the speed of the sound of the model and c is taken to be 1....Why other values of j(from paper not considered) Prateek */
+
+  /* calculate the values of M, Kb, Ks, and g in LB world */
+  gv->g_l = gv->u_l * gv->u_l / (gv->Fr * gv->L_l);  /*How...? PN*/
+  gv->g_l = 0.0; // gravity is equal to zero.
+
+  gv->Kb_l = gv->Kbhat * gv->rho_l * gv->u_l * gv->u_l * pow(gv->L_l, 4); // For bending Force
+  //Not used any more.gv->Kst_l = gv->Ksthat * gv->rho_l * gv->u_l * gv->u_l * gv->L_l;       // For stretching Force may be used fo tethered points only
+  gv->Ks_l = gv->Kshat * gv->rho_l * gv->u_l * gv->u_l * gv->L_l;
+  //printf("GV->Ks_l:::::%f\n",gv->Ks_l);
+}
+
+// dir = aggr_stream_dir
+void init_stream_msg_and_lock(GV gv, int dir, int points){
+  int cube_size =  gv->cube_size;
+  int toTid;
+  int total_threads = gv->threads_per_task;
+
+  gv->stream_last_pos[dir] = 0;     // Initialize gv->stream_last_pos
+  gv->stream_msg[dir] = (char*) malloc ((STREAM_MSG_EACH_POINT_SIZE)* points);
+  // printf("Fluid%d: Init stream_msg[%d] = %d\n", gv->taskid, dir, (sizeof(int)* 4 + sizeof(double))* points);
+
+  gv->lock_stream_thd_msg[dir] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
+  gv->stream_thd_last_pos[dir] = (int*) malloc(sizeof(int) * total_threads);
+  gv->stream_thd_msg[dir]      = (char**)malloc(sizeof(char*) * total_threads);
+
+  std::vector<Map3to1> threadmap;
+  threadmap.resize(total_threads);
+  stream_thd_msg_map[dir] = threadmap;
+
+  for(toTid = 0; toTid < total_threads; ++toTid){
+    // Initialize mutex lock_stream_msg
+    if (pthread_mutex_init(&gv->lock_stream_thd_msg[dir][toTid], NULL)){
+      fprintf(stderr, "Unable to initialize lock_stream_msg mutex\n");
+      exit(1);
+    }
+
+    // malloc stream_thd_msg
+    gv->stream_thd_last_pos[dir][toTid] = 0;
+    gv->stream_thd_msg[dir][toTid] = (char*) calloc (points, STREAM_MSG_EACH_POINT_SIZE);
+  }
+
+}
+
+void init_gv(GV gv) {
+  int i, j;
+  int BI, BJ, BK; //to identify the Sub grids
+  long cube_idx;
+  int node_idx;
+  int temp_taskid;
+  int li, lj, lk; //local access point inside cube
+  int P, Q, R;
+  int Px, Py, Pz;
+  int my_rank; //my_rank_x, my_rank_y, my_rank_z;
+  int cube_size = gv->cube_size;
+  int num_fluid_tasks = gv->num_fluid_tasks;
+  int num_fiber_tasks = gv->fiber_shape->num_sheets;
+  size_t tmp;
+  Fluidgrid* fluid_grid = gv->fluid_grid;
+
+  P = gv->tx;
+  Q = gv->ty;
+  R = gv->tz;
+
+  int total_threads = P*Q*R;
+
+  Px = gv->num_fluid_task_x;
+  Py = gv->num_fluid_task_y;
+  Pz = gv->num_fluid_task_z;
+
+  int dim_x = fluid_grid->x_dim;
+  int dim_y = fluid_grid->y_dim;
+  int dim_z = fluid_grid->z_dim;
+
+  my_rank   = gv->taskid;
+  // my_rank_x = gv->my_rank_x;
+  // my_rank_y = gv->my_rank_y;
+  // my_rank_z = gv->my_rank_z;
+
+  // printf("Task%d: Enter init_gv\n", my_rank);
+
+  // determine the ifd_max_bufsize received by a fluid task
+  gv->ifd_max_bufsize = 0;
+  for (i = 0; i < num_fiber_tasks; i++){
+    // an estimate of this ifd_max_bufsize
+    tmp = (IFD_MSG_EACH_POINT_SIZE) * IFD_SIZE * IFD_SIZE *
+                        (gv->fiber_shape->sheets[i].width + IFD_SIZE) *
+                        (gv->fiber_shape->sheets[i].height + IFD_SIZE);
+#if 0
+    printf("%d: tmp=%d, width=%f, height=%f, row=%d, col=%d\n",
+      my_rank, tmp,
+      gv->fiber_shape->sheets[0].width, gv->fiber_shape->sheets[0].height,
+      gv->fiber_shape->sheets[0].num_rows, gv->fiber_shape->sheets[0].num_cols);
+#endif
+    if (tmp > gv->ifd_max_bufsize)
+      gv->ifd_max_bufsize = tmp;
+  }
+  // printf("ifd_max_bufsize=%d\n", gv->ifd_max_bufsize);
+
+  /* ------------------ Fluid task initialization Start ---------------------- */
+  if (gv->taskid < gv->num_fluid_tasks){
+
+    // printf("row:%d, col:%d, ifd_max_bufsize = %d \n", gv->fiber_shape->sheets[0].num_rows, gv->fiber_shape->sheets[0].num_cols, gv->ifd_max_bufsize);
+    // fflush(stdout);
+    gv->ifd_recv_count = 0;
+    gv->ifd_recv_buf = (char*) malloc(sizeof(char) * gv->ifd_max_bufsize);
+
+    // Initilize stream_msg
+    int max_stream_msg_points = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)); //TOO BIG: max_stream_msg_points: stream a 2D surface to neighbour
+
+    gv->stream_recv_max_bufsize = (STREAM_MSG_EACH_POINT_SIZE) * max_stream_msg_points;//(X,Y,Z) + (iPop,df1)*5
+
+    // use msg[0] as recv buffer
+    gv->stream_msg[0] = (char*)malloc(gv->stream_recv_max_bufsize);
+    gv->stream_recv_buf = gv->stream_msg[0];
+    gv->stream_msg_recv_cnt = 0;
+
+    if (my_rank == 0){
+      printf("Fluid%d: stream_recv_max_bufsize=%d\n", my_rank, gv->stream_recv_max_bufsize);
+      fflush(stdout);
+    }
+
+    int destCoord[3], srcCoord[3];
+    for (int streamdir = 1; streamdir < 19; ++streamdir) {
+      destCoord[0] = gv->rankCoord[0] + c[streamdir][0];
+      // destCoord[0] = check_dim(destCoord[0], Px);
+
+      destCoord[1] = gv->rankCoord[1] + c[streamdir][1];
+      // destCoord[1] = check_dim(destCoord[1], Py);
+
+      destCoord[2] = gv->rankCoord[2] + c[streamdir][2];
+      // destCoord[2] = check_dim(destCoord[2], Pz);
+
+      // printf("Fluid%d dest: %d %d %d\n", my_rank, destCoord[0], destCoord[1], destCoord[2]);
+
+      srcCoord[0] = gv->rankCoord[0] - c[streamdir][0];
+      // srcCoord[0] = check_dim(srcCoord[0], Px);
+
+      srcCoord[1] = gv->rankCoord[1] - c[streamdir][1];
+      // srcCoord[1] = check_dim(srcCoord[1], Py);
+
+      srcCoord[2] = gv->rankCoord[2] - c[streamdir][2];
+      // srcCoord[2] = check_dim(srcCoord[2], Pz);
+
+      // printf("Fluid%d src: %d, %d, %d\n", my_rank, srcCoord[0], srcCoord[1],srcCoord[2]);
+
+      int dest, src;
+
+      MPI_Cart_rank(gv->cartcomm, destCoord, &dest);
+      MPI_Cart_rank(gv->cartcomm, srcCoord, &src);
+
+      gv->streamDest[streamdir] = dest;
+      gv->streamSrc[streamdir] = src;
+
+#if 1
+      printf("Fluid%2d: streamdir=%2d, dest(x,y,z)=(%2d, %2d, %2d), dest=%2d || src(x,y,z)=(%2d, %2d, %2d), src=%2d\n",
+        gv->rank[0], streamdir, destCoord[0], destCoord[1], destCoord[2], dest,
+        srcCoord[0], srcCoord[1], srcCoord[2], src);
+      fflush(stdout);
+#endif
+      // if(gv->rank[0] != dest){
+
+      //   gv->streamdir[streamdir] = dest;
+
+      //   // if(streamdir < 7){
+      //   //   init_stream_msg(gv, streamdir, * 5);
+      //   // }
+      //   // else{
+      //   //   init_stream_msg(gv, streamdir, Q);
+      //   // }
+      // }
+      // else{
+      //   gv->streamdir[streamdir] = -1;
+      // }
+
+      init_stream_msg_and_lock(gv, streamdir, max_stream_msg_points); //need to optimize
+      // printf("init_stream_msg_and_lock %d\n", streamdir);
+    }
+  }
+  /* ------------------ Fluid task initialization End ---------------------- */
+
+
+  /* ------------------ Fiber task initialization Start -------------------- */
+  /******* Shift fiber sheet for one time step ************/
+  //TODO: for all the fiber sheets, shift.
+  if (gv->taskid >= gv->num_fluid_tasks){
+
+    // fiber taskid in group =
+    int taskid_fiber_group = gv->rank[1];
+    printf("taskid_fiber_group=%d, width=%f, height=%f\n",
+      taskid_fiber_group,
+      gv->fiber_shape->sheets[taskid_fiber_group].width,
+      gv->fiber_shape->sheets[taskid_fiber_group].height);
+
+    for (i = 0; i < gv->fiber_shape->sheets[taskid_fiber_group].num_rows; i++) {
+      for (j = 0; j < gv->fiber_shape->sheets[taskid_fiber_group].num_cols; j++){
+        gv->fiber_shape->sheets[taskid_fiber_group].fibers[i].nodes[j].x += gv->u_l*gv->dt;
+        //TODO: if v_l, w_l !=0, then ADD .y, .z = v_l, w_l times gv->dt.
+      }
+    }
+
+    /*MPI changes*/
+
+    Ifdmap_proc_thd.resize(num_fluid_tasks);
+    gv->ifd_send_msg = (char **) malloc(sizeof(char*) * num_fluid_tasks);
+    gv->num_influenced_proc = 0;
+    gv->ifd_last_pos = (int*) malloc(sizeof(int) * num_fluid_tasks);
+
+    // change to fluid thread
+    gv->ifd_last_pos_proc_thd = (int**) malloc(sizeof(int*) * num_fluid_tasks);
+    gv->lock_ifd_proc_thd = (pthread_mutex_t**) malloc(sizeof(pthread_mutex_t*) * num_fluid_tasks);
+    gv->ifd_fluid_thread_msg = (char***) malloc(sizeof(char**) * num_fluid_tasks);
+
+    int max_msg_size = (IFD_MSG_EACH_POINT_SIZE) * IFD_SIZE * IFD_SIZE *
+                        (gv->fiber_shape->sheets[taskid_fiber_group].width + IFD_SIZE) *
+                        (gv->fiber_shape->sheets[taskid_fiber_group].height + IFD_SIZE);
+
+
+    printf("Fiber%d of %d: Init width+IFD_SIZE=%f, height+IFD_SIZE=%f, max_msg_size=%d\n",
+      gv->rank[1], gv->size[1],
+      gv->fiber_shape->sheets[taskid_fiber_group].width + IFD_SIZE,
+      gv->fiber_shape->sheets[taskid_fiber_group].height + IFD_SIZE,
+      max_msg_size);
+
+    for (i = 0; i < num_fluid_tasks; i++){
+
+      // Initialize ifd_send_msg
+      gv->ifd_send_msg[i] = (char*) malloc(sizeof(char) * max_msg_size);
+      gv->ifd_last_pos[i] = 0;
+#if 0
+      int X=0, Y=0, Z=0;
+      std::array<int, 3> a;
+      a[0]=X; a[1]=Y; a[2]=Z;
+#endif
+      std::vector<Map3to1> threadmap;
+      threadmap.resize(total_threads);
+#if 0
+      threadmap[0].insert(std::pair<std::array<int, 3>, int>(a, 0));
+      printf("-- thread[0] size = %d\n", threadmap[0].size());
+#endif
+      // Ifdmap_proc_thd.push_back(threadmap);
+      Ifdmap_proc_thd[i] = threadmap;
+#if 0
+      printf("-- toProc[%d] of %d has num_threadmap = %d\n",
+        i, Ifdmap_proc_thd.size(), Ifdmap_proc_thd[i].size());
+#endif
+      gv->ifd_last_pos_proc_thd[i] = (int*) malloc(sizeof(int) * total_threads);
+      gv->lock_ifd_proc_thd[i] = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_threads);
+      gv->ifd_fluid_thread_msg[i] = (char**) malloc(sizeof(char*) * total_threads);
+
+      for (j = 0; j < total_threads; j++){
+        gv->ifd_last_pos_proc_thd[i][j] = 0;     // Initialize gv->ifd_fluid_thread_last_pos
+        // printf("-- pass init ifd_last_pos_proc_thd[%d][%d]\n", i, j);
+
+        // Initialize mutex lock_ifd_proc_thd
+        if (pthread_mutex_init(&gv->lock_ifd_proc_thd[i][j], NULL)){
+          fprintf(stderr, "Unable to initialize lock_ifd_proc_thd mutex (%d,%d)\n", i, j);
+          exit(1);
+        }
+        // printf("-- pass init lock_ifd_proc_thd[%d][%d]\n", i, j);
+
+        // doesn't need to pre allocate so much memory
+        // TODO: test performance allocate when needed
+        gv->ifd_fluid_thread_msg[i][j] = (char*) malloc(sizeof(char) * max_msg_size);
+      }
+    }
+
+    printf("***********Fiber Init exit*****\n");
+
+  } 
+  /* ------------------ Fiber task initialization End ---------------------- */
+
+  // printf("***********Gv Init exit*****\n");
+
+}

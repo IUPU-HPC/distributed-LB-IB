@@ -1,0 +1,2 @@
+#pragma once
+#cmakedefine USE_SOMETHING @USE_SOMTHING_CONTENT@
