@@ -3,6 +3,8 @@
 
 date
 
+BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/build/bin/distributed-lb-ib
+
 #prepare output result directory
 PBS_RESULTDIR=${SCRATCH_DIR}/results
 # OUTPUT_DIR=${SCRATCH_DIR}/distributed-lb-ib/${directory}

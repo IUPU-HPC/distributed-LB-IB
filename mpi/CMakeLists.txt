@@ -1,11 +1,29 @@
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 
-# include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
-
-option(use_itac "build with itac" OFF)
+option(use_itac "Build with itac" OFF)
 option(USE_CUDA "Build with CUDA" OFF)
 
 option(USE_STRICT_CHECK "use pedantic flag" OFF)
+
+# include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("-- ${CMAKE_CURRENT_SOURCE_DIR} > Debug build.")
+  set(MPI_CXX_COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wextra -Wconversion -rdynamic")
+  if(USE_STRICT_CHECK)
+    set(GCC_COVERAGE_COMPILE_FLAGS "-pedantic ${GCC_COVERAGE_COMPILE_FLAGS}")
+    set(MPI_CXX_COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+  endif()
+
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+  message("-- ${CMAKE_CURRENT_SOURCE_DIR} > Release build.")
+  set(MPI_CXX_COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+
+endif()
 
 #output json compile command
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -15,19 +33,7 @@ set(CMAKE_CXX_COMPILER "mpicxx")
 
 set(CMAKE_CXX_STANDARD 11) #can remove -std=c++11 in CMAKE_CXX_FLAGS
 
-set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wextra -Wconversion -rdynamic")
-if(USE_STRICT_CHECK)
-  set(GCC_COVERAGE_COMPILE_FLAGS "-pedantic ${GCC_COVERAGE_COMPILE_FLAGS}")
-endif()
-
-set(CMAKE_C_FLAGS "-O3 -DNDEBUG")
-set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
-set(MPI_CXX_COMPILE_FLAGS "-O3 -DNDEBUG")
-
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-
-message("-----current cxx flags is ${CMAKE_CXX_FLAGS}")
+message("-----current mpicxx flags is ${MPI_CXX_COMPILE_FLAGS}")
 
 project(distributed-LBIB LANGUAGES CXX)
 
@@ -108,4 +114,4 @@ target_link_libraries(distributed-lb-ib m pthread) #remove ${MPI_CXX_LIBRARIES}
 #   set_target_properties(${item} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 # endif()
 
-add_subdirectory(exe_itac)
+# add_subdirectory(exe_itac)
