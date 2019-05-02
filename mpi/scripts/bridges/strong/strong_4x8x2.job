@@ -1,0 +1,70 @@
+#!/bin/bash
+#SBATCH --job-name="s_4x8x2"
+#SBATCH --output="results/str_4x8x2.%j.out"
+#SBATCH --partition=RM
+#SBATCH --nodes=65
+#SBATCH --ntasks-per-node=28
+#SBATCH -t 0:30:00
+#SBATCH --export=ALL
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+# send mail to this address
+#SBATCH --mail-user=qoofyk@gmail.com
+
+#This job runs with 4 nodes, each node runs 7 processes.
+#ibrun in verbose mode will give binding detail
+##################parameter setting#################
+directory="str_4x8x2"
+export nproc_per_mac=1
+
+PBS_O_HOME=$HOME
+PBS_O_WORKDIR=$(pwd)
+export SCRATCH_DIR=${SCRATCH}/distributed-LB-IB/${SLURM_JOBID}
+
+# bridges
+groupname=$(id -Gn)
+export SCRATCH_DIR=/pylon5/ac561jp/qoofyk/distributed-LB-IB/${SLURM_JOBID}
+EMPTY_DIR=/pylon5/ac561jp/qoofyk/empty/
+
+BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/distributed-lb-ib
+
+# export PSM2_MQ_RECVREQS_MAX=$((1048576 * 2))
+######################################################################
+mkdir -p $SCRATCH_DIR
+cd $SCRATCH_DIR
+
+######################################################################
+timestep=200 # how many steps
+dump=100
+
+# timestep=30 # how many steps
+# dump=1
+
+#fluid
+fluid_task_x=4
+fluid_task_y=8
+fluid_task_z=2
+
+fluid_grid_x=$((128 * 2))
+fluid_grid_y=$((128 * 2))
+fluid_grid_z=$((112 * 2))
+
+cube_size=4
+thread_per_task_x=1
+thread_per_task_y=4
+thread_per_task_z=7
+
+#fiber
+num_fibersht=1
+fiber_width=20
+fiber_height=20
+fiber_row=52
+fiber_clmn=52
+fiber_x0=20
+fiber_y0=21.5
+fiber_z0=11.5
+
+total_proc=$(( fluid_task_x * fluid_task_y * fluid_task_z + num_fibersht))
+
+source ${PBS_O_WORKDIR}/scripts/bridges/common.sh
