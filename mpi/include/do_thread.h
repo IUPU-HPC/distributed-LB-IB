@@ -64,7 +64,7 @@
 // #define IFD_FORCE_PERF
 // #define IFD_VEL_PERF
 #define STREAM_PERF
-// #define CHECK_STREAM
+//#define CHECK_STREAM
 // #define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY

@@ -16,8 +16,8 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(MPI_CXX_COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
   endif()
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${GCC_COVERAGE_COMPILE_FLAGS}" )
 
 elseif(CMAKE_BUILD_TYPE MATCHES Release)
   message("-- ${CMAKE_CURRENT_SOURCE_DIR} > Release build.")
@@ -33,8 +33,6 @@ set(CMAKE_CXX_COMPILER "mpicxx")
 
 set(CMAKE_CXX_STANDARD 11) #can remove -std=c++11 in CMAKE_CXX_FLAGS
 
-message("-----current mpicxx flags is ${MPI_CXX_COMPILE_FLAGS}")
-
 project(distributed-LBIB LANGUAGES CXX)
 
 set(common_library "m" "pthread")
@@ -42,6 +40,7 @@ set(common_library "m" "pthread")
 #itac
 if(use_itac)
     add_definitions(-DV_T)
+    #set(MPI_CXX_COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set(VT_ROOT $ENV{VT_ROOT} CACHE PATH "The path vt")
     message("itac enabled! with ${VT_ROOT}")
     include_directories(${VT_ROOT}/include)
@@ -51,6 +50,8 @@ if(use_itac)
     set(common_library ${common_library} ${vt_library})
    #set(common_library ${common_library} "-L/opt/intel/itac/2017.3.030/intel64/lib -lVT -ldwarf -lelf -lvtunwind" )
 endif(use_itac)
+
+message("-----current mpicxx flags is ${MPI_CXX_COMPILE_FLAGS}")
 
 # mpi
 find_package(MPI REQUIRED)
@@ -67,8 +68,7 @@ configure_file(
 include_directories(${MPI_CXX_INCLUDE_PATH} ${CMAKE_SOURCE_DIR})
 include_directories(include ${PROJECT_BINARY_DIR})
 
-#output json compile command
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 
 add_executable(distributed-lb-ib
   src/main.cpp
@@ -102,9 +102,12 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 
 # target_compile_options(distributed-lb-ib ${MPI_CXX_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS})
 set_target_properties(distributed-lb-ib PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
-target_link_libraries(distributed-lb-ib m pthread) #remove ${MPI_CXX_LIBRARIES}
+# target_link_libraries(distributed-lb-ib m pthread) #remove ${MPI_CXX_LIBRARIES}
 
-# target_link_libraries(distributed-lb-ib ${common_library})
+target_link_libraries(distributed-lb-ib ${common_library})
+
+#output json compile command
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # if(MPI_COMPILE_FLAGS)
 #   set_target_properties(${item} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")

@@ -23,6 +23,12 @@
 #include "do_thread.h"
 #include "timer.h"
 
+#ifdef V_T
+#include <VT.h>
+int class_id;
+int stream_phase;
+#endif
+
 double get_cur_time(){
   struct timeval tv;
   double t;
@@ -44,6 +50,12 @@ void* do_thread(void* v){
   double t00, t11, t4_1=0, t4_2=0, t4_3=0, t4_4=0;
   double startTime=0, endTime=0;
   char filename[80];
+
+#ifdef V_T
+  // VT_initialize(NULL, NULL);
+  VT_classdef( "Fluid", &class_id );
+  VT_funcdef("STREAM", class_id, &stream_phase); //MPI_Send_Recv
+#endif
 
   startTime = get_cur_time();
 
@@ -207,7 +219,13 @@ void* do_thread(void* v){
         fflush(stdout);
       }
 #endif //DEBUG_PRINT
+#ifdef V_T
+      VT_begin(stream_phase);
+#endif      
       stream_distrfunc(lv);
+#ifdef V_T
+      VT_end(stream_phase);
+#endif      
       pthread_barrier_wait(&(gv->barr));
       // if(tid==0)
       //   MPI_Barrier(MPI_COMM_WORLD);
