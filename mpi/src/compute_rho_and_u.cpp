@@ -49,9 +49,12 @@ void compute_rho_and_u(LV lv){
   my_rank = gv->taskid;
   s1 = s2 = s3 = s4 = 0;
 
-  for (BI = 0; BI < num_cubes_x; ++BI)
-    for (BJ = 0; BJ < num_cubes_y; ++BJ)//for computing womega near bdy
-      for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  //   for (BJ = 0; BJ < num_cubes_y; ++BJ)//for computing womega near bdy
+  //     for (BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
         ownertid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
         if (my_rank == toProc && ownertid == tid){
 

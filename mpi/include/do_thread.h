@@ -63,8 +63,8 @@
 
 // #define IFD_FORCE_PERF
 // #define IFD_VEL_PERF
-#define STREAM_PERF
-//#define CHECK_STREAM
+// #define STREAM_PERF
+// #define CHECK_STREAM
 // #define SAVE
 // #define DEBUG_PRINT
 // #define VERIFY
@@ -235,6 +235,8 @@ typedef struct gv_t {
   int num_fluid_task_x, num_fluid_task_y, num_fluid_task_z; //number of fluid task along x, y, z
   int num_fluid_tasks;
   int rankCoord[3]; //x, y, z
+  int cubes_per_task[3];
+  int start_B[3], stop_B[3];
   MPI_Comm cartcomm;
 
   // Fiber <--> Fluid influential domain
@@ -321,7 +323,7 @@ void init_gv(GV gv); //TODO: pass all necessary information from users to initia
 void gen_fiber_sheet(Fibersheet* sheet);
 
 /* Create a 3D fluid grid */ /*PTHREAD_Change*/
-void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv);
+void gen_fluid_grid(GV gv);
 
 
 /* Methods for IB computations */

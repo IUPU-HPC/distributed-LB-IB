@@ -136,10 +136,12 @@ void  stream_distrfunc(LV lv){//df2
   t2 = Timer::get_cur_time();
 #endif
   // step1: prepare message
-  for (BI = 0; BI < num_cubes_x; ++BI)
-  for (BJ = 0; BJ < num_cubes_y; ++BJ)
-  for (BK = 0; BK < num_cubes_z; ++BK){
-
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  // for (BJ = 0; BJ < num_cubes_y; ++BJ)
+  // for (BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
     send_tid = cube2thread_and_task(BI, BJ, BK, gv, &fromProc);
 
     if (my_rank == fromProc && send_tid == tid){
@@ -319,7 +321,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 #ifdef STREAM_PERF
     t0 = Timer::get_cur_time();
 #endif
-    for (iPop = 1; iPop < 19; iPop++){
+    for (iPop = 1; iPop < 3; iPop++){
       for (toTid = 0; toTid < total_threads; ++toTid){
         char* src = gv->stream_thd_msg[iPop][toTid];
         int size = gv->stream_thd_last_pos[iPop][toTid];
@@ -331,9 +333,10 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
           memcpy(dest, src, size);
 
           gv->stream_last_pos[iPop] += size;
-
+#if 0
           printf("Fluid%dTid%d: memcpy (%d, %d) --> (%d), size=%d, stream_last_pos[%d]=%d\n",
             my_rank, tid, iPop, toTid, iPop, size, iPop, gv->stream_last_pos[iPop]);
+#endif 
         }
       }
     }
@@ -348,7 +351,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
   // step3: send message, iPop = aggr_stream_dir
   t0 = Timer::get_cur_time();
 
-  for(iPop = 1; iPop < 19; iPop++){
+  for(iPop = 1; iPop < 3; iPop++){
 #ifdef CHECK_STREAM
     if (tid == 0){
       printf("-COUNT- Fluid%dtid%d: start streaming msg iPop=%d, dest=%d, src=%d, sendcnt=%d\n",
@@ -367,7 +370,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 
   //reset & clear
   if (tid == 0){
-    for (iPop = 1; iPop < 19; iPop++){
+    for (iPop = 1; iPop < 3; iPop++){
 
       gv->stream_last_pos[iPop] = 0;
 
@@ -595,10 +598,23 @@ void streaming_on_direction(GV gv, int tid, int dir, int dest, int src){
 #endif
 
 #ifdef CHECK_STREAM
-    printf("#Get_SndRecv Fluid%dtid%d: dir=%d, Recv_from_src=%d with gv->stream_msg_recv_cnt=%d\n",
-      my_rank, tid, dir, src, gv->stream_msg_recv_cnt);
+      printf("#Get_SndRecv Fluid%dtid%d: dir=%d, Recv_from_src=%d with gv->stream_msg_recv_cnt=%d\n",
+        my_rank, tid, dir, src, gv->stream_msg_recv_cnt);
 #endif
-    // }
+//     }
+//     else{
+//       MPI_Sendrecv(gv->stream_msg[dir], gv->stream_last_pos[dir], MPI_CHAR,
+//         dest, dir, gv->stream_recv_buf, gv->stream_recv_max_bufsize,
+//         MPI_CHAR, src, dir,
+//         gv->cartcomm, MPI_STATUS_IGNORE);
+
+//       gv->stream_msg_recv_cnt = 0;
+
+// #ifdef CHECK_STREAM      
+//       printf("#Get_SndRecv Fluid%dtid%d: dir=%d, Recv_from_src=%d, sendcnt=%d, MPI_STATUS_IGNORE\n",
+//         my_rank, tid, dir, src, gv->stream_last_pos[dir]);
+// #endif
+//     }
   }
 
   pthread_barrier_wait(&(gv->barr));
@@ -616,6 +632,7 @@ void streaming_on_direction(GV gv, int tid, int dir, int dest, int src){
 #endif
   // if (gv->stream_msg_recv_cnt > 0){
     get_df2_from_stream_msg(gv, tid, gv->stream_msg_recv_cnt, dir, src);
+  // }  
 #ifdef V_T
       VT_end(read_msg_id);
 #endif
@@ -625,7 +642,6 @@ void streaming_on_direction(GV gv, int tid, int dir, int dest, int src){
     my_rank, tid, src, dir, gv->stream_msg_recv_cnt);
   fflush(stdout);
 #endif //CHECK_STREAM
-  // }
 
   pthread_barrier_wait(&(gv->barr));
 

@@ -22,20 +22,26 @@
 
 #include "do_thread.h"
 
-void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv){
+void gen_fluid_grid(GV gv){
+  Fluidgrid *fluid_grid = gv->fluid_grid;
+  int cube_size = gv->cube_size;
+  int taskid = gv->taskid;
   long total_sub_grids;
   int dim_x = fluid_grid->x_dim;
   int dim_y = fluid_grid->y_dim;
   int dim_z = fluid_grid->z_dim;
 
-  /*Calculate total no of cubes*/
-  total_sub_grids = (dim_x * dim_y * dim_z) / (cube_size * cube_size * cube_size);
+  int num_cubes_x = fluid_grid->num_cubes_x = dim_x / cube_size;
+  int num_cubes_y = fluid_grid->num_cubes_y = dim_y / cube_size;
+  int num_cubes_z = fluid_grid->num_cubes_z = dim_z / cube_size;
 
-  int num_cubes_x = gv->fluid_grid->num_cubes_x = dim_x / cube_size;
-  int num_cubes_y = gv->fluid_grid->num_cubes_y = dim_y / cube_size;
-  int num_cubes_z = gv->fluid_grid->num_cubes_z = dim_z / cube_size;
-  /*Calculate total no of cubes*/
+  gv->cubes_per_task[0] = num_cubes_x / gv->num_fluid_task_x;
+  gv->cubes_per_task[1] = num_cubes_y / gv->num_fluid_task_y;
+  gv->cubes_per_task[2] = num_cubes_z / gv->num_fluid_task_z;
+
+  /*Calculate no of cubes within a fluid task*/
   total_sub_grids = num_cubes_x * num_cubes_y * num_cubes_z;
+  // total_sub_grids = gv->cubes_per_task[0] * gv->cubes_per_task[1] * gv->cubes_per_task[2];
 
   /*Allocate Memory for sub_fluid grid*/
   fluid_grid->sub_fluid_grid = (Sub_Fluidgrid*) malloc(sizeof(Sub_Fluidgrid) * total_sub_grids);
@@ -49,22 +55,72 @@ void gen_fluid_grid(Fluidgrid *fluid_grid, int cube_size, int taskid, GV gv){
   fluid_grid->inlet->nodes  = (Fluidnode*)calloc(dim_y * dim_z, sizeof(Fluidnode));
   fluid_grid->outlet->nodes = (Fluidnode*)calloc(dim_y * dim_z, sizeof(Fluidnode));
 
-  for (int BI = 0; BI < num_cubes_x; ++BI)
-    for (int BJ = 0; BJ < num_cubes_y; ++BJ)
-      for (int BK = 0; BK < num_cubes_z; ++BK){
-        if (taskid == cube2task(BI, BJ, BK, gv)){
-          long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
-          Fluidnode *nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes =
-            (Fluidnode*)calloc(cube_size * cube_size * cube_size, sizeof(Fluidnode));
-          for (int li = 0; li < cube_size; ++li)
-            for (int lj = 0; lj < cube_size; ++lj)
-              for (int lk = 0; lk < cube_size; ++lk){
-                int node_idx = li * cube_size * cube_size + lj * cube_size + lk;
-                nodes[node_idx].rho = gv->rho_l;//same as rho_l
-                nodes[node_idx].vel_x = gv->u_l;
-                nodes[node_idx].vel_y = 0.0;
-                nodes[node_idx].vel_z = 0.0;
-              }
-        }
+  // for (int BI = 0; BI < num_cubes_x; ++BI)
+  //   for (int BJ = 0; BJ < num_cubes_y; ++BJ)
+  //     for (int BK = 0; BK < num_cubes_z; ++BK){
+  //       if (taskid == cube2task(BI, BJ, BK, gv)){
+  //         long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+  //         Fluidnode *nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes =
+  //           (Fluidnode*)calloc(cube_size * cube_size * cube_size, sizeof(Fluidnode));
+  //         for (int li = 0; li < cube_size; ++li)
+  //           for (int lj = 0; lj < cube_size; ++lj)
+  //             for (int lk = 0; lk < cube_size; ++lk){
+  //               int node_idx = li * cube_size * cube_size + lj * cube_size + lk;
+  //               nodes[node_idx].rho = gv->rho_l;//same as rho_l
+  //               nodes[node_idx].vel_x = gv->u_l;
+  //               nodes[node_idx].vel_y = 0.0;
+  //               nodes[node_idx].vel_z = 0.0;
+  //             }
+  //       }
+  // }
+
+  gv->start_B[2] = gv->rankCoord[2] * gv->cubes_per_task[2];
+  gv->start_B[1] = gv->rankCoord[1] * gv->cubes_per_task[1];
+  gv->start_B[0] = gv->rankCoord[0] * gv->cubes_per_task[0];
+
+  gv->stop_B[0] = gv->start_B[0] + gv->cubes_per_task[0];
+  gv->stop_B[1] = gv->start_B[1] + gv->cubes_per_task[1];
+  gv->stop_B[2] = gv->start_B[2] + gv->cubes_per_task[2];
+
+  printf("(%d, %d, %d) start_B(%d, %d, %d) stop_B(%d, %d, %d)\n", 
+    gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2],
+    gv->start_B[0], gv->start_B[1], gv->start_B[2],
+    gv->stop_B[0], gv->stop_B[1], gv->stop_B[2]
+    );
+
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
+        long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
+        Fluidnode *nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes =
+          (Fluidnode*)calloc(cube_size * cube_size * cube_size, sizeof(Fluidnode));
+        for (int li = 0; li < cube_size; ++li)
+          for (int lj = 0; lj < cube_size; ++lj)
+            for (int lk = 0; lk < cube_size; ++lk){
+              int node_idx = li * cube_size * cube_size + lj * cube_size + lk;
+              nodes[node_idx].rho = gv->rho_l;//same as rho_l
+              nodes[node_idx].vel_x = gv->u_l;
+              nodes[node_idx].vel_y = 0.0;
+              nodes[node_idx].vel_z = 0.0;
+            }
   }
+
+
+  // for (int BI = 0; BI < gv->cubes_per_task[0]; BI++)
+  //   for (int BJ = 0; BJ < gv->cubes_per_task[1]; BJ++)
+  //     for (int BK = 0; BK < gv->cubes_per_task[2]; BK++){
+  //       long cube_idx = BI * gv->cubes_per_task[1] * gv->cubes_per_task[2] + BJ * gv->cubes_per_task[2] + BK;
+  //       Fluidnode *nodes = fluid_grid->sub_fluid_grid[cube_idx].nodes =
+  //         (Fluidnode*)calloc(cube_size * cube_size * cube_size, sizeof(Fluidnode));
+  //       for (int li = 0; li < cube_size; ++li)
+  //         for (int lj = 0; lj < cube_size; ++lj)
+  //           for (int lk = 0; lk < cube_size; ++lk){
+  //             int node_idx = li * cube_size * cube_size + lj * cube_size + lk;
+  //             nodes[node_idx].rho = gv->rho_l;//same as rho_l
+  //             nodes[node_idx].vel_x = gv->u_l;
+  //             nodes[node_idx].vel_y = 0.0;
+  //             nodes[node_idx].vel_z = 0.0;
+  //           }
+  //     }
+  
 }

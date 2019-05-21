@@ -382,7 +382,8 @@ The cubes should be distributed equally on the entire fluid grid\n",
     printf("Fluid world_rank=%d: cart_rank=%d, cart_coords(x,y,z) = (%d, %d, %d)\n",
       gv->rank[0], my_cart_rank, gv->rankCoord[0], gv->rankCoord[1], gv->rankCoord[2]);
 
-    gen_fluid_grid(gv->fluid_grid, gv->cube_size, gv->taskid, gv);
+    // generate fluid grid
+    gen_fluid_grid(gv);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
