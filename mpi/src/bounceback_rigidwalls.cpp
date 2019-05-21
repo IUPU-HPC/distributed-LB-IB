@@ -58,8 +58,10 @@ void bounceback_rigidwalls(LV lv){
   lk = gv->kb;
   BK = 0;
 
-  for (BI = 0; BI < num_cubes_x; ++BI)
-    for (BJ = 0; BJ < num_cubes_y; ++BJ){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  //   for (BJ = 0; BJ < num_cubes_y; ++BJ){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ){
       ownertid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
       if (my_rank == toProc && tid == ownertid){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -91,8 +93,10 @@ void bounceback_rigidwalls(LV lv){
   lk = cube_size - 3;
   BK = num_cubes_z - 1;//lk=gv->ke; //BI=gv->ib+1;BI<=gv->ie-1;BJ=gv->jb;BJ<=gv->je
 
-  for (BI = 0; BI < num_cubes_x; ++BI)
-    for (BJ = 0; BJ < num_cubes_y; ++BJ){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  //   for (BJ = 0; BJ < num_cubes_y; ++BJ){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ){
       ownertid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
       if (my_rank == toProc && tid == ownertid){
 
@@ -126,8 +130,10 @@ void bounceback_rigidwalls(LV lv){
   lj = gv->jb; 
   BJ =0;
 
-  for (BI = 0; BI < num_cubes_x; ++BI)
-    for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  //   for (BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
       ownertid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
       if (my_rank == toProc && tid == ownertid){
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -160,8 +166,10 @@ void bounceback_rigidwalls(LV lv){
   lj = cube_size - 3; 
   BJ = num_cubes_y - 1;//gv->je;
 
-  for (BI = 0; BI < num_cubes_x; ++BI)
-    for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  //   for (BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
       ownertid = cube2thread_and_task(BI, BJ, BK, gv, &toProc);
       if (my_rank == toProc && tid == ownertid){
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;

@@ -351,7 +351,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
   // step3: send message, iPop = aggr_stream_dir
   t0 = Timer::get_cur_time();
 
-  for(iPop = 1; iPop < 3; iPop++){
+  for(iPop = 1; iPop < 19; iPop++){
 #ifdef CHECK_STREAM
     if (tid == 0){
       printf("-COUNT- Fluid%dtid%d: start streaming msg iPop=%d, dest=%d, src=%d, sendcnt=%d\n",
@@ -370,7 +370,7 @@ next(X,Y,Z)=(%ld,%ld,%ld), next(BI,BJ,BK)=(%ld,%ld,%ld), next(li,lj,lk)=(%ld,%ld
 
   //reset & clear
   if (tid == 0){
-    for (iPop = 1; iPop < 3; iPop++){
+    for (iPop = 1; iPop < 19; iPop++){
 
       gv->stream_last_pos[iPop] = 0;
 

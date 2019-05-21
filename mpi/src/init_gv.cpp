@@ -203,8 +203,8 @@ void init_gv(GV gv) {
     gv->ifd_recv_buf = (char*) malloc(sizeof(char) * gv->ifd_max_bufsize);
 
     // Initilize stream_msg
-    //int max_stream_msg_points = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)); //TOO BIG: max_stream_msg_points: stream a 2D surface to neighbour
-    int max_stream_msg_points = dim_z*dim_y/(Pz*Py); //test along x axis, whether this memory matters
+    int max_stream_msg_points = max(max(dim_x*dim_y/(Px*Py), dim_x*dim_z/(Px*Pz)), dim_z*dim_y/(Pz*Py)); //TOO BIG: max_stream_msg_points: stream a 2D surface to neighbour
+    // int max_stream_msg_points = dim_z*dim_y/(Pz*Py); //test along x axis, whether this memory matters
 
     gv->stream_recv_max_bufsize = (STREAM_MSG_EACH_POINT_SIZE) * max_stream_msg_points;//(X,Y,Z) + (iPop,df1)*5
 

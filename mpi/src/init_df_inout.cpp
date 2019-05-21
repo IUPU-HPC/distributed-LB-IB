@@ -37,8 +37,10 @@ void init_df_inout(GV gv){
   /* inlet, copy once */
   li = gv->ib;
   BI = 0;
-  for (BJ = 0; BJ < num_cubes_y; ++BJ)
-  for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BJ = 0; BJ < num_cubes_y; ++BJ)
+  // for (BK = 0; BK < num_cubes_z; ++BK){
+  for (BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+  for (BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
     tmp_task = cube2task(BI, BJ, BK, gv);
     if (gv->taskid == tmp_task){ //MPI changes
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -59,8 +61,10 @@ void init_df_inout(GV gv){
   /* outlet, copy once */
   li = cube_size - 1;
   BI = num_cubes_x - 1;//ie
-  for (BJ = 0; BJ < num_cubes_y; ++BJ)
-  for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BJ = 0; BJ < num_cubes_y; ++BJ)
+  // for (BK = 0; BK < num_cubes_z; ++BK){
+  for (BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+  for (BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
     tmp_task = cube2task(BI, BJ, BK, gv);
     if (gv->taskid == tmp_task){ //MPI changes
       cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;

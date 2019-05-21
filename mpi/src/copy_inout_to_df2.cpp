@@ -44,8 +44,10 @@ void copy_inout_to_df2(LV lv){
   //i = gv->ib;BJ=gv->jb-1; BJ<=gv->je+1;BK=gv->kb-1; BK<=gv->ke+1;
   li = gv->ib;
   BI = 0;
-  for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_z; BK++){
+  // for (BJ = 0; BJ < num_cubes_y; BJ++)
+  //   for (BK = 0; BK < num_cubes_z; BK++){
+  for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+    for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -75,8 +77,10 @@ void copy_inout_to_df2(LV lv){
   //i=gv->ib-1;
   li = gv->ib - 1;
   BI = 0;
-  for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_z; BK++){
+  // for (BJ = 0; BJ < num_cubes_y; BJ++)
+  //   for (BK = 0; BK < num_cubes_z; BK++){
+  for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+    for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -106,8 +110,10 @@ void copy_inout_to_df2(LV lv){
   //i=gv->ie;
   li = cube_size - 3;
   BI = num_cubes_x - 1;
-  for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_z; BK++){
+  // for (BJ = 0; BJ < num_cubes_y; BJ++)
+  //   for (BK = 0; BK < num_cubes_z; BK++){
+  for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+    for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -136,8 +142,10 @@ void copy_inout_to_df2(LV lv){
   //i=gv->ie+1;
   li = cube_size - 2;
   BI = num_cubes_x - 1;
-  for (BJ = 0; BJ < num_cubes_y; BJ++)
-    for (BK = 0; BK < num_cubes_z; BK++){
+  // for (BJ = 0; BJ < num_cubes_y; BJ++)
+  //   for (BK = 0; BK < num_cubes_z; BK++){
+  for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+    for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
       if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
         if (my_rank == temp_mac_rank){
           cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;

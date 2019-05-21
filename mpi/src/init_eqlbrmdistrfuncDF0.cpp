@@ -27,9 +27,12 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfeq*/
   /*PTHREAD_Change*/
 
   //For each cube BI, BJ ,BK, li, lj, lk 0 to cube size-1
-  for (int BI = 0; BI < num_cubes_x; ++BI){
-    for (int BJ = 0; BJ < num_cubes_y; ++BJ){
-      for (int BK = 0; BK < num_cubes_z; ++BK){
+  // for (int BI = 0; BI < num_cubes_x; ++BI){
+  //   for (int BJ = 0; BJ < num_cubes_y; ++BJ){
+  //     for (int BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
         tmp_task = cube2task(BI, BJ, BK, gv);
         if (gv->taskid == tmp_task){ //MPI changes
           long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
@@ -86,8 +89,7 @@ void init_eqlbrmdistrfuncDF0(GV gv){/*stored in dfeq*/
           } // for loop local x
         }//if machine check ends
       }//for BK
-    }//for BJ
-  }//FOR BI
+
   /*PTHREAD_Change*/
   // printf("****************init_eqlbrmdistrfuncDF0 EXIT ***************\n");
 }

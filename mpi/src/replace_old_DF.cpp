@@ -20,7 +20,6 @@ void replace_old_DF(LV lv){
   Fluidnode *nodes;
 
   int ksi;
-  int BI, BJ, BK; //to identify the Sub grids
   int cube_size;
   long cube_idx;
   int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
@@ -40,11 +39,14 @@ void replace_old_DF(LV lv){
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   /* replacing the old d.f. values by the newly computed ones */
-  for (BI = 0; BI < num_cubes_x; ++BI)
-  for (BJ = 0; BJ < num_cubes_y; ++BJ)
-  for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  // for (BJ = 0; BJ < num_cubes_y; ++BJ)
+  // for (BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+  for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+  for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
     if (cube2thread_and_task(BI, BJ, BK, gv, &temp_mac_rank) == tid){
-      if (my_rank == temp_mac_rank){
+      // if (my_rank == temp_mac_rank){
         cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
         nodes = fluidgrid->sub_fluid_grid[cube_idx].nodes;
 
@@ -68,7 +70,7 @@ void replace_old_DF(LV lv){
             nodes[node_idx].df1[ksi] = nodes[node_idx].df2[ksi];
 
         }//lk
-      }//if machine check
+      // }//if machine check
     }//if cube2thread
   }//BK
 

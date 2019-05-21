@@ -12,7 +12,6 @@
 
 void init_df1(GV gv) {
   int ksi;
-  int BI, BJ, BK; //to identify the Sub grids
   int starting_x, starting_y, starting_z, stopping_x, stopping_y, stopping_z;//To identify buffer zone
   int li, lj, lk, node_idx;//local access point inside cube
   int tmp_task;
@@ -23,9 +22,12 @@ void init_df1(GV gv) {
   int num_cubes_z = gv->fluid_grid->num_cubes_z;
 
   /*PTHREAD_Change*/
-  for (BI = 0; BI < num_cubes_x; ++BI)
-  for (BJ = 0; BJ < num_cubes_y; ++BJ)
-  for (BK = 0; BK < num_cubes_z; ++BK){
+  // for (BI = 0; BI < num_cubes_x; ++BI)
+  // for (BJ = 0; BJ < num_cubes_y; ++BJ)
+  // for (BK = 0; BK < num_cubes_z; ++BK){
+  for (int BI = gv->start_B[0]; BI < gv->stop_B[0]; ++BI)
+    for (int BJ = gv->start_B[1]; BJ < gv->stop_B[1]; ++BJ)
+      for (int BK = gv->start_B[2]; BK < gv->stop_B[2]; ++BK){
     tmp_task = cube2task(BI, BJ, BK, gv);
     if (gv->taskid == tmp_task){ //MPI changes
       long cube_idx = BI * num_cubes_y * num_cubes_z + BJ * num_cubes_z + BK;
