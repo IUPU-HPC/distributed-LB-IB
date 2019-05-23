@@ -49,7 +49,7 @@ fluid_grid_z=$((112 * fluid_task_z))
 
 cube_size=4
 thread_per_task_x=1
-thread_per_task_y=2
+thread_per_task_y=4
 thread_per_task_z=7
 
 #fiber

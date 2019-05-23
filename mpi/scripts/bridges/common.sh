@@ -18,8 +18,8 @@ rm -f $HOST_DIR/hostfile*
 #all tasks run the following command
 srun -o $HOST_DIR/hostfile-dup hostname
 cat $HOST_DIR/hostfile-dup | sort | uniq | sed "s/$/:${nproc_per_mac}/" >$HOST_DIR/hostfile-all
-srun -o $HOST_DIR/cpuinfo lscpu
-cat $HOST_DIR/cpuinfo | uniq
+#srun -o $HOST_DIR/cpuinfo lscpu
+#cat $HOST_DIR/cpuinfo | uniq
 # # cd ${PBS_RESULTDIR}
 
 #SET TOTAL MPI PROC

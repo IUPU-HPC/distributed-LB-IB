@@ -27,7 +27,7 @@ groupname=$(id -Gn)
 export SCRATCH_DIR=/pylon5/ac561jp/qoofyk/distributed-LB-IB/${SLURM_JOBID}
 EMPTY_DIR=/pylon5/ac561jp/qoofyk/empty/
 
-BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/distributed-lb-ib
+#BIN=${PBS_O_HOME}/distributed-LB-IB/mpi/distributed-lb-ib
 
 # export PSM2_MQ_RECVREQS_MAX=$((1048576 * 2))
 ######################################################################
